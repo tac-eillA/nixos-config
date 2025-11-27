@@ -485,15 +485,7 @@ in
                   "$mainMod, k, movefocus, u"
                   "$mainMod, j, movefocus, d"
 
-                  # Go to workspace 6 and 7 with mouse side buttons
-                  "$mainMod, mouse:276, workspace, 5"
-                  "$mainMod, mouse:275, workspace, 6"
-                  "$mainMod SHIFT, mouse:276, movetoworkspace, 5"
-                  "$mainMod SHIFT, mouse:275, movetoworkspace, 6"
-                  "$mainMod CTRL, mouse:276, movetoworkspacesilent, 5"
-                  "$mainMod CTRL, mouse:275, movetoworkspacesilent, 6"
-
-                  # Rebuild NixOS with a KeyBind
+		  # Rebuild NixOS with a KeyBind
                   "$mainMod, U, exec, $term -e rebuild"
 
                   # Scroll through existing workspaces with mainMod + scroll
