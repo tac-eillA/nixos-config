@@ -100,7 +100,7 @@ in
     XDG_BIN_HOME = "$HOME/.local/bin";
     XDG_RUNTIME_DIR = "/run/user/$UID";
   };
-
+  hardware.enableRedistributableFirmware = true;
   console.keyMap = "${consoleKeymap}";
   nixpkgs = {
     overlays = builtins.attrValues overlays;
