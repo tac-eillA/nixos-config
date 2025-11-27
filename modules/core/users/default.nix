@@ -16,8 +16,10 @@ let
 in
 {
   imports = [ inputs.home-manager.nixosModules.home-manager
-     ./allison.nix
-     ./custom.nix
+     if (username == "allison") then
+       ./allison.nix
+     else
+       ./custom.nix
    ];
   programs.dconf.enable = true; # Enable dconf for home-manager
   home-manager = {
