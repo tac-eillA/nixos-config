@@ -564,16 +564,16 @@ in
 
               workspace = [
                 # Binds workspaces to my monitors (find desc with: hyprctl monitors)
-                "1,monitor:desc:BNQ BenQ EL2870U PCK00489SL0,default:true"
-                "2,monitor:desc:BNQ BenQ EL2870U PCK00489SL0"
-                "3,monitor:desc:BNQ BenQ EL2870U PCK00489SL0"
-                "4,monitor:desc:BNQ BenQ EL2870U PCK00489SL0"
-                "5,monitor:desc:BNQ BenQ EW277HDR 99J01861SL0,default:true"
-                "6,monitor:desc:BNQ BenQ EW277HDR 99J01861SL0"
-                "7,monitor:desc:BNQ BenQ EW277HDR 99J01861SL0"
-                "8,monitor:desc:BNQ BenQ xl2420t 99D06760SL0,default:true"
-                "9,monitor:desc:BNQ BenQ xl2420t 99D06760SL0"
-                "10,monitor:desc:BNQ BenQ EL2870U PCK00489SL0"
+                #"1,monitor:desc:BNQ BenQ EL2870U PCK00489SL0,default:true"
+                #"2,monitor:desc:BNQ BenQ EL2870U PCK00489SL0"
+                #"3,monitor:desc:BNQ BenQ EL2870U PCK00489SL0"
+                #"4,monitor:desc:BNQ BenQ EL2870U PCK00489SL0"
+                #"5,monitor:desc:BNQ BenQ EW277HDR 99J01861SL0,default:true"
+                #"6,monitor:desc:BNQ BenQ EW277HDR 99J01861SL0"
+                #"7,monitor:desc:BNQ BenQ EW277HDR 99J01861SL0"
+                #"8,monitor:desc:BNQ BenQ xl2420t 99D06760SL0,default:true"
+                #"9,monitor:desc:BNQ BenQ xl2420t 99D06760SL0"
+                #"10,monitor:desc:BNQ BenQ EL2870U PCK00489SL0"
               ];
             };
           };
