@@ -10,7 +10,7 @@
   games = true; # Whether to enable the gaming module
 
   # Hardware Configuration
-  videoDriver = "amdgpu"; # CRITICAL: Choose your GPU driver (nvidia, amdgpu, intel)
+  videoDriver = "nvidia"; # CRITICAL: Choose your GPU driver (nvidia, amdgpu, intel)
   hostname = "artemis"; # Your system hostname
 
   # Localization
