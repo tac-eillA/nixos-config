@@ -4,7 +4,7 @@ let
 in
 {
   imports = [
-    /etc/nixos/hardware-configuration.nix
+    ./hardware-configuration.nix
     ./host-packages.nix
 
     # Core Modules (Don't change unless you know what you're doing)
