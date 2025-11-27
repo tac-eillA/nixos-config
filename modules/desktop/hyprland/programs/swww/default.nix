@@ -18,7 +18,7 @@
   xdg.configFile."waypaper/config.ini".text = lib.generators.toINI { } {
     Settings = {
       language = "en";
-      folder = "~/hyprnix/modules/themes/wallpapers";
+      folder = "~/nixos-config/modules/themes/wallpapers";
       post_command = "ln -sf \"$wallpaper\" ${wpPath}";
       zen_mode = "false";
       backend = "swww";
