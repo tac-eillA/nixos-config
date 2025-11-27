@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-for file in *.png *.jpg *.jpeg; do
-  cjxl "$file" "${file%.*}.jxl" --lossless_jpeg=1
+for file in *.jxl; do
+  djxl "$file" "${file%.*}.png"
 done
-rm *.png *.jpg *.jpeg
+#rm *.png *.jpg *.jpeg
