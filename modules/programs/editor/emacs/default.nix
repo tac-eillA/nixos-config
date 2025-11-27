@@ -13,13 +13,8 @@
       };
       services.emacs = {
         enable = true;
-        package = pkgs.emacs-unstable; # replace with emacs-gtk, or a version provided by the community overlay if desired.
+        package = pkgs.emacs; # replace with emacs-gtk, or a version provided by the community overlay if desired.
       };
-      nixpkgs.overlays = [
-        (import (builtins.fetchTarball {
-          url = "https://github.com/nix-community/emacs-overlay/archive/master.tar.gz";
-        }))
-      ];
     })
   ];
 }
