@@ -16,17 +16,17 @@ let
 in
 {
 
-    home-manager.users.anand = {
+    home-manager.users.allison = {
       # Let Home Manager install and manage itself.
       programs.home-manager.enable = true;
 
       xdg.enable = true;
       home = {
-        username = "anand";
-        homeDirectory = "/home/anand";
+        username = "allison";
+        homeDirectory = "/home/allison";
         stateVersion = "25.05"; # Do not change!
         sessionVariables = {
-          EDITOR = "vscode"; 
+          EDITOR = "emacs"; 
           BROWSER = "${browser}";
           TERMINAL = "${terminal}";
         };
@@ -34,7 +34,7 @@ in
     };
   
   users = {
-    users.anand = {
+    users.allison = {
       isNormalUser = true;
       extraGroups = [
         "wheel" # sudo access

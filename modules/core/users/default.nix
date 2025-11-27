@@ -16,8 +16,8 @@ let
 in
 {
   imports = [ inputs.home-manager.nixosModules.home-manager
-     ./anand.nix
-     ./annmaro.nix
+     ./allison.nix
+     ./custom.nix
    ];
   programs.dconf.enable = true; # Enable dconf for home-manager
   home-manager = {
@@ -25,5 +25,5 @@ in
     useUserPackages = true;
     backupFileExtension = "backup";
     };
-  nix.settings.allowed-users = [ "${username}" "anand" ];
+  nix.settings.allowed-users = [ "${username}" "allison" ];
 }
