@@ -2,10 +2,9 @@
 # https://github.com/doomemacs. This module sets it up to meet my particular
 # Doomy needs.
 
-{ hey, lib, config, pkgs, ... }:
+{ lib, config, pkgs, ... }:
 
 with lib;
-with hey.lib;
 let cfg = config.modules.editors.emacs;
     emacs = with pkgs; (emacsPackagesFor
       (if config.modules.desktop.type == "wayland"
@@ -25,11 +24,6 @@ in {
     #   configRepoUrl = mkOpt types.str "${forgeUrl}/hlissner/.doom.d";
     # };
   };
-
-  config = mkIf cfg.enable {
-    nixpkgs.overlays = [
-      hey.inputs.emacs-overlay.overlays.default
-    ];
 
     user.packages = with pkgs; [
       (mkLauncherEntry "Emacs (Debug Mode)" {
@@ -81,8 +75,6 @@ in {
     ];
 
     environment.variables.PATH = [ "$XDG_CONFIG_HOME/emacs/bin" ];
-
-    modules.shell.zsh.rcFiles = [ "${hey.configDir}/emacs/aliases.zsh" ];
 
     fonts.packages = [ pkgs.nerd-fonts.symbols-only ];
   };
