@@ -6,5 +6,6 @@
     krita
     godot
     neovim
+    gh
   ];
 }
