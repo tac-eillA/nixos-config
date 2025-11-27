@@ -32,7 +32,7 @@ in
             else if editor == "vscode" then
               "code"
             else
-              "nano";
+              "emacs";
           BROWSER = "${browser}";
           TERMINAL = "${terminal}";
         };
