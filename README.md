@@ -3,9 +3,10 @@
    <br>
       My NixOS Configuration
    <br>
-      <img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/palette/macchiato.png" width="600px" /> <br>
+      <img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/palette/macchiato.png" width="600px" />
+    <br>
    <div align="center">
-
+</h1>
 ## Installation
 
 > [!Note]
