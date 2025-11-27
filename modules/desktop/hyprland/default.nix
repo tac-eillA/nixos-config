@@ -421,11 +421,9 @@ in
                   # Applications/Programs
                   "$mainMod, Return, exec, $term"
                   "$mainMod, T, exec, $term"
-                  "$mainMod, E, exec, $fileManager"
-                  "$mainMod, C, exec, $editor"
-                  "$mainMod, F, exec, $browser"
-                  "$mainMod SHIFT, S, exec, spotify"
-                  "$mainMod SHIFT, Y, exec, youtube-music"
+                  "$mainMod, F, exec, $fileManager"
+                  "$mainMod, B, exec, $browser"
+                  "$mainMod SHIFT, S, exec, cider"
                   "$CONTROL ALT, DELETE, exec, $term -e '${getExe pkgs.btop}'" # System Monitor
                   "$mainMod CTRL, C, exec, hyprpicker --autocopy --format=hex" # Colour Picker
 
