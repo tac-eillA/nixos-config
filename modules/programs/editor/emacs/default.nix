@@ -1,77 +1,20 @@
-# Emacs is my main driver. I'm the author of Doom Emacs
-# https://github.com/doomemacs. This module sets it up to meet my particular
-# Doomy needs.
-
-{ lib, config, pkgs, ... }:
-
-with lib;
-let cfg = config.modules.editors.emacs;
-    emacs = with pkgs; (emacsPackagesFor
-      (if config.modules.desktop.type == "wayland"
-       then emacs-git-pgtk
-       else emacs-git)).emacsWithPackages (epkgs: with epkgs; [
-         treesit-grammars.with-all-grammars
-         vterm
-         mu4e
-       ]);
-in {
-  options.modules.editors.emacs = {
-    enable = mkBoolOpt false;
-    # doom = rec {
-    #   enable = mkBoolOpt false;
-    #   forgeUrl = mkOpt types.str "https://github.com";
-    #   repoUrl = mkOpt types.str "${forgeUrl}/doomemacs/doomemacs";
-    #   configRepoUrl = mkOpt types.str "${forgeUrl}/hlissner/.doom.d";
-    # };
-  };
-
-    user.packages = with pkgs; [
-      (mkLauncherEntry "Emacs (Debug Mode)" {
-        description = "Start Emacs in debug mode";
-        icon = "emacs";
-        exec = "${emacs}/bin/emacs --debug-init";
-      })
-
-      ## Emacs itself
-      binutils            # native-comp needs 'as', provided by this
-      emacs               # HEAD + native-comp
-
-      ## Doom dependencies
-      git
-      ripgrep
-      gnutls              # for TLS connectivity
-
-      ## Optional dependencies
-      fd                  # faster projectile indexing
-      imagemagick         # for image-dired
-      (mkIf (config.programs.gnupg.agent.enable)
-        pinentry-emacs)   # in-emacs gnupg prompts
-      zstd                # for undo-fu-session/undo-tree compression
-
-      ## Module dependencies
-      # :email mu4e
-      mu
-      isync
-      # :checkers spell
-      (aspellWithDicts (ds: with ds; [ en en-computers en-science ]))
-      # :emacs dired +dirvish
-      ffmpegthumbnailer
-      mediainfo
-      vips
-      # :tools editorconfig
-      editorconfig-core-c # per-project style config
-      # :tools lookup & :lang org +roam
-      sqlite
-      # :lang cc
-      clang-tools
-      # :lang latex & :lang org (latex previews)
-      texlive.combined.scheme-medium
-      # :lang beancount
-      unstable.beancount
-      unstable.beanquery
-      unstable.fava
-      # :lang nix
-      age
-    ];
-
+{ pkgs, ... }:
+{
+  home-manager.sharedModules = [
+    (_: {
+      programs.emacs = {
+        enable = true;
+        package = pkgs.emacs.override {
+          withGTK3 = true;
+          withPgtk = true; # true on wayland
+          withNativeCompilation = true;
+          withTreeSitter = true;
+        };
+      };
+      services.emacs = {
+        enable = true;
+        package = pkgs.emacs; # replace with emacs-gtk, or a version provided by the community overlay if desired.
+      };
+    })
+  ];
 }
