@@ -75,6 +75,4 @@ in {
     ];
 
     environment.variables.PATH = [ "$XDG_CONFIG_HOME/emacs/bin" ];
-
-  };
 }
