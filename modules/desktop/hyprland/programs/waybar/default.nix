@@ -25,7 +25,7 @@ in
             ipc = true;
             fixed-center = true;
             margin-top = 5;
-            margin-left = 5;
+            margin-left = 10;
             margin-right = 5;
             margin-bottom = 0;
 
