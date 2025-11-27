@@ -9,7 +9,7 @@ in
       enable = true;
       extraArgs = "--keep-since 2d --keep 2";
     };
-    flake = "/home/${username}/hyprnix";
+    flake = "/home/${username}/nixos-config";
   };
 
    environment.systemPackages = with pkgs; [

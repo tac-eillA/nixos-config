@@ -29,7 +29,7 @@ You can install on a running system or from the NixOS live installer. Get the mi
 2. Change Directory:
 
 ```bash
-cd ~/hyprnix
+cd ~/nixos-config
 ```
 
 3. Run the Installer:
@@ -69,7 +69,7 @@ Apply configuration changes:
 
 - **Keyboard shortcut:** `Super + U`
 - **rebuild script:** `rebuild`
-- **nixos-rebuild:** `sudo nixos-rebuild switch --flake ~/hyprnix#<HOST>`
+- **nixos-rebuild:** `sudo nixos-rebuild switch --flake ~/nixos-config#<HOST>`
 - **nh:** `nh os switch --hostname <HOST>`
 
 Replace `<HOST>` with the name of your host (e.g., `Laptop`).

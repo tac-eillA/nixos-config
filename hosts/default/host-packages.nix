@@ -7,5 +7,6 @@
     godot
     neovim
     gh
+    zed-editor
   ];
 }

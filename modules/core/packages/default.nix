@@ -15,7 +15,7 @@
   };
 
   nixpkgs.config.allowUnfree = true;
- 
+
 
   environment.systemPackages = with pkgs; [
     appimage-run # Needed For AppImage Support
@@ -56,17 +56,17 @@
     # cowsay # Great Fun Terminal Program
     # duf # Utility For Viewing Disk Usage In Terminal
     # dysk # Disk space util nice formattting
-    # ffmpeg # Terminal Video / Audio Editing
+    ffmpeg # Terminal Video / Audio Editing
     # gemini-cli # CLI AI client ONLY (optional)
     # glxinfo # needed for inxi diag util
-     inxi # CLI System Information Tool
+    inxi # CLI System Information Tool
     # libsForQt5.qt5.qtgraphicaleffects # Sddm Dependency (Old)
     # libnotify # For Notifications
     # lolcat # Add Colors To Your Terminal Command Output
-     lshw # Detailed Hardware Information
+    lshw # Detailed Hardware Information
     # mpv # Incredible Video Player
-     ncdu # Disk Usage Analyzer With Ncurses Interface
-     nixfmt-rfc-style # Nix Formatter
+    ncdu # Disk Usage Analyzer With Ncurses Interface
+    nixfmt-rfc-style # Nix Formatter
     # nwg-displays # configure monitor configs via GUI
     # onefetch # provides zsaneyos build info on current system
     # pavucontrol # For Editing Audio Levels & Devices
@@ -79,7 +79,7 @@
     # v4l-utils # Used For Things Like OBS Virtual Camera
     # warp-terminal # Terminal with AI support build in
      wget # Tool For Fetching Files With Links
-   
+
     # devenv
     # devbox
     # shellify
