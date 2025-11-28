@@ -45,12 +45,11 @@ in
       TimeoutStopSec = 10;
     };
   };
-  services.displayManager.defaultSession = "hyprland";
+  services.displayManager.defaultSession = "hyprland-uwsm";
 
   xdg.portal = {
     enable = true;
     extraPortals = with pkgs; [
-      xdg-desktop-portal
       xdg-desktop-portal-hyprland
       xdg-desktop-portal-gtk
     ];
