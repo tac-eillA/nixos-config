@@ -32,12 +32,17 @@ in
     nvidia = {
       open = false;
       # nvidiaPersistenced = true;
-      nvidiaSettings = false;
+      nvidiaSettings = true;
       powerManagement.enable = true; # Fixes sleep/suspend
 
       modesetting.enable = true; # Modesetting is required.
 
       package = nvidiaDriverChannel;
+      prime = {
+		# Make sure to use the correct Bus ID values for your system!
+		  intelBusId = "PCI:00:02.0";
+		  nvidiaBusId = "PCI:01:00.0";
+	};
     };
     graphics = {
       enable = true;
