@@ -50,6 +50,7 @@ in
   xdg.portal = {
     enable = true;
     extraPortals = with pkgs; [
+      xdg-desktop-portal
       xdg-desktop-portal-hyprland
       xdg-desktop-portal-gtk
     ];
@@ -58,7 +59,7 @@ in
 
   programs.hyprland = {
     enable = true;
-    # withUWSM = true;
+    withUWSM = true;
   };
 
   home-manager.sharedModules =
