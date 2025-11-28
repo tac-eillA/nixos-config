@@ -545,6 +545,7 @@ in
               monitor = [
                 # Easily plug in any monitor
                 ",preferred,auto,1"
+		"DP-3,38402160@120,auto,1"
 
                 # My Monitors (Fine to leave these since i used the serial numbers)
                 "desc:BNQ BenQ EW277HDR 99J01861SL0,preferred,-1920x0,1"
