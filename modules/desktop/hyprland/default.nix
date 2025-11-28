@@ -45,7 +45,7 @@ in
       TimeoutStopSec = 10;
     };
   };
-  services.displayManager.defaultSession = "hyprland-uwsm";
+  services.displayManager.defaultSession = "hyprland";
 
   xdg.portal = {
     enable = true;
@@ -58,7 +58,7 @@ in
 
   programs.hyprland = {
     enable = true;
-    withUWSM = true;
+   # withUWSM = true;
   };
 
   home-manager.sharedModules =
