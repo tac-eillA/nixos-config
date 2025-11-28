@@ -8,5 +8,6 @@
     neovim
     gh
     zed-editor
+    ghostty
   ];
 }
