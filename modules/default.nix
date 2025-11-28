@@ -28,7 +28,7 @@ in
 
     # Optional
     ./hardware/drives
-    ./hardware/video/${vars.videoDriver}.nix # Enable gpu drivers defined in variables.nix
+    ./hardware/video/nvidia.nix # Enable gpu drivers defined in variables.nix
     ./desktop/${vars.desktop} # Set window manager defined in variables.nix
     ./programs/browser/${vars.browser} # Set browser defined in variables.nix
     ./programs/terminal/${vars.terminal} # Set terminal defined in variables.nix

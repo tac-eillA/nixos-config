@@ -41,7 +41,7 @@ in
     };
     graphics = {
       enable = true;
-      # package = nvidiaDriverChannel;
+      package = nvidiaDriverChannel;
       enable32Bit = true;
       extraPackages = with pkgs; [
         nvidia-vaapi-driver
