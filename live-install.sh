@@ -793,9 +793,9 @@ info "Creating user directories..."
 mkdir -p "/mnt/home/$username"/{Downloads,Documents,Pictures,Videos,.local/bin}
 
 # Copy flake to ~/NixOS
-info "Copying flake to /home/$username/NixOS..."
-mkdir -p "/mnt/home/$username/NixOS"
-cp -r ./ "/mnt/home/$username/NixOS/" || {
+info "Copying flake to /home/$username/nixos-config..."
+mkdir -p "/mnt/home/$username/nixos-config"
+cp -r ./ "/mnt/home/$username/nixos-config/" || {
   warn "Failed to copy configuration to user's home directory."
 }
 
