@@ -9,5 +9,6 @@
     gh
     zed-editor
     ghostty
+    python314
   ];
 }

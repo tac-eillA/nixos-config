@@ -189,7 +189,7 @@ in
                 "col.inactive_border" = "rgba(b4befecc) rgba(6c7086cc) 45deg";
                 resize_on_border = true;
                 layout = "dwindle"; # dwindle or master
-                # allow_tearing = true; # Allow tearing for games (use immediate window rules for specific games or all titles)
+                allow_tearing = true; # Allow tearing for games (use immediate window rules for specific games or all titles)
               };
               decoration = {
                 shadow.enabled = false;
