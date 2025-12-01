@@ -5,12 +5,11 @@
     settings = {
       charger = {
         governor = "performance";
-        turbo = "auto";
+        turbo = "always";
       };
       battery = {
         governor = "ondemand";
-        scaling_max_freq = 3800000;
-        turbo = "auto";
+        turbo = "always";
       };
     };
   };
