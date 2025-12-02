@@ -45,7 +45,7 @@ in
       TimeoutStopSec = 10;
     };
   };
-  services.displayManager.defaultSession = "hyprland";
+  services.displayManager.defaultSession = "hyprland-uwsm";
 
   xdg.portal = {
     enable = true;
@@ -58,7 +58,7 @@ in
 
   programs.hyprland = {
     enable = true;
-   # withUWSM = true;
+    withUWSM = true;
   };
 
   home-manager.sharedModules =
@@ -146,9 +146,9 @@ in
                 #"[workspace 6 silent] spotify"
                 #"[workspace special silent] ${browser} --private-window"
                 #"[workspace special silent] ${terminal}"
-                
-                
-                
+
+
+
                 "gnome-keyring-daemon"
                 "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
                 "dbus-update-activation-environment --all"
