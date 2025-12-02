@@ -491,8 +491,7 @@ in
               "org.gnome.Nautilus.desktop"
               "gnome-system-monitor.desktop"
               "firefox.desktop"
-              "Alacritty.desktop"
-              "org.gnome.Console.desktop"
+              "ghostty.desktop"
             ];
             last-selected-power-profile = "performance";
             welcome-dialog-last-shown-version = "45.4";
