@@ -10,20 +10,20 @@
       "btrfs"
     ];
     tmp.cleanOnBoot = true;
-    kernelPackages = pkgs.linuxPackages_zen; # _latest, _zen, _xanmod_latest, _hardened, _rt, _OTHER_CHANNEL, etc.
+    kernelPackages = pkgs.linuxPackages_latest; # _latest, _zen, _xanmod_latest, _hardened, _rt, _OTHER_CHANNEL, etc.
     kernelParams = [
       "preempt=full" # lower latency but less throughput
     ];
     loader = {
-      systemd-boot.enable = false;   
+      systemd-boot.enable = false;
       efi.canTouchEfiVariables = true;
       efi.efiSysMountPoint = "/boot";
-      timeout = 10; # bootloader display duration
+      timeout = 20; # bootloader display duration
       grub = {
         enable = true;
         device = "nodev";
         efiSupport = true;
-     #  efiInstallAsRemovable = true; # in case canTouchEfiVariables doesn't work for your system, kindly set "canTouchEfiVariables" to false before enabling this 
+     #  efiInstallAsRemovable = true; # in case canTouchEfiVariables doesn't work for your system, kindly set "canTouchEfiVariables" to false before enabling this
         useOSProber = true;
         #gfxmodeEfi = "2715x1527"; # for 4k: 3840x2160
         #gfxmodeBios = "2715x1527"; # for 4k: 3840x2160
