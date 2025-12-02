@@ -1,7 +1,7 @@
 {
   # User Configuration
   username = "allison"; # Your username (auto-set with install.sh, live-install.sh, rebuild)
-  desktop = "hyprland"; # Options: hyprland, i3-gaps, gnome, plasma6
+  desktop = "gnome"; # Options: hyprland, i3-gaps, gnome, plasma6
   terminal = "kitty"; # Options: kitty, alacritty
   editor = "emacs"; # Options: nixvim, vscode, helix, nvchad, neovim
   browser = "firefox"; # Options: firefox, floorp, zen
