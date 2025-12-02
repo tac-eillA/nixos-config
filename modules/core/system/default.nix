@@ -26,6 +26,7 @@ in
   services.xserver = {
     enable = true;
     exportConfiguration = true; # Make sure /etc/X11/xkb is populated so localectl works correctly
+    videoDrivers = ["nvidia"];
     xkb = {
       layout = "${kbdLayout}";
       variant = "${kbdVariant}";

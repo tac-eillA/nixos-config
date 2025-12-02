@@ -4,13 +4,12 @@
     enable = true;
     settings = {
       charger = {
-        governor = "powersave";
-        turbo = "auto";
+        governor = "performance";
+        turbo = "always";
       };
       battery = {
-        governor = "schedutil";
-        scaling_max_freq = 3800000;
-        turbo = "never";
+        governor = "ondemand";
+        turbo = "always";
       };
     };
   };
