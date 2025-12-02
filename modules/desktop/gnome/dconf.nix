@@ -490,6 +490,7 @@ in
               "user-theme@gnome-shell-extensions.gcampax.github.com"
               "workspace-indicator@gnome-shell-extensions.gcampax.github.com"
               "Vitals@CoreCoding.com"
+              "pop-shell@system76.com"
             ];
             favorite-apps = [
               "org.gnome.Settings.desktop"

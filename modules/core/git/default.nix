@@ -2,9 +2,9 @@
   pkgs,
   config,
   ...
-}: 
+}:
 
-{ 
+{
   home-manager.sharedModules = [
     (_: {
 
@@ -15,14 +15,14 @@
     userName = "tac-eillA";
     userEmail = "allie.snod@gmail.com";
 
-   
+
 
     lfs = {
       enable = true;
       skipSmudge = true;
     };
 
-    extraConfig = {
+    settings = {
       # core.editor = "vscode";
       credential.helper = "${pkgs.gitFull}/bin/git-credential-libsecret";
 
@@ -52,7 +52,7 @@
         autoupdate = true;
       };
     };
-    
+
     aliases = {
       # Semantic commit message aliases
       chore = "!f() { git commit -m \"chore($1): $2\"; }; f";
@@ -63,14 +63,14 @@
       style = "!f() { git commit -m \"style($1): $2\"; }; f";
       test = "!f() { git commit -m \"test($1): $2\"; }; f";
     };
-     
+
     ignores = [
       "*~"
       "*.swp"
       "*result*"
       ".direnv"
       "node_modules"
-    ]; 
+    ];
   };
     })
   ];
