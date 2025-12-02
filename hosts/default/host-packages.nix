@@ -8,7 +8,8 @@
     neovim
     gh
     code-cursor
-    code-cursor-fhs
+    zed-editor
+    google-chrome
     ghostty
     python314
   ];

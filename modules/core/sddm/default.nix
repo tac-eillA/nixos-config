@@ -21,7 +21,7 @@ in  {
         echo "Sleeping to wait for session registration..."
         sleep 1
       '';
-      defaultSession = "hyprland";
+      defaultSession = "hyprland-uwsm";
       sddm = {
       enable = true;
       wayland.enable = true;
