@@ -7,7 +7,8 @@
     godot
     neovim
     gh
-    zed-editor
+    code-cursor
+    code-cursor-fhs
     ghostty
     python314
   ];
