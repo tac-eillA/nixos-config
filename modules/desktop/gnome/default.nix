@@ -45,7 +45,7 @@
     # gnomeExtensions.gtile
     # gnomeExtensions.dash-to-panel
     # gnomeExtensions.tray-icons-reloaded
-    SgnomeExtensions.paperwm
+    gnomeExtensions.paperwm
     # gnomeExtensions.just-perfection
   ];
 }
