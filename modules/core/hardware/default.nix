@@ -9,6 +9,7 @@
     logitech.wireless.enable = false;
     logitech.wireless.enableGraphical = false;
     graphics.enable = true;
+    nvidia.open = false;
     enableRedistributableFirmware = true;
     keyboard.qmk.enable = true;
     bluetooth = {

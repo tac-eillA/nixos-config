@@ -8,7 +8,5 @@
     neovim
     gh
     zed-editor
-    ghostty
-    python314
   ];
 }

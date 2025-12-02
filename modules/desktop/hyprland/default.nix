@@ -58,7 +58,7 @@ in
 
   programs.hyprland = {
     enable = true;
-    # withUWSM = true;
+   # withUWSM = true;
   };
 
   home-manager.sharedModules =
@@ -189,7 +189,7 @@ in
                 "col.inactive_border" = "rgba(b4befecc) rgba(6c7086cc) 45deg";
                 resize_on_border = true;
                 layout = "dwindle"; # dwindle or master
-                # allow_tearing = true; # Allow tearing for games (use immediate window rules for specific games or all titles)
+                allow_tearing = true; # Allow tearing for games (use immediate window rules for specific games or all titles)
               };
               decoration = {
                 shadow.enabled = false;
@@ -545,6 +545,7 @@ in
               monitor = [
                 # Easily plug in any monitor
                 ",preferred,auto,1"
+		"DP-3,3840x2160@120,auto,1"
 
                 # My Monitors (Fine to leave these since i used the serial numbers)
                 "desc:BNQ BenQ EW277HDR 99J01861SL0,preferred,-1920x0,1"

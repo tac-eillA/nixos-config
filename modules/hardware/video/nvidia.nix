@@ -15,7 +15,7 @@ in
     __GLX_VENDOR_LIBRARY_NAME = "nvidia";
     # MOZ_DISABLE_RDD_SANDBOX = 1; # Potential security risk
 
-    __GL_GSYNC_ALLOWED = "1"; # GSync
+    __GL_SYNC_DISPLAY_DEVICE="DP-3";
     __GL_VRR_ALLOWED = "1"; # VRR
     __GL_MaxFramesAllowed = "1"; # Reduces input lag
   };
