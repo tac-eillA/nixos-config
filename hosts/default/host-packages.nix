@@ -12,5 +12,6 @@
     google-chrome
     ghostty
     python314
+    pciutils
   ];
 }
