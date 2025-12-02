@@ -11,7 +11,7 @@
 
   # Hardware Configuration
   videoDriver = "nvidia"; # CRITICAL: Choose your GPU driver (nvidia, amdgpu, intel)
-  hostname = "athena"; # Your system hostname
+  hostname = "artemis"; # Your system hostname
 
   # Localization
   clock24h = true; # 24H or 12H clock in waybar

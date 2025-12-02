@@ -9,7 +9,7 @@
     gnome.gnome-initial-setup.enable = false;
     gnome.games.enable = false;
     power-profiles-daemon.enable = false;
-    tlp.enable = lib.mkForce true; # gnome has builtin power management
+    #tlp.enable = lib.mkForce true; # gnome has builtin power management
     xserver = {
       enable = true;
       #layout = "gb";
