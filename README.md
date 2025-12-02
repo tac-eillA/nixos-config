@@ -7,7 +7,7 @@
     <br>
    <div align="center">
 </h1>
-## Installation
+### Installation
 
 > [!Note]
 > Before proceeding with the installation, check these files and adjust them for your system:
@@ -36,6 +36,10 @@ cd ~/nixos-config
 
 ```bash
 ./install.sh
+```
+or if on a live install iso
+```bash
+./live-install.sh
 ```
 
 <!-- The script handles host setup, username configuration, and automatically generates `hardware-configuration.nix` based on your hardware. -->
@@ -67,12 +71,9 @@ The install and rebuild scripts automate the setup process, including hosts, use
 
 Apply configuration changes:
 
-- **Keyboard shortcut:** `Super + U`
-- **rebuild script:** `rebuild`
+- **Keyboard shortcut:** `Super + U` -- EASIEST
+- **rebuild script:** `rebuild` -- Alias for below command
 - **nixos-rebuild:** `sudo nixos-rebuild switch --flake ~/nixos-config#<HOST>`
-- **nh:** `nh os switch --hostname <HOST>`
-
-Replace `<HOST>` with the name of your host (e.g., `Laptop`).
 
 ### Rollbacks
 
