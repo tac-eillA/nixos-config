@@ -159,7 +159,7 @@ in
             font-hinting = "slight";
             gtk-theme = "catppuccin-mocha-mauve-compact";
             icon-theme = "Papirus-Dark";
-            # show-battery-percentage = true;
+            show-battery-percentage = true;
           };
 
           "org/gnome/desktop/notifications" = {
@@ -392,6 +392,11 @@ in
             edge-tiling = false;
             overlay-key = "Super_L";
             workspaces-only-on-primary = false;
+            #experimental-features = ['scale-monitor-framebuffer'];
+          };
+
+          "org/gnome/mutter/experimental-features" = {
+            scale-monitor-framebuffer = true;
           };
 
           "org/gnome/mutter/keybindings" = {
