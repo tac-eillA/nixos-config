@@ -26,13 +26,13 @@ in
         homeDirectory = "/home/allison";
         stateVersion = "25.05"; # Do not change!
         sessionVariables = {
-          EDITOR = "emacs"; 
+          EDITOR = "emacs";
           BROWSER = "${browser}";
           TERMINAL = "${terminal}";
         };
       };
     };
-  
+
   users = {
     users.allison = {
       isNormalUser = true;

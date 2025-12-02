@@ -5,8 +5,8 @@ in
 {
   networking = {
     hostName = "${hostname}";
-    #networkmanager.enable = true;
-    wireless.enable = true; # Enables wireless support via wpa_supplicant.
+    networkmanager.enable = true;
+    #wireless.enable = true; # Enables wireless support via wpa_supplicant.
     # proxy = {
     #   default = "http://user:password@proxy:port/";
     #   noProxy = "127.0.0.1,localhost,internal.domain";
@@ -29,5 +29,5 @@ in
     };
   };
 
-  environment.systemPackages = with pkgs; [ networkmanagerapplet ];
+  #environment.systemPackages = with pkgs; [ networkmanagerapplet ];
 }
