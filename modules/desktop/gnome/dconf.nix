@@ -470,12 +470,11 @@ in
               "native-window-placement@gnome-shell-extensions.gcampax.github.com"
               "window-list@gnome-shell-extensions.gcampax.github.com"
               "windowsNavigator@gnome-shell-extensions.gcampax.github.com"
-              "appindicatorsupport@rgcjonas.gmail.com"
-              "arcmenu@arcmenu.com"
+
               "blur-my-shell@aunetx"
               "burn-my-windows@schneegans.github.com"
               "custom-accent-colors@demiskp"
-              "dash-to-panel@jderose9.github.com"
+
               "gTile@vibou"
               "gnome-compact-top-bar@metehan-arslan.github.io"
               "just-perfection-desktop@just-perfection"
@@ -491,6 +490,9 @@ in
               "workspace-indicator@gnome-shell-extensions.gcampax.github.com"
               "Vitals@CoreCoding.com"
               "paperwm@paperwm.github.com"
+              "dash-to-panel@jderose9.github.com"
+              "appindicatorsupport@rgcjonas.gmail.com"
+              "arcmenu@arcmenu.com"
             ];
             favorite-apps = [
               "org.gnome.Settings.desktop"

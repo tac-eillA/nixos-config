@@ -36,13 +36,13 @@
     gnome-tweaks
     gnomeExtensions.vitals
     gnomeExtensions.arcmenu
-    # gnomeExtensions.appindicator
+    gnomeExtensions.appindicator
     # gnomeExtensions.blur-my-shell
     # gnomeExtensions.burn-my-windows
     # gnomeExtensions.compact-top-bar
     # gnomeExtensions.custom-accent-colors
     # gnomeExtensions.gtile
-    # gnomeExtensions.dash-to-panel
+    gnomeExtensions.dash-to-panel
     # gnomeExtensions.tray-icons-reloaded
     gnomeExtensions.paperwm
     # gnomeExtensions.just-perfection
