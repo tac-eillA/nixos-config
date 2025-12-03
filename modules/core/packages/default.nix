@@ -39,7 +39,6 @@
     vlc # Cross-platform media player and streaming server
     peazip # File and archive manager
     calibre # Comprehensive e-book software
-    vivaldi # Browser for our Friends, powerful and personal
     foliate # Simple and modern GTK eBook reader
     nicotine-plus # Graphical client for the SoulSeek peer-to-peer system
     uget # Download manager using GTK and libcurls
@@ -51,19 +50,11 @@
     quodlibet-full # GTK-based audio player written in Python, using the Mutagen tagging library
     papers # GNOME's document viewer
     libreoffice-fresh # Comprehensive, professional-quality productivity suite
-    # aider-chat # AI in terminal (Optional: Client only)
-    # cmatrix # Matrix Movie Effect In Terminal
-    # cowsay # Great Fun Terminal Program
-    # duf # Utility For Viewing Disk Usage In Terminal
-    # dysk # Disk space util nice formattting
     ffmpeg # Terminal Video / Audio Editing
-    # gemini-cli # CLI AI client ONLY (optional)
     inxi # CLI System Information Tool
     # libsForQt5.qt5.qtgraphicaleffects # Sddm Dependency (Old)
     # libnotify # For Notifications
-    # lolcat # Add Colors To Your Terminal Command Output
     lshw # Detailed Hardware Information
-    # mpv # Incredible Video Player
     ncdu # Disk Usage Analyzer With Ncurses Interface
     nixfmt-rfc-style # Nix Formatter
     # nwg-displays # configure monitor configs via GUI
@@ -73,11 +64,10 @@
     # picard # For Changing Music Metadata & Getting Cover Art
     # pkg-config # Wrapper Script For Allowing Packages To Get Info On Others
     # socat # Needed For Screenshots
-     usbutils # Good Tools For USB Devices
+    usbutils # Good Tools For USB Devices
     # uwsm # Universal Wayland Session Manager (optional must be enabled)
     # v4l-utils # Used For Things Like OBS Virtual Camera
-    # warp-terminal # Terminal with AI support build in
-     wget # Tool For Fetching Files With Links
+    wget # Tool For Fetching Files With Links
 
     # devenv
     # devbox
