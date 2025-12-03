@@ -39,7 +39,6 @@ cd ~/nixos-config
 
 3. Run the Installer:
 
-or if on a live install iso
 ```bash
 ./live-install.sh
 ```
