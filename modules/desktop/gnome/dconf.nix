@@ -479,7 +479,7 @@ in
               "gTile@vibou"
               "gnome-compact-top-bar@metehan-arslan.github.io"
               "just-perfection-desktop@just-perfection"
-              "paperwm@paperwm.github.com"
+
               "trayIconsReloaded@selfmade.pl"
             ];
             enabled-extensions = [
@@ -490,7 +490,7 @@ in
               "user-theme@gnome-shell-extensions.gcampax.github.com"
               "workspace-indicator@gnome-shell-extensions.gcampax.github.com"
               "Vitals@CoreCoding.com"
-              "pop-shell@system76.com"
+              "paperwm@paperwm.github.com"
             ];
             favorite-apps = [
               "org.gnome.Settings.desktop"

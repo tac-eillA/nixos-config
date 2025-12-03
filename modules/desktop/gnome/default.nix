@@ -45,7 +45,7 @@
     # gnomeExtensions.gtile
     # gnomeExtensions.dash-to-panel
     # gnomeExtensions.tray-icons-reloaded
-    gnomeExtensions.pop-shell
+    gnomeExtensions.paperwm
     # gnomeExtensions.just-perfection
   ];
 }
