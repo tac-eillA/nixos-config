@@ -44,7 +44,6 @@ in
     ../../modules/programs/misc/cpufreq
     ../../modules/programs/cli/cava
     ../../modules/programs/cli/btop
-    ../../modules/programs/media/discord
     #../../modules/programs/media/cider
     ../../modules/programs/media/obs-studio
     ../../modules/programs/media/mpv

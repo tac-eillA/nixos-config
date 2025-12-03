@@ -39,8 +39,6 @@ in
     ./programs/cli/lazygit
     ./programs/cli/cava
     ./programs/cli/btop
-    ./programs/media/discord
-    ./programs/media/spicetify
     # ./programs/media/youtube-music
     # ./programs/media/thunderbird
     # ./programs/media/obs-studio
