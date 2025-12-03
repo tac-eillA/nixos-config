@@ -32,7 +32,7 @@ in
     ./desktop/${vars.desktop} # Set window manager defined in variables.nix
     ./programs/browser/${vars.browser} # Set browser defined in variables.nix
     ./programs/terminal/${vars.terminal} # Set terminal defined in variables.nix
-    ./programs/editor/${vars.editor} # Set editor defined in variables.nix
+    #./programs/editor/${vars.editor} # Set editor defined in variables.nix
     ./programs/cli/${vars.tuiFileManager} # Set file-manager defined in variables.nix
     ./programs/cli/tmux
     ./programs/cli/direnv

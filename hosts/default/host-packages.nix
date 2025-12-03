@@ -7,7 +7,6 @@
     godot
     neovim
     gh
-    code-cursor
     zed-editor
     google-chrome
     ghostty
@@ -17,5 +16,6 @@
     streamrip
     vial
     davinci-resolve
+    emacs
   ];
 }
