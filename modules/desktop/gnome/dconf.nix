@@ -470,15 +470,12 @@ in
               "native-window-placement@gnome-shell-extensions.gcampax.github.com"
               "window-list@gnome-shell-extensions.gcampax.github.com"
               "windowsNavigator@gnome-shell-extensions.gcampax.github.com"
-
               "blur-my-shell@aunetx"
               "burn-my-windows@schneegans.github.com"
               "custom-accent-colors@demiskp"
-
               "gTile@vibou"
               "gnome-compact-top-bar@metehan-arslan.github.io"
               "just-perfection-desktop@just-perfection"
-
               "trayIconsReloaded@selfmade.pl"
             ];
             enabled-extensions = [
@@ -584,7 +581,6 @@ in
             ];
             dot-position = "BOTTOM";
             dot-style-focused = "METRO";
-            extension-version = 68;
             global-border-radius = 0;
             highlight-appicon-hover = true;
             hotkeys-overlay-combo = "TEMPORARILY";
