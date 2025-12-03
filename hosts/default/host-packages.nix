@@ -14,5 +14,6 @@
     python314
     pciutils
     cider-2
+    streamrip
   ];
 }
