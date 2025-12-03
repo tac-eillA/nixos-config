@@ -1,7 +1,7 @@
 <h1 align="center">
    <img src="/img/nixos-logo.png" width="100px" /> 
    <br>
-      My NixOS Configuration
+      Allie's NixOS Configuration
    <br>
       <img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/palette/macchiato.png" width="600px" />
     <br>
@@ -19,11 +19,13 @@
 
 <!-- You can install this configuration either on a running system or from the NixOS live installer. The minimal ISO is recommended and can be downloaded from the [official NixOS website](https://nixos.org/download/#nixos-iso). -->
 
-Its recommended that you install from the live installer and instructions will cover that. However you can install from a pre-existing system and there is an install script for that. Get the ISO from the [NixOS website](https://nixos.org/download/#nixos-iso).
+Its recommended that you install from the live installer and instructions will cover that. However you can install from a pre-existing system and there is an install script for that (just not covering here... use the live ISO). Get the ISO from the [NixOS website](https://nixos.org/download/#nixos-iso).
 
 ### Installation Steps
 
-1. Clone the Repository:
+1. Boot into NixOS live ISO
+
+2. Clone the Repository:
 
 ```bash
 git clone https://github.com/tac-eillA/nixos-config
@@ -31,17 +33,19 @@ git clone https://github.com/tac-eillA/nixos-config
 
 <!-- 2. Navigate to the Directory: -->
 
-2. Change Directory:
+3. Change Directory:
 
 ```bash
 cd ~/nixos-config
 ```
 
-3. Run the Installer:
+4. Run the Installer:
 
 ```bash
 ./live-install.sh
 ```
+
+5. Follow prompts on screen to step through the install script
 
 <!-- The script handles host setup, username configuration, and automatically generates `hardware-configuration.nix` based on your hardware. -->
 
@@ -49,7 +53,7 @@ The install and rebuild scripts automate the setup process, including hosts, use
 
 ## Usage
 
-### Managing Hosts
+### Managing Hosts -- MASSIVE WIP DONT WORRY ABOUT THIS NOW USE DEFAULT
 
 **Method 1: Automatic** - run the installer again to select or create another host:
 
@@ -72,7 +76,6 @@ The install and rebuild scripts automate the setup process, including hosts, use
 
 Apply configuration changes:
 
-- **Keyboard shortcut:** `Super + U` -- EASIEST
 - **rebuild script:** `rebuild` -- Alias for below command
 - **nixos-rebuild:** `sudo nixos-rebuild switch --flake ~/nixos-config#<HOST>`
 
