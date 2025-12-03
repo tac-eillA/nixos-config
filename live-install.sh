@@ -137,30 +137,6 @@ while true; do
   fi
 done
 
-# GPU Drivers selection
-info "Choose GPU Drivers:"
-echo "1) nvidia"
-echo "2) amdgpu"
-echo "3) intel"
-while true; do
-  read -p "Enter choice (1, 2 or 3): " driver_choice
-  case $driver_choice in
-  1)
-    sed -i -e "s/videoDriver = \".*\"/videoDriver = \"nvidia\"/" "./hosts/default/variables.nix"
-    break
-    ;;
-  2)
-    sed -i -e "s/videoDriver = \".*\"/videoDriver = \"amdgpu\"/" "./hosts/default/variables.nix"
-    break
-    ;;
-  3)
-    sed -i -e "s/videoDriver = \".*\"/videoDriver = \"intel\"/" "./hosts/default/variables.nix"
-    break
-    ;;
-  *) error "Invalid choice. Enter 1, 2, or 3." ;;
-  esac
-done
-
 # Editor selection for customizing variables.nix
 default_editor=$(check_editors)
 if [ "$default_editor" = "none" ]; then

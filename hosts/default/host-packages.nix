@@ -15,5 +15,6 @@
     pciutils
     cider-2
     streamrip
+    vial
   ];
 }
