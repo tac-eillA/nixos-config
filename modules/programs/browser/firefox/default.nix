@@ -36,7 +36,7 @@
               lockPref("dom.security.https_only_mode_pbm", true);
               lockPref("dom.security.https_only_mode_error_page_user_suggestions", true);
               lockPref("browser.firefox-view.feature-tour", "{\"screen\":\"\",\"complete\":true}");
-              lockPref("identity.fxaccounts.enabled", false);
+              lockPref("identity.fxaccounts.enabled", true);
               lockPref("browser.tabs.firefox-view-next", false);
               lockPref("privacy.sanitize.sanitizeOnShutdown", false);
               lockPref("privacy.clearOnShutdown.cache", true);

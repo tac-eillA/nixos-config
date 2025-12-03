@@ -1,2 +1,3 @@
 flake.lock
+modules/programs/media/cider/cider.AppImage
 hosts/default/hardware-configuration.nix
