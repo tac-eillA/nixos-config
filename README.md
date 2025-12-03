@@ -19,11 +19,15 @@
 
 <!-- You can install this configuration either on a running system or from the NixOS live installer. The minimal ISO is recommended and can be downloaded from the [official NixOS website](https://nixos.org/download/#nixos-iso). -->
 
-You can install on a running system or from the NixOS live installer. Get the minimal ISO from the [NixOS website](https://nixos.org/download/#nixos-iso).
+Its recommended that you install from the live installer and instructions will cover that. However you can install from a pre-existing system and there is an install script for that. Get the ISO from the [NixOS website](https://nixos.org/download/#nixos-iso).
 
 ### Installation Steps
 
 1. Clone the Repository:
+
+```bash
+git clone https://github.com/tac-eillA/nixos-config
+```
 
 <!-- 2. Navigate to the Directory: -->
 
@@ -35,9 +39,6 @@ cd ~/nixos-config
 
 3. Run the Installer:
 
-```bash
-./install.sh
-```
 or if on a live install iso
 ```bash
 ./live-install.sh
@@ -91,14 +92,3 @@ rollback N
 ```
 
 Replace `N` with the generation number (e.g., `69`).
-
-### Keybindings
-
-View all keybindings with `Super + ?` or `Super + Ctrl + K`.
-
-## Credits/Inspiration
-
-| Credit                                      | Reason                                      |
-| ------------------------------------------- | ------------------------------------------- |
-| [Sly-Harvey](//github.com/Sly-Harvey/NixOS) | Thanks for creating such a wonderful config |
-| [Nixy](https://github.com/anotherhadi/nixy) | Amazing Neovim config                       |
