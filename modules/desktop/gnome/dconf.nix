@@ -492,7 +492,7 @@ in
               "paperwm@paperwm.github.com"
               "dash-to-panel@jderose9.github.com"
               "appindicatorsupport@rgcjonas.gmail.com"
-              "arcmenu@arcmenu.com"
+              #"arcmenu@arcmenu.com"
             ];
             favorite-apps = [
               "org.gnome.Settings.desktop"
