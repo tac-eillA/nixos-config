@@ -13,5 +13,6 @@
     ghostty
     python314
     pciutils
+    cider-2
   ];
 }
