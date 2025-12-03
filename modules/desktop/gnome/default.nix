@@ -41,7 +41,6 @@
     # gnomeExtensions.burn-my-windows
     # gnomeExtensions.compact-top-bar
     # gnomeExtensions.custom-accent-colors
-    gnomeExtensions.StreamController
     # gnomeExtensions.gtile
     # gnomeExtensions.dash-to-panel
     # gnomeExtensions.tray-icons-reloaded
