@@ -7,7 +7,7 @@
     godot
     neovim
     gh
-    code-cursor-fhs
+    code-cursor
     zed-editor
     google-chrome
     ghostty
@@ -16,5 +16,6 @@
     cider-2
     streamrip
     vial
+    davinci-resolve
   ];
 }
