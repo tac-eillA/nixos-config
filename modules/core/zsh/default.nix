@@ -59,7 +59,7 @@
             export XMONAD_CONFIG_DIR="''${XDG_CONFIG_HOME:-$HOME/.config}/xmonad" # xmonad.hs is expected to stay here
             export XMONAD_DATA_DIR="''${XDG_DATA_HOME:-$HOME/.local/share}/xmonad"
             export XMONAD_CACHE_DIR="''${XDG_CACHE_HOME:-$HOME/.cache}/xmonad"
-
+	    export PATH=$PATH:$HOME/.emacs.d/bin
             export FZF_DEFAULT_OPTS=" \
             --color=bg+:#363a4f,bg:#24273a,spinner:#f4dbd6,hl:#ed8796 \
             --color=fg:#cad3f5,header:#ed8796,info:#c6a0f6,pointer:#f4dbd6 \

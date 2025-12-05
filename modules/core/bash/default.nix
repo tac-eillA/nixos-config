@@ -23,6 +23,7 @@
           #   export TERM="xterm-256color" # Get correct colour
           # '';
          # export PATH = "~/nixos-config/modules/desktop/hyprland/scripts/weather.py:$PATH";
+	    #export PATH=$PATH:$HOME/.emacs.d/bin
 
           shellOptions = [
             "autocd" # change to named directory
