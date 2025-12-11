@@ -108,15 +108,6 @@ in
             translate = true;
           };
 
-          "org/gnome/desktop/background" = {
-            color-shading-type = "solid";
-            picture-options = "zoom";
-            picture-uri = "file://${../../themes/wallpapers/fog.png}";
-            picture-uri-dark = "file://${../../themes/wallpapers/fog.png}";
-            primary-color = "#241f31";
-            secondary-color = "#000000";
-          };
-
           "org/gnome/desktop/break-reminders/eyesight" = {
             play-sound = true;
           };
@@ -486,8 +477,8 @@ in
               "user-theme@gnome-shell-extensions.gcampax.github.com"
               "workspace-indicator@gnome-shell-extensions.gcampax.github.com"
               "Vitals@CoreCoding.com"
-              "paperwm@paperwm.github.com"
-              "dash-to-panel@jderose9.github.com"
+              #"paperwm@paperwm.github.com"
+              #"dash-to-panel@jderose9.github.com"
               "appindicatorsupport@rgcjonas.gmail.com"
               #"arcmenu@arcmenu.com"
             ];

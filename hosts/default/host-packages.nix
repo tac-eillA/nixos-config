@@ -17,5 +17,6 @@
     vial
     davinci-resolve
     emacs
+    code-cursor-fhs
   ];
 }

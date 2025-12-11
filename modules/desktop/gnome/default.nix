@@ -42,9 +42,9 @@
     # gnomeExtensions.compact-top-bar
     # gnomeExtensions.custom-accent-colors
     # gnomeExtensions.gtile
-    gnomeExtensions.dash-to-panel
+    #gnomeExtensions.dash-to-panel
     # gnomeExtensions.tray-icons-reloaded
-    gnomeExtensions.paperwm
+    gnomeExtensions.tiling-shell
     # gnomeExtensions.just-perfection
   ];
 }
