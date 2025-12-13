@@ -14,7 +14,10 @@
 
     userName = "tac-eillA";
     userEmail = "allie.snod@gmail.com";
-
+    # user = {
+    #   Name = "tac-eillA";
+    #   Email= "allie.snod@gmail.com";
+    # };
 
 
     lfs = {
