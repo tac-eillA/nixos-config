@@ -14,7 +14,7 @@ in
     ../../modules/core/zsh
     ../../modules/core/starship
     ../../modules/core/fonts
-    ../../modules/core/git
+    #../../modules/core/git
     ../../modules/core/hardware
     ../../modules/core/network
     ../../modules/core/nh

@@ -18,5 +18,6 @@
     davinci-resolve
     emacs
     code-cursor-fhs
+    gitFull
   ];
 }
