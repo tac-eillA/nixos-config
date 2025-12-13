@@ -26,7 +26,7 @@ in
             fixed-center = true;
             margin-top = 5;
             margin-left = 10;
-            margin-right = 5;
+            margin-right = 10;
             margin-bottom = 0;
 
             modules-left = [
@@ -189,6 +189,11 @@ in
                "3" = "";
                "4" = "";
                "5" = "";
+               "6" = "";
+               "7" = "";
+               "8" = "";
+               "9" = "";
+               "10" = "";
               urgent = "";
               active = "";  
               default = "";
@@ -200,6 +205,11 @@ in
                 "3" = [ ];
                 "4" = [ ];
                 "5" = [ ];
+                "6" = [ ];
+                "7" = [ ];
+                "8" = [ ];
+                "9" = [ ];
+                "10" = [ ];
               };
             };
 
@@ -305,11 +315,11 @@ in
             "network" = {
               on-click = "nm-connection-editor";
               # "interface" = "wlp2*"; # (Optional) To force the use of this interface
-              format-wifi = "📡 WiFi";
-              # format-wifi = " {bandwidthDownBits}  {bandwidthUpBits}";
-              # format-wifi = "  {essid}";
+              # format-wifi = "📡 WiFi";
+              # format-wifi = "  {essid}  {bandwidthDownBits}  {bandwidthUpBits}";
+              format-wifi = "  {essid}";
               format-ethernet = "󱘖 Wired";
-              # format-ethernet = " {bandwidthDownBits}  {bandwidthUpBits}";
+              # format-ethernet = "󱘖 Wired  {bandwidthDownBits}  {bandwidthUpBits}";
               #format-linked = "󰤪 Secure";
               format-linked = "󱘖 {ifname} (No IP)";
               #format-disconnected = "󰤮 Off";

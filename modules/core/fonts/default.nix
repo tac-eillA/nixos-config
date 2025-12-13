@@ -6,6 +6,8 @@
       # Nerd Fonts
       maple-mono.NF
       pkgs.nerd-fonts.jetbrains-mono
+      pkgs.nerd-fonts.roboto-mono
+      pkgs.nerd-fonts.symbols-only
 
       # Normal Fonts
       noto-fonts

@@ -420,7 +420,7 @@ in
 
                   # Applications/Programs
                   "$mainMod, Return, exec, $term"
-                  "$mainMod, T, exec, $term"
+                  "$mainMod, T, exec, emacs"
                   "$mainMod, F, exec, $fileManager"
                   "$mainMod, B, exec, $browser"
                   "$mainMod SHIFT, S, exec, cider"

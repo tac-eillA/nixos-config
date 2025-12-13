@@ -13,7 +13,7 @@
             {
               monitor = "";
               color = "rgb(36, 39, 58)";
-              path = "${../../../../themes/wallpapers/dark-forest.png}";
+              path = "${../../../../themes/wallpapers/black-sands2.jpg}";
 
               new_optimizations = true;
               blur_size = 3;
