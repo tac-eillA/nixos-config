@@ -8,7 +8,26 @@ if command -v nm-connection-editor >/dev/null 2>&1; then
 fi
 
 if command -v nmtui >/dev/null 2>&1; then
-  exec kitty -e nmtui
+  # Prefer explicit terminal emulators for interactive TUI workflows.
+  if command -v kitty >/dev/null 2>&1; then
+    exec kitty -e nmtui
+  fi
+
+  if command -v alacritty >/dev/null 2>&1; then
+    exec alacritty -e nmtui
+  fi
+
+  if command -v ghostty >/dev/null 2>&1; then
+    exec ghostty -e nmtui
+  fi
+
+  # Last resort for users invoking this directly from a TTY.
+  if [[ -t 0 ]]; then
+    exec nmtui
+  fi
+
+  notify-send "Wi-Fi controls missing terminal" "Install kitty/alacritty/ghostty for nmtui fallback." -u critical
+  exit 1
 fi
 
 notify-send "Wi-Fi controls missing" "No NetworkManager UI was found." -u critical

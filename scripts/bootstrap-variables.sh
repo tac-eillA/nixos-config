@@ -9,6 +9,18 @@ host_name="${1:-${default_host}}"
 host_dir="${REPO_ROOT}/hosts/${host_name}"
 target_file="${host_dir}/variables.nix"
 
+print_info() {
+  printf '\n[bootstrap] %s\n' "$1"
+}
+
+print_warn() {
+  printf '[bootstrap] warning: %s\n' "$1" >&2
+}
+
+print_error() {
+  printf '[bootstrap] error: %s\n' "$1" >&2
+}
+
 detect_system() {
   case "$(uname -m)" in
     x86_64) printf '%s\n' "x86_64-linux" ;;
@@ -80,6 +92,36 @@ prompt_bool() {
   done
 }
 
+prompt_required() {
+  local label="$1"
+  local current_default="$2"
+  local value=""
+
+  while true; do
+    value="$(prompt_default "${label}" "${current_default}")"
+    if [[ -n "${value}" ]]; then
+      printf '%s\n' "${value}"
+      return
+    fi
+    print_warn "${label} cannot be empty."
+  done
+}
+
+prompt_absolute_path() {
+  local label="$1"
+  local current_default="$2"
+  local value=""
+
+  while true; do
+    value="$(prompt_default "${label}" "${current_default}")"
+    if [[ "${value}" == /* ]]; then
+      printf '%s\n' "${value}"
+      return
+    fi
+    print_warn "Please provide an absolute path."
+  done
+}
+
 escape_nix_string() {
   local value="$1"
   value="${value//\\/\\\\}"
@@ -113,34 +155,73 @@ home_subvol_default="${home_subvol_default:-@home}"
 log_subvol_default="${log_subvol_default:-@log}"
 cache_subvol_default="${cache_subvol_default:-}"
 
-printf '\nBootstrap variables for host %s\n\n' "${host_name}"
+confirm_write_plan() {
+  print_info "Review variables to be written"
+  printf '  Host:            %s\n' "${host_name}"
+  printf '  System:          %s\n' "${system_name}"
+  printf '  State version:   %s\n' "${state_version}"
+  printf '  User:            %s (%s)\n' "${username}" "${full_name}"
+  printf '  Repo path:       %s\n' "${repo_root}"
+  printf '  Locale/Time:     %s / %s\n' "${default_locale}" "${time_zone}"
+  printf '  Root UUID:       %s\n' "${root_uuid}"
+  printf '  EFI UUID:        %s\n' "${esp_uuid}"
+  printf '  LUKS PARTUUID:   %s\n' "${luks_partuuid:-disabled}"
+  printf '  Subvols:         root=%s home=%s log=%s cache=%s\n' "${root_subvol}" "${home_subvol}" "${log_subvol}" "${cache_subvol:-disabled}"
+  printf '  Profiles:        framework13=%s nvidiaDesktop=%s gaming=%s\n' "${framework13_profile}" "${nvidia_profile}" "${gaming_profile}"
+  printf '  Output file:     %s\n' "${target_file}"
 
-host_name="$(prompt_default "Host name" "${host_name}")"
-system_name="$(prompt_default "System" "${system_default}")"
-state_version="$(prompt_default "State version" "${state_version_default}")"
-repo_root="$(prompt_default "Repo root path (used by helper scripts)" "${repo_root_default}")"
+  if [[ "$(prompt_bool "Write variables.nix with these values?" "yes")" != "true" ]]; then
+    print_error "Aborted before writing variables file."
+    exit 1
+  fi
+}
 
-username="$(prompt_default "Primary username" "${username_default}")"
-full_name="$(prompt_default "Full name" "${fullname_default}")"
-initial_password="$(prompt_default "Initial password" "changeme")"
+print_info "Bootstrap variables"
+printf 'Host template source: %s\n' "${host_dir}"
+printf 'Press Enter to accept defaults.\n\n'
 
-default_locale="$(prompt_default "Default locale" "${locale_default}")"
-time_zone="$(prompt_default "Time zone" "${timezone_default}")"
-key_map="$(prompt_default "Console keymap" "${keymap_default}")"
+host_name="$(prompt_required "Host name (flake attr + networking.hostName)" "${host_name}")"
+while [[ ! "${host_name}" =~ ^[a-zA-Z0-9._-]+$ ]]; do
+  print_warn "Host name may only contain letters, numbers, dot, underscore, and dash."
+  host_name="$(prompt_required "Host name (flake attr + networking.hostName)" "${host_name}")"
+done
 
-root_uuid="$(prompt_default "Root filesystem UUID" "${root_uuid_default}")"
-esp_uuid="$(prompt_default "EFI partition UUID" "${esp_uuid_default}")"
-luks_partuuid="$(prompt_default "LUKS partition PARTUUID (empty to disable)" "${luks_partuuid_default}")"
+# Recompute destination paths after any host name edits.
+host_dir="${REPO_ROOT}/hosts/${host_name}"
+target_file="${host_dir}/variables.nix"
 
-root_subvol="$(prompt_default "Root subvolume" "${root_subvol_default}")"
-home_subvol="$(prompt_default "Home subvolume" "${home_subvol_default}")"
-log_subvol="$(prompt_default "Log subvolume" "${log_subvol_default}")"
-cache_subvol="$(prompt_default "Cache subvolume (empty to disable)" "${cache_subvol_default}")"
-cache_mount_point="$(prompt_default "Cache mount point" "/var/cache")"
+system_name="$(prompt_required "System (x86_64-linux or aarch64-linux)" "${system_default}")"
+state_version="$(prompt_required "State version (e.g. 25.11)" "${state_version_default}")"
+repo_root="$(prompt_absolute_path "Repo root path on this system (absolute path)" "${repo_root_default}")"
+
+username="$(prompt_required "Primary username (linux account)" "${username_default}")"
+while [[ ! "${username}" =~ ^[a-z_][a-z0-9_-]*$ ]]; do
+  print_warn "Username must match: ^[a-z_][a-z0-9_-]*$"
+  username="$(prompt_required "Primary username (linux account)" "${username_default}")"
+done
+
+full_name="$(prompt_required "Full name (display name)" "${fullname_default}")"
+initial_password="$(prompt_required "Initial password (first boot)" "changeme")"
+
+default_locale="$(prompt_required "Default locale (e.g. en_US.UTF-8)" "${locale_default}")"
+time_zone="$(prompt_required "Time zone (e.g. UTC or America/New_York)" "${timezone_default}")"
+key_map="$(prompt_required "Console keymap (e.g. us)" "${keymap_default}")"
+
+root_uuid="$(prompt_required "Root filesystem UUID" "${root_uuid_default}")"
+esp_uuid="$(prompt_required "EFI partition UUID" "${esp_uuid_default}")"
+luks_partuuid="$(prompt_default "LUKS partition PARTUUID (empty disables disk unlock in initrd)" "${luks_partuuid_default}")"
+
+root_subvol="$(prompt_required "Root subvolume name" "${root_subvol_default}")"
+home_subvol="$(prompt_required "Home subvolume name" "${home_subvol_default}")"
+log_subvol="$(prompt_required "Log subvolume name" "${log_subvol_default}")"
+cache_subvol="$(prompt_default "Cache subvolume name (empty to disable)" "${cache_subvol_default}")"
+cache_mount_point="$(prompt_absolute_path "Cache mount point (absolute path)" "/var/cache")"
 
 framework13_profile="$(prompt_bool "Enable Framework13 profile? (yes/no)" "yes")"
 nvidia_profile="$(prompt_bool "Enable NVIDIA desktop profile? (yes/no)" "no")"
 gaming_profile="$(prompt_bool "Enable gaming profile? (yes/no)" "yes")"
+
+confirm_write_plan
 
 mkdir -p "${host_dir}"
 

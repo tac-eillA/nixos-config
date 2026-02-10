@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  shell-launch-or-focus [--app-id <regex>] [--title <regex>] -- <command> [args...]
+
+At least one of --app-id or --title is required.
+EOF
+}
+
+focus_window() {
+  local window_id="$1"
+
+  if niri msg action focus-window "${window_id}" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if niri msg action focus-window --id "${window_id}" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  return 1
+}
+
+main() {
+  local app_id_regex=""
+  local title_regex=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --app-id)
+        [[ $# -ge 2 ]] || { usage; exit 1; }
+        app_id_regex="$2"
+        shift 2
+        ;;
+      --title)
+        [[ $# -ge 2 ]] || { usage; exit 1; }
+        title_regex="$2"
+        shift 2
+        ;;
+      --)
+        shift
+        break
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      *)
+        usage
+        exit 1
+        ;;
+    esac
+  done
+
+  [[ $# -gt 0 ]] || { usage; exit 1; }
+  [[ -n "${app_id_regex}" || -n "${title_regex}" ]] || { usage; exit 1; }
+
+  if command -v niri >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+    local windows_json=""
+    # Query the compositor directly to avoid stale external window lists.
+    windows_json="$(niri msg --json windows 2>/dev/null || true)"
+
+    if [[ -n "${windows_json}" ]]; then
+      local target_window_id=""
+
+      target_window_id="$(printf '%s\n' "${windows_json}" | jq -r --arg app "${app_id_regex}" --arg title "${title_regex}" '
+        def windows:
+          if type == "array" then .
+          elif .Windows? then .Windows
+          elif .windows? then .windows
+          elif .Ok?.Windows? then .Ok.Windows
+          elif .ok?.windows? then .ok.windows
+          else []
+          end;
+
+        def app_match:
+          ($app == "") or ((.app_id // "") | test($app));
+        def title_match:
+          ($title == "") or ((.title // "") | test($title));
+
+        [windows[] | select(app_match and title_match)] as $matches
+        # Prefer an already focused match, otherwise the first matching window.
+        | (([$matches[] | select((.is_focused // false) == true)][0]) // ($matches[0]))
+        | (.id // empty)
+      ' 2>/dev/null || true)"
+
+      if [[ -n "${target_window_id}" ]] && [[ "${target_window_id}" != "null" ]]; then
+        if focus_window "${target_window_id}"; then
+          exit 0
+        fi
+      fi
+    fi
+  fi
+
+  exec "$@"
+}
+
+main "$@"

@@ -167,14 +167,31 @@ partition_path() {
   fi
 }
 
+normalize_partition_input() {
+  local value="$1"
+  if [[ "${value}" == /dev/* ]]; then
+    printf '%s\n' "${value}"
+  else
+    printf '/dev/%s\n' "${value}"
+  fi
+}
+
 ensure_live_environment() {
   local root_fs
   root_fs="$(findmnt -n -o FSTYPE / || true)"
 
-  if [[ "${root_fs}" != "tmpfs" ]]; then
-    print_error "This installer is intended for the NixOS live environment (root fs tmpfs)."
-    exit 1
-  fi
+  # Most NixOS live media use tmpfs for /, but some environments use overlay.
+  case "${root_fs}" in
+    tmpfs|overlay)
+      ;;
+    *)
+      print_warn "Detected root filesystem '${root_fs}', not a typical live-media root."
+      if [[ "$(ask_yes_no "Continue anyway?" "no")" != "true" ]]; then
+        print_error "Aborted: unsupported or unexpected live environment."
+        exit 1
+      fi
+      ;;
+  esac
 
   if [[ ! -d /sys/firmware/efi ]]; then
     print_error "UEFI firmware was not detected. This installer currently supports UEFI installs."
@@ -257,20 +274,36 @@ auto_partition_disk() {
   fi
 
   partprobe "${DISK_DEV}"
+  # Wait for partition nodes to appear before formatting/mounting.
+  if command -v udevadm >/dev/null 2>&1; then
+    udevadm settle
+  else
+    sleep 1
+  fi
 }
 
 manual_partition_disk() {
+  require_cmd cfdisk
+
   print_info "Launching cfdisk for ${DISK_DEV}."
   cfdisk "${DISK_DEV}"
 
+  # Ensure partition device nodes are refreshed after manual edits.
+  partprobe "${DISK_DEV}"
+  if command -v udevadm >/dev/null 2>&1; then
+    udevadm settle
+  else
+    sleep 1
+  fi
+
   while true; do
-    EFI_PART="/dev/$(ask_default "EFI partition" "$(basename "$(partition_path "${DISK_DEV}" 1)")")"
+    EFI_PART="$(normalize_partition_input "$(ask_default "EFI partition (name or /dev path)" "$(basename "$(partition_path "${DISK_DEV}" 1)")")")"
     [[ -b "${EFI_PART}" ]] && break
     print_warn "Invalid EFI partition: ${EFI_PART}"
   done
 
   while true; do
-    ROOT_PART="/dev/$(ask_default "Root partition" "$(basename "$(partition_path "${DISK_DEV}" 2)")")"
+    ROOT_PART="$(normalize_partition_input "$(ask_default "Root partition (name or /dev path)" "$(basename "$(partition_path "${DISK_DEV}" 2)")")")"
     if [[ -b "${ROOT_PART}" && "${ROOT_PART}" != "${EFI_PART}" ]]; then
       break
     fi
@@ -278,9 +311,9 @@ manual_partition_disk() {
   done
 
   local swap_input
-  swap_input="$(ask_default "Swap partition (empty to disable)" "")"
+  swap_input="$(ask_default "Swap partition (name or /dev path, empty to disable)" "")"
   if [[ -n "${swap_input}" ]]; then
-    SWAP_PART="/dev/${swap_input}"
+    SWAP_PART="$(normalize_partition_input "${swap_input}")"
     if [[ ! -b "${SWAP_PART}" ]]; then
       print_warn "Invalid swap partition. Swap disabled."
       SWAP_PART=""
@@ -484,7 +517,7 @@ collect_install_identity() {
   user_default="${SUDO_USER:-nixos}"
 
   while true; do
-    INSTALL_USERNAME="$(ask_default "Primary username" "${user_default}")"
+    INSTALL_USERNAME="$(ask_default "Primary username (linux account)" "${user_default}")"
     if [[ "${INSTALL_USERNAME}" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
       break
     fi
@@ -493,11 +526,11 @@ collect_install_identity() {
 
   INSTALL_FULLNAME="$(ask_default "Full name" "${INSTALL_USERNAME}")"
   INSTALL_PASSWORD="$(ask_password "User password")"
-  REPO_ROOT_TARGET="$(ask_default "Repo root path on installed system" "/home/${INSTALL_USERNAME}/nixos-config")"
+  REPO_ROOT_TARGET="$(ask_default "Repo root path on installed system (absolute path)" "/home/${INSTALL_USERNAME}/nixos-config")"
 
-  DEFAULT_LOCALE="$(ask_default "Locale" "${DEFAULT_LOCALE}")"
-  TIME_ZONE="$(ask_default "Timezone" "${TIME_ZONE}")"
-  KEY_MAP="$(ask_default "Console keymap" "${KEY_MAP}")"
+  DEFAULT_LOCALE="$(ask_default "Locale (e.g. en_US.UTF-8)" "${DEFAULT_LOCALE}")"
+  TIME_ZONE="$(ask_default "Time zone (e.g. UTC or America/New_York)" "${TIME_ZONE}")"
+  KEY_MAP="$(ask_default "Console keymap (e.g. us)" "${KEY_MAP}")"
 
   PROFILE_FRAMEWORK13="$(ask_yes_no "Enable Framework13 profile?" "yes")"
   PROFILE_NVIDIA_DESKTOP="$(ask_yes_no "Enable NVIDIA desktop profile?" "no")"
@@ -522,7 +555,7 @@ copy_repo_to_runtime_location() {
   mkdir -p "${TARGET_ROOT}${runtime_root}"
   cp -a "${TARGET_ROOT}/etc/nixos/." "${TARGET_ROOT}${runtime_root}/"
 
-  if [[ "${runtime_root}" == /home/${INSTALL_USERNAME}/* ]]; then
+  if [[ "${runtime_root}" == "/home/${INSTALL_USERNAME}" || "${runtime_root}" == /home/${INSTALL_USERNAME}/* ]]; then
     nixos-enter --root "${TARGET_ROOT}" -c "chown -R ${INSTALL_USERNAME}:users '${runtime_root}'" || true
   fi
 }
@@ -536,10 +569,29 @@ configure_storage_choices() {
   ENABLE_CACHE_SUBVOL="$(ask_yes_no "Create dedicated cache subvolume (@cache)?" "no")"
 }
 
+confirm_install_plan() {
+  print_info "Install plan summary"
+  printf '  Host:            %s\n' "${HOST_NAME}"
+  printf '  User:            %s (%s)\n' "${INSTALL_USERNAME}" "${INSTALL_FULLNAME}"
+  printf '  Disk:            %s\n' "${DISK_DEV}"
+  printf '  EFI partition:   %s\n' "${EFI_PART}"
+  printf '  Root partition:  %s\n' "${ROOT_PART}"
+  printf '  Swap partition:  %s\n' "${SWAP_PART:-disabled}"
+  printf '  Root encryption: %s\n' "$( [[ "${ROOT_LUKS_ENABLED}" == "true" ]] && printf '%s' enabled || printf '%s' disabled )"
+  printf '  Cache subvolume: %s\n' "$( [[ "${ENABLE_CACHE_SUBVOL}" == "true" ]] && printf '%s' enabled || printf '%s' disabled )"
+  printf '  Repo path:       %s\n' "${REPO_ROOT_TARGET}"
+
+  print_warn "The next step formats partitions and installs the system."
+  if [[ "$(ask_yes_no "Proceed with formatting and installation?" "no")" != "true" ]]; then
+    print_error "Aborted by user before formatting."
+    exit 1
+  fi
+}
+
 partition_menu() {
   print_info "Partitioning method"
-  printf '1) Automatic (wipe selected disk)\n'
-  printf '2) Manual (run cfdisk)\n'
+  printf '1) Automatic (wipe selected disk and create EFI/swap/root)\n'
+  printf '2) Manual (run cfdisk, then select existing partitions)\n'
 
   local choice
   choice="$(ask_default "Choose partitioning mode" "1")"
@@ -553,6 +605,12 @@ partition_menu() {
 }
 
 install_system() {
+  if ! nix eval --raw "${TARGET_ROOT}/etc/nixos#nixosConfigurations.${HOST_NAME}.config.networking.hostName" >/dev/null 2>&1; then
+    print_error "Flake does not define nixosConfigurations.${HOST_NAME}."
+    print_error "Add that host to flake outputs or install with a defined host (for this repo: artemis)."
+    exit 1
+  fi
+
   print_info "Installing NixOS using flake host ${HOST_NAME}..."
   nixos-install --root "${TARGET_ROOT}" --flake "${TARGET_ROOT}/etc/nixos#${HOST_NAME}" --no-root-passwd
 }
@@ -566,11 +624,11 @@ main() {
   require_cmd lsblk
   require_cmd findmnt
   require_cmd parted
-  require_cmd cfdisk
   require_cmd mkfs.fat
   require_cmd mkfs.btrfs
   require_cmd nixos-install
   require_cmd nixos-generate-config
+  require_cmd nix
   require_cmd cryptsetup
   require_cmd blkid
 
@@ -579,10 +637,13 @@ main() {
 
   print_info "Interactive NixOS live installer"
   print_info "Target host: ${HOST_NAME}"
+  print_info "Repo source: ${REPO_ROOT}"
+  print_warn "Press Ctrl+C at any prompt to abort safely."
 
   collect_install_identity
   partition_menu
   configure_storage_choices
+  confirm_install_plan
 
   setup_root_luks_if_enabled
   format_and_mount_filesystems
@@ -597,6 +658,7 @@ main() {
   copy_repo_to_runtime_location
 
   print_info "Installation complete. You can reboot now."
+  print_info "After reboot: sign in, run 'nixos-rebuild switch --flake ${REPO_ROOT_TARGET}#${HOST_NAME}', then verify shell menu actions."
 }
 
 main "$@"

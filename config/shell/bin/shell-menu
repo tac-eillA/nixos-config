@@ -2,10 +2,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-HOST_NAME="$(hostname)"
+HOST_NAME="$(hostnamectl --static 2>/dev/null || hostname -s || hostname)"
 REPO_ROOT="${NIXOS_CONFIG_REPO:-/etc/nixos}"
 
-MENU_ITEMS=$'Apps\nNext Wallpaper\nScreenshot (edit)\nScreenshot (clipboard)\nRecord Screen\nAudio\nWi-Fi\nBluetooth\nCheck Updates\nUpdate + Rebuild\nRollback\nLock\nSuspend\nReboot\nShutdown'
+MENU_ITEMS=$'Apps\nNext Wallpaper\nScreenshot (edit)\nScreenshot (clipboard)\nRecord Screen\nAudio\nWi-Fi\nBluetooth\nCheck Updates\nCreate Snapshot\nRestore Snapshot\nUpdate + Rebuild\nRollback\nFingerprint Setup\nFingerprint Verify\nFingerprint Remove\nLock\nSuspend\nReboot\nShutdown'
 
 show_menu() {
   local prompt="$1"
@@ -66,11 +66,27 @@ main() {
     "Check Updates")
       run_script shell-update-check
       ;;
+    "Create Snapshot")
+      run_command_in_terminal "~/.config/shell/bin/shell-snapshot create manual"
+      ;;
+    "Restore Snapshot")
+      run_command_in_terminal "~/.config/shell/bin/shell-snapshot restore"
+      ;;
     "Update + Rebuild")
-      run_command_in_terminal "cd \"${REPO_ROOT}\" && sudo nix flake update && sudo nixos-rebuild switch --flake \"${REPO_ROOT}\"#${HOST_NAME}"
+      # Keep update resilient: snapshot failure warns but does not block rebuild.
+      run_command_in_terminal "~/.config/shell/bin/shell-snapshot create pre-update || printf 'Warning: pre-update snapshot failed; continuing.\\n'; cd \"${REPO_ROOT}\" && sudo nix flake update && sudo nixos-rebuild switch --flake \"${REPO_ROOT}\"#${HOST_NAME}"
       ;;
     "Rollback")
       run_command_in_terminal "sudo nixos-rebuild switch --rollback"
+      ;;
+    "Fingerprint Setup")
+      run_command_in_terminal "~/.config/shell/bin/shell-fingerprint setup"
+      ;;
+    "Fingerprint Verify")
+      run_command_in_terminal "~/.config/shell/bin/shell-fingerprint verify"
+      ;;
+    "Fingerprint Remove")
+      run_command_in_terminal "~/.config/shell/bin/shell-fingerprint remove"
       ;;
     "Lock")
       run_script shell-lock-screen

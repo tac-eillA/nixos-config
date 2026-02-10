@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+die() {
+  printf 'Error: %s\n' "$1" >&2
+  exit 1
+}
+
+require_cmd() {
+  local cmd="$1"
+  command -v "${cmd}" >/dev/null 2>&1 || die "Missing command: ${cmd}"
+}
+
+usage() {
+  cat <<'EOF'
+Usage:
+  shell-fingerprint setup
+  shell-fingerprint verify
+  shell-fingerprint remove
+  shell-fingerprint status
+EOF
+}
+
+cmd_setup() {
+  require_cmd fprintd-enroll
+  # Interactive enrollment; user chooses finger when prompted.
+  printf 'Enroll fingerprint for user %s\n' "${USER}"
+  exec fprintd-enroll "${USER}"
+}
+
+cmd_verify() {
+  require_cmd fprintd-verify
+  printf 'Verify fingerprint for user %s\n' "${USER}"
+  exec fprintd-verify "${USER}"
+}
+
+cmd_remove() {
+  require_cmd fprintd-delete
+  printf 'Remove all enrolled fingerprints for user %s\n' "${USER}"
+  exec fprintd-delete "${USER}"
+}
+
+cmd_status() {
+  require_cmd fprintd-list
+
+  # fprintd runs as a system service even when this helper runs as the user.
+  if systemctl is-active --quiet fprintd.service; then
+    printf 'fprintd service: active\n'
+  else
+    printf 'fprintd service: inactive\n'
+  fi
+
+  printf '\nCurrent enrolled fingerprints:\n'
+  fprintd-list "${USER}" || true
+}
+
+main() {
+  case "${1:-help}" in
+    setup)
+      cmd_setup
+      ;;
+    verify)
+      cmd_verify
+      ;;
+    remove)
+      cmd_remove
+      ;;
+    status)
+      cmd_status
+      ;;
+    help|-h|--help|"")
+      usage
+      ;;
+    *)
+      die "Unknown command: $1"
+      ;;
+  esac
+}
+
+main "$@"

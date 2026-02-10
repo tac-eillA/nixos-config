@@ -27,10 +27,21 @@ EOF
 }
 
 build_waybar_style() {
-  cat "${THEME_OVERRIDES_FILE}" "${BASE_STYLE_FILE}" > "${RENDERED_STYLE_FILE}"
+  # If the base style is missing, still launch with generated theme overrides.
+  if [[ -f "${BASE_STYLE_FILE}" ]]; then
+    cat "${THEME_OVERRIDES_FILE}" "${BASE_STYLE_FILE}" > "${RENDERED_STYLE_FILE}"
+    return
+  fi
+
+  cp "${THEME_OVERRIDES_FILE}" "${RENDERED_STYLE_FILE}"
 }
 
 ensure_theme_overrides
 build_waybar_style
+
+if [[ ! -f "${WAYBAR_CONFIG_FILE}" ]]; then
+  notify-send "Waybar config missing" "Expected ${WAYBAR_CONFIG_FILE}." -u critical
+  exit 1
+fi
 
 exec waybar -c "${WAYBAR_CONFIG_FILE}" -s "${RENDERED_STYLE_FILE}"

@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="${NIXOS_CONFIG_REPO:-/etc/nixos}"
+SYSTEM_SCRIPT="${REPO_ROOT}/scripts/system-snapshot.sh"
+
+die() {
+  printf 'Error: %s\n' "$1" >&2
+  exit 1
+}
+
+show_menu() {
+  local prompt="$1"
+  local options="$2"
+
+  if command -v walker >/dev/null 2>&1; then
+    printf '%b\n' "${options}" | walker --dmenu --width 440 --minheight 1 --maxheight 640 -p "${prompt}" 2>/dev/null
+    return
+  fi
+
+  if command -v wofi >/dev/null 2>&1; then
+    printf '%b\n' "${options}" | wofi --dmenu --prompt "${prompt}" 2>/dev/null
+    return
+  fi
+
+  if command -v fzf >/dev/null 2>&1; then
+    printf '%b\n' "${options}" | fzf --prompt "${prompt}> "
+    return
+  fi
+
+  return 1
+}
+
+ensure_system_script() {
+  [[ -f "${SYSTEM_SCRIPT}" ]] || die "Snapshot system script not found: ${SYSTEM_SCRIPT}"
+}
+
+run_system_script() {
+  ensure_system_script
+  # The backend script performs root-level btrfs operations.
+  sudo bash "${SYSTEM_SCRIPT}" "$@"
+}
+
+prompt_target_path() {
+  local target=""
+  while true; do
+    read -r -p "Absolute path to restore (example: /etc/nixos): " target
+    if [[ -z "${target}" ]]; then
+      printf 'Target path is required.\n' >&2
+      continue
+    fi
+    if [[ "${target}" != /* ]]; then
+      printf 'Target must be an absolute path.\n' >&2
+      continue
+    fi
+    printf '%s\n' "${target}"
+    return
+  done
+}
+
+select_snapshot() {
+  local snapshots=""
+  snapshots="$(run_system_script list --plain)"
+  [[ -n "${snapshots}" ]] || die "No snapshots available."
+
+  local selection=""
+  # Prefer launcher-style selection when available.
+  if selection="$(show_menu "Snapshot" "${snapshots}")"; then
+    [[ -n "${selection}" ]] || exit 0
+    printf '%s\n' "${selection}"
+    return
+  fi
+
+  printf 'Available snapshots:\n%s\n' "${snapshots}"
+  read -r -p "Snapshot name: " selection
+  [[ -n "${selection}" ]] || exit 0
+  printf '%s\n' "${selection}"
+}
+
+usage() {
+  cat <<'EOF'
+Usage:
+  shell-snapshot create [label]
+  shell-snapshot list
+  shell-snapshot restore [snapshot-name] [absolute-path]
+EOF
+}
+
+main() {
+  local cmd="${1:-help}"
+
+  case "${cmd}" in
+    create)
+      shift || true
+      run_system_script create "${1:-manual}"
+      ;;
+    list)
+      run_system_script list
+      ;;
+    restore)
+      shift || true
+
+      local snapshot_name="${1:-}"
+      local target_path="${2:-}"
+
+      if [[ -z "${snapshot_name}" ]]; then
+        snapshot_name="$(select_snapshot)"
+      fi
+
+      if [[ -z "${target_path}" ]]; then
+        target_path="$(prompt_target_path)"
+      fi
+
+      printf 'Restoring %s from snapshot %s\n' "${target_path}" "${snapshot_name}"
+      run_system_script restore "${snapshot_name}" "${target_path}"
+      ;;
+    help|-h|--help)
+      usage
+      ;;
+    *)
+      die "Unknown command: ${cmd}"
+      ;;
+  esac
+}
+
+main "$@"

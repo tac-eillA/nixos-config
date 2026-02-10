@@ -97,7 +97,9 @@ window-rule {
 
 binds {
     // Launchers and shell menu.
-    Mod+Return { spawn "kitty"; }
+    // Reuse existing terminal window when present; Shift+Return always opens a new one.
+    Mod+Return { spawn "bash" "-lc" "~/.config/shell/bin/shell-launch-or-focus --app-id '^kitty$' -- kitty"; }
+    Mod+Shift+Return { spawn "kitty"; }
     Mod+D { spawn "bash" "-lc" "~/.config/shell/bin/shell-launcher"; }
     Mod+Space { spawn "bash" "-lc" "~/.config/shell/bin/shell-menu"; }
     Mod+Shift+W { spawn "bash" "-lc" "~/.config/shell/bin/shell-next-wallpaper"; }

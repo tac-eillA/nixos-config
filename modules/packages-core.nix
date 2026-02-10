@@ -36,6 +36,9 @@
     unzip
     zip
     p7zip
+    btrfs-progs
+    rsync
+    fprintd
 
     neovim
     tmux
