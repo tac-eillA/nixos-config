@@ -1,0 +1,5 @@
+# Kept in repo for reference; niri starts swayidle with inline args.
+# timeout 300 'swaylock -f'
+# timeout 900 'niri msg action power-off-monitors'
+# resume 'niri msg action power-on-monitors'
+# before-sleep 'swaylock -f'

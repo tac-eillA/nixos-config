@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if pgrep -x wf-recorder >/dev/null 2>&1; then
+  printf '%s\n' '{"text":"REC","class":"active","tooltip":"Stop recording"}'
+else
+  printf '%s\n' '{"text":"","class":"idle","tooltip":"Start recording"}'
+fi

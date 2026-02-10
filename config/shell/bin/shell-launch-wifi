@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+rfkill unblock wifi >/dev/null 2>&1 || true
+
+if command -v nm-connection-editor >/dev/null 2>&1; then
+  exec nm-connection-editor
+fi
+
+if command -v nmtui >/dev/null 2>&1; then
+  exec kitty -e nmtui
+fi
+
+notify-send "Wi-Fi controls missing" "No NetworkManager UI was found." -u critical

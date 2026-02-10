@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CAPTURE_MODE="${1:-smart}"
+OUTPUT_MODE="${2:-satty}"
+
+if [[ -f "${HOME}/.config/user-dirs.dirs" ]]; then
+  # shellcheck disable=SC1090
+  source "${HOME}/.config/user-dirs.dirs"
+fi
+
+SCREENSHOT_DIR="${SHELL_SCREENSHOT_DIR:-${XDG_PICTURES_DIR:-${HOME}/Pictures}}"
+mkdir -p "${SCREENSHOT_DIR}"
+
+TIMESTAMP="$(date +'%Y-%m-%d_%H-%M-%S')"
+SCREENSHOT_FILE="${SCREENSHOT_DIR}/screenshot-${TIMESTAMP}.png"
+
+select_capture_region() {
+  case "${CAPTURE_MODE}" in
+    region|smart)
+      slurp
+      ;;
+    full)
+      printf '%s\n' ""
+      ;;
+    *)
+      slurp
+      ;;
+  esac
+}
+
+capture_to_file() {
+  local region="$1"
+  if [[ -n "${region}" ]]; then
+    grim -g "${region}" "${SCREENSHOT_FILE}"
+  else
+    grim "${SCREENSHOT_FILE}"
+  fi
+}
+
+capture_to_clipboard() {
+  local region="$1"
+  if [[ -n "${region}" ]]; then
+    grim -g "${region}" - | wl-copy
+  else
+    grim - | wl-copy
+  fi
+}
+
+capture_with_satty() {
+  local region="$1"
+
+  if [[ -n "${region}" ]]; then
+    grim -g "${region}" - | satty --filename - --output-filename "${SCREENSHOT_FILE}" --early-exit --actions-on-enter save-to-clipboard --save-after-copy --copy-command wl-copy
+  else
+    grim - | satty --filename - --output-filename "${SCREENSHOT_FILE}" --early-exit --actions-on-enter save-to-clipboard --save-after-copy --copy-command wl-copy
+  fi
+}
+
+CAPTURE_REGION="$(select_capture_region)"
+
+if [[ "${CAPTURE_MODE}" != "full" && -z "${CAPTURE_REGION}" ]]; then
+  exit 0
+fi
+
+if [[ "${OUTPUT_MODE}" == "clipboard" ]]; then
+  capture_to_clipboard "${CAPTURE_REGION}"
+  notify-send "Screenshot copied" "Image copied to clipboard"
+  exit 0
+fi
+
+if command -v satty >/dev/null 2>&1; then
+  capture_with_satty "${CAPTURE_REGION}"
+else
+  capture_to_file "${CAPTURE_REGION}"
+  wl-copy < "${SCREENSHOT_FILE}"
+fi
+
+notify-send "Screenshot saved" "${SCREENSHOT_FILE}"

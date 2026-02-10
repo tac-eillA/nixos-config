@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+STATE_DIR="${XDG_STATE_HOME:-${HOME}/.local/state}/shell"
+CURRENT_WALLPAPER_FILE="${STATE_DIR}/current-wallpaper"
+
+mkdir -p "${STATE_DIR}"
+
+list_wallpaper_dirs() {
+  local wallpaper_dirs=()
+
+  if [[ -n "${SHELL_WALLPAPER_DIR:-}" ]]; then
+    wallpaper_dirs+=("${SHELL_WALLPAPER_DIR}")
+  fi
+
+  wallpaper_dirs+=(
+    "${HOME}/.config/wallpapers"
+    "${HOME}/Pictures/wallpapers"
+    "${HOME}/Pictures/Wallpapers"
+  )
+
+  printf '%s\n' "${wallpaper_dirs[@]}"
+}
+
+list_wallpaper_files() {
+  local wallpaper_dir
+
+  while IFS= read -r wallpaper_dir; do
+    [[ -d "${wallpaper_dir}" ]] || continue
+    find "${wallpaper_dir}" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" -o -iname "*.bmp" -o -iname "*.gif" -o -iname "*.svg" \)
+  done < <(list_wallpaper_dirs)
+}
+
+pick_random_wallpaper() {
+  local skip_wallpaper="${1:-}"
+  local wallpapers=()
+
+  mapfile -t wallpapers < <(list_wallpaper_files | sort -u)
+
+  if [[ "${#wallpapers[@]}" -eq 0 ]]; then
+    return 1
+  fi
+
+  if [[ -n "${skip_wallpaper}" && "${#wallpapers[@]}" -gt 1 ]]; then
+    mapfile -t wallpapers < <(printf '%s\n' "${wallpapers[@]}" | grep -Fvx "${skip_wallpaper}")
+  fi
+
+  if [[ "${#wallpapers[@]}" -eq 0 ]]; then
+    return 1
+  fi
+
+  printf '%s\n' "${wallpapers[@]}" | shuf -n 1
+}
+
+pick_saved_or_random_wallpaper() {
+  if [[ -f "${CURRENT_WALLPAPER_FILE}" ]]; then
+    local saved_wallpaper
+    saved_wallpaper="$(<"${CURRENT_WALLPAPER_FILE}")"
+    if [[ -n "${saved_wallpaper}" && -f "${saved_wallpaper}" ]]; then
+      printf '%s\n' "${saved_wallpaper}"
+      return 0
+    fi
+  fi
+
+  pick_random_wallpaper
+}
+
+REQUESTED_WALLPAPER="${1:-}"
+SELECTED_WALLPAPER=""
+
+case "${REQUESTED_WALLPAPER}" in
+  --next)
+    CURRENT_WALLPAPER=""
+    [[ -f "${CURRENT_WALLPAPER_FILE}" ]] && CURRENT_WALLPAPER="$(<"${CURRENT_WALLPAPER_FILE}")"
+    SELECTED_WALLPAPER="$(pick_random_wallpaper "${CURRENT_WALLPAPER}")"
+    ;;
+  --restore|"")
+    SELECTED_WALLPAPER="$(pick_saved_or_random_wallpaper)"
+    ;;
+  *)
+    SELECTED_WALLPAPER="${REQUESTED_WALLPAPER}"
+    ;;
+esac
+
+if [[ -z "${SELECTED_WALLPAPER}" || ! -f "${SELECTED_WALLPAPER}" ]]; then
+  notify-send "Wallpaper" "No valid wallpaper found." -u critical
+  exit 1
+fi
+
+if ! swww query >/dev/null 2>&1; then
+  swww-daemon >/dev/null 2>&1 &
+  sleep 0.5
+fi
+
+swww img "${SELECTED_WALLPAPER}" --transition-type grow --transition-pos 0.85,0.1 --transition-fps 60 --transition-step 90
+
+printf '%s\n' "${SELECTED_WALLPAPER}" > "${CURRENT_WALLPAPER_FILE}"
+"${SCRIPT_DIR}/shell-apply-theme" "${SELECTED_WALLPAPER}" || true

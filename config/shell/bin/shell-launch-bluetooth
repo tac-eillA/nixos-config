@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if command -v blueman-manager >/dev/null 2>&1; then
+  exec blueman-manager
+fi
+
+notify-send "Bluetooth controls missing" "blueman-manager is not installed." -u critical

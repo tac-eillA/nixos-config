@@ -1,94 +1,55 @@
 {
-  description = "My NixOS Hyprland flake";
+  description = "Artemis NixOS config (niri shell, self-contained dotfiles)";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-25.05";
-    nix-flatpak.url = "github:gmodena/nix-flatpak?ref=latest";
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    nix-index-database = {
-      url = "github:nix-community/nix-index-database";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    nvf = {
-      url = "github:notashelf/nvf";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    silentSDDM = {
-      url = "github:uiriansan/SilentSDDM";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    ags.url = "github:aylur/ags";
-
-    spicetify-nix = {
-      url = "github:Gerg-L/spicetify-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    nur.url = "github:nix-community/NUR";
-    betterfox = {
-      url = "github:yokoffing/Betterfox";
-      flake = false;
-    };
-
-    thunderbird-catppuccin = {
-      url = "github:catppuccin/thunderbird";
-      flake = false;
-    };
-
-    zen-browser = {
-      url = "github:0xc000022070/zen-browser-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    nix-doom-emacs = {
-      url = "github:nix-community/nix-doom-emacs";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
-  outputs =
-    {
-      self,
-      nixpkgs,
-      ...
-    }@inputs:
+  outputs = { nixpkgs, ... }:
     let
-      inherit (self) outputs;
-      systems = [
-        "x86_64-linux"
-      ];
-      forAllSystems = nixpkgs.lib.genAttrs systems;
-      mkHost =
-        host:
-        nixpkgs.lib.nixosSystem {
-          # inherit system;
-          system = forAllSystems (system: system);
-          modules = [
-            ./hosts/${host}/configuration.nix
-          ];
-          specialArgs = {
-            # inherit self inputs outputs;
-            overlays = import ./overlays { inherit inputs host; };
-            inherit
-              self
-              inputs
-              outputs
-              host
-              ;
-          };
-        };
+      artemisVars = import ./hosts/artemis/variables.nix;
+      system = artemisVars.host.system or "x86_64-linux";
+      pkgs = import nixpkgs { inherit system; };
     in
     {
-      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
-      nixosConfigurations = {
-        default = mkHost "default";
+      nixosConfigurations.artemis = nixpkgs.lib.nixosSystem {
+        inherit system;
+        specialArgs = {
+          vars = artemisVars;
+        };
+        modules = [
+          ./hosts/artemis/configuration.nix
+        ];
+      };
+
+      devShells.${system} = {
+        rust = pkgs.mkShell {
+          packages = [
+            pkgs.rustc
+            pkgs.cargo
+            pkgs.rustfmt
+            pkgs.clippy
+            pkgs."rust-analyzer"
+            pkgs.pkg-config
+            pkgs.openssl
+          ];
+
+          shellHook = ''
+            echo "Rust dev shell ready (cargo/rustc/rust-analyzer)"
+          '';
+        };
+
+        go = pkgs.mkShell {
+          packages = [
+            pkgs.go
+            pkgs.gopls
+            pkgs.delve
+          ];
+
+          shellHook = ''
+            echo "Go dev shell ready (go/gopls/delve)"
+          '';
+        };
       };
     };
 }

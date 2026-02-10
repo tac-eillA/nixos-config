@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+start_user_service() {
+  local unit_name="$1"
+  systemctl --user start "${unit_name}" >/dev/null 2>&1 || true
+}
+
+start_user_service shell-elephant.service
+start_user_service shell-walker.service
+
+if command -v walker >/dev/null 2>&1; then
+  exec walker --width 680 --minheight 280 --maxheight 520 "$@"
+fi
+
+if command -v wofi >/dev/null 2>&1; then
+  exec wofi --show drun
+fi
+
+notify-send "Launcher missing" "Install walker or wofi to launch apps." -u critical

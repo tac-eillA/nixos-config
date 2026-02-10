@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2160" viewBox="0 0 3840 2160">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1424" />
+      <stop offset="40%" stop-color="#10213a" />
+      <stop offset="100%" stop-color="#1b2c46" />
+    </linearGradient>
+    <radialGradient id="glow" cx="0.85" cy="0.1" r="0.65">
+      <stop offset="0%" stop-color="#7bb8ff" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#7bb8ff" stop-opacity="0" />
+    </radialGradient>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M 64 0 L 0 0 0 64" fill="none" stroke="#9ec9ff" stroke-opacity="0.08" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <rect width="3840" height="2160" fill="url(#bg)" />
+  <rect width="3840" height="2160" fill="url(#grid)" />
+  <rect width="3840" height="2160" fill="url(#glow)" />
+
+  <circle cx="3100" cy="280" r="420" fill="#a6d0ff" fill-opacity="0.08" />
+  <circle cx="3020" cy="220" r="180" fill="#d2ebff" fill-opacity="0.14" />
+
+  <g stroke="#9bc8ff" stroke-opacity="0.22" stroke-width="2" fill="none">
+    <path d="M 0 1700 C 620 1460, 1120 1640, 1880 1500 C 2580 1360, 3140 1480, 3840 1320" />
+    <path d="M 0 1810 C 680 1600, 1260 1770, 1980 1650 C 2700 1530, 3260 1680, 3840 1540" />
+  </g>
+</svg>

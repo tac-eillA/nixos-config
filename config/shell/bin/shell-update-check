@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="${NIXOS_CONFIG_REPO:-/etc/nixos}"
+LOCK_FILE="${REPO_ROOT}/flake.lock"
+CACHE_DIR="${XDG_CACHE_HOME:-${HOME}/.cache}/shell"
+FLAG_FILE="${CACHE_DIR}/update-available"
+
+mkdir -p "${CACHE_DIR}"
+
+signal_waybar() {
+  pkill -RTMIN+7 waybar >/dev/null 2>&1 || true
+}
+
+clear_update_flag() {
+  rm -f "${FLAG_FILE}"
+}
+
+if [[ ! -f "${LOCK_FILE}" ]]; then
+  clear_update_flag
+  signal_waybar
+  exit 0
+fi
+
+CURRENT_REV="$(jq -r '.nodes.nixpkgs.locked.rev // empty' "${LOCK_FILE}")"
+if [[ -z "${CURRENT_REV}" ]]; then
+  clear_update_flag
+  signal_waybar
+  exit 0
+fi
+
+LATEST_REV="$(nix flake metadata --json github:NixOS/nixpkgs/nixos-unstable 2>/dev/null | jq -r '.locked.rev // empty')"
+if [[ -z "${LATEST_REV}" ]]; then
+  signal_waybar
+  exit 0
+fi
+
+if [[ "${CURRENT_REV}" != "${LATEST_REV}" ]]; then
+  touch "${FLAG_FILE}"
+else
+  clear_update_flag
+fi
+
+signal_waybar

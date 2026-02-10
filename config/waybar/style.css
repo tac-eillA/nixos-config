@@ -1,0 +1,95 @@
+* {
+  border: none;
+  border-radius: 0;
+  font-family: "JetBrainsMono Nerd Font", "Inter", sans-serif;
+  font-size: 13px;
+  min-height: 0;
+}
+
+window#waybar {
+  background: transparent;
+  color: @shell_text;
+}
+
+window#waybar > box {
+  margin: 0;
+}
+
+#custom-shell-menu,
+#custom-system-update,
+#custom-screen-recording,
+#workspaces,
+#window,
+#clock,
+#bluetooth,
+#network,
+#pulseaudio,
+#backlight,
+#battery,
+#cpu,
+#memory,
+#tray {
+  background: linear-gradient(180deg, alpha(@shell_panel_start, 0.90), alpha(@shell_panel_end, 0.88));
+  border: 1px solid alpha(@shell_border, 0.28);
+  border-radius: 12px;
+  margin: 6px 0;
+  padding: 6px 11px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+}
+
+#custom-shell-menu {
+  color: @shell_accent;
+  margin-right: 8px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+#workspaces {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+#workspaces button {
+  color: alpha(@shell_text, 0.68);
+  border-radius: 8px;
+  margin: 0 2px;
+  padding: 0 4px;
+}
+
+#workspaces button.active {
+  color: @shell_text;
+  text-shadow: 0 0 10px alpha(@shell_accent, 0.55);
+}
+
+#window {
+  color: @shell_muted;
+  padding-right: 16px;
+}
+
+#clock {
+  color: @shell_text;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+#custom-system-update.active,
+#custom-screen-recording.active {
+  color: @shell_accent;
+}
+
+#custom-system-update.hidden,
+#custom-screen-recording.idle {
+  opacity: 0.45;
+}
+
+#network.disconnected,
+#bluetooth.disabled,
+#pulseaudio.muted,
+#battery.warning,
+#battery.critical {
+  color: @shell_warning;
+}
+
+#tray {
+  padding-right: 14px;
+}

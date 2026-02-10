@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FLAG_FILE="${XDG_CACHE_HOME:-${HOME}/.cache}/shell/update-available"
+
+if [[ -f "${FLAG_FILE}" ]]; then
+  printf '%s\n' '{"text":"UPD","class":"active","tooltip":"NixOS update available"}'
+else
+  printf '%s\n' '{"text":"","class":"hidden","tooltip":"System is up to date"}'
+fi

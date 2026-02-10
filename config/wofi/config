@@ -1,0 +1,10 @@
+show=drun
+allow_markup=true
+insensitive=true
+no_actions=true
+hide_scroll=true
+columns=1
+width=38%
+lines=12
+prompt=Search
+term=kitty

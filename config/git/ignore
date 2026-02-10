@@ -1,0 +1,16 @@
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Local environments
+.direnv/
+.env
+.env.*
+.python-version
+
+# Runtime junk
+*.log
+*.tmp

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CACHE_DIR="${XDG_CACHE_HOME:-${HOME}/.cache}/shell"
+THEME_OVERRIDES_FILE="/tmp/shell-waybar-theme.css"
+RENDERED_STYLE_FILE="${CACHE_DIR}/waybar-style.css"
+BASE_STYLE_FILE="${HOME}/.config/waybar/style.css"
+WAYBAR_CONFIG_FILE="${HOME}/.config/waybar/config.jsonc"
+
+mkdir -p "${CACHE_DIR}"
+
+ensure_theme_overrides() {
+  if [[ -f "${THEME_OVERRIDES_FILE}" ]]; then
+    return
+  fi
+
+  cat > "${THEME_OVERRIDES_FILE}" <<'EOF'
+@define-color shell_panel_start #121c2c;
+@define-color shell_panel_end #1f2b3d;
+@define-color shell_border #8ec5fc;
+@define-color shell_text #d9e4f4;
+@define-color shell_muted #c9ddf7;
+@define-color shell_accent #8ec5fc;
+@define-color shell_warning #ff8f9a;
+@define-color shell_bg #0b1324;
+EOF
+}
+
+build_waybar_style() {
+  cat "${THEME_OVERRIDES_FILE}" "${BASE_STYLE_FILE}" > "${RENDERED_STYLE_FILE}"
+}
+
+ensure_theme_overrides
+build_waybar_style
+
+exec waybar -c "${WAYBAR_CONFIG_FILE}" -s "${RENDERED_STYLE_FILE}"

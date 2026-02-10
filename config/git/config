@@ -1,0 +1,57 @@
+[core]
+  editor = nvim
+  pager = less -FRX
+  excludesfile = ~/.config/git/ignore
+  autocrlf = input
+
+[init]
+  defaultBranch = main
+
+[fetch]
+  prune = true
+  pruneTags = true
+
+[pull]
+  rebase = true
+  ff = only
+
+[rebase]
+  autoStash = true
+  updateRefs = true
+
+[push]
+  autoSetupRemote = true
+  followTags = true
+
+[merge]
+  conflictStyle = zdiff3
+
+[rerere]
+  enabled = true
+  autoupdate = true
+
+[diff]
+  algorithm = histogram
+  colorMoved = default
+
+[branch]
+  sort = -committerdate
+
+[help]
+  autocorrect = prompt
+
+[commit]
+  verbose = true
+
+[alias]
+  st = status -sb
+  lg = log --graph --decorate --oneline --all
+  l1 = log -1 --stat
+  last = log -1 --decorate
+  sw = switch
+  co = checkout
+  br = branch -vv
+  aa = add --all
+  unstage = restore --staged
+  fix = commit --fixup
+  amend = commit --amend

@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+WALLPAPER_PATH="${1:-}"
+WAL_CACHE_DIR="${XDG_CACHE_HOME:-${HOME}/.cache}/wal"
+WAL_COLORS_FILE="${WAL_CACHE_DIR}/colors.json"
+
+WAYBAR_THEME_FILE="/tmp/shell-waybar-theme.css"
+WAYBAR_BASE_STYLE="${HOME}/.config/waybar/style.css"
+WAYBAR_RENDERED_STYLE="${XDG_CACHE_HOME:-${HOME}/.cache}/shell/waybar-style.css"
+
+KITTY_THEME_FILE="/tmp/shell-kitty-theme.conf"
+MAKO_THEME_FILE="/tmp/shell-mako-theme.conf"
+
+if [[ -z "${WALLPAPER_PATH}" || ! -f "${WALLPAPER_PATH}" ]]; then
+  exit 1
+fi
+
+if ! command -v wal >/dev/null 2>&1; then
+  exit 0
+fi
+
+wal -q -n -i "${WALLPAPER_PATH}" >/dev/null 2>&1 || exit 0
+
+if [[ ! -f "${WAL_COLORS_FILE}" ]]; then
+  exit 0
+fi
+
+read_color() {
+  local jq_expr="$1"
+  local default_value="$2"
+  jq -r "${jq_expr} // \"${default_value}\"" "${WAL_COLORS_FILE}"
+}
+
+BACKGROUND="$(read_color '.special.background' '#0b1324')"
+FOREGROUND="$(read_color '.special.foreground' '#d9e4f4')"
+ACCENT="$(read_color '.colors.color4' '#8ec5fc')"
+WARNING="$(read_color '.colors.color1' '#ff8f9a')"
+PANEL_START="$(read_color '.colors.color0' '#121c2c')"
+PANEL_END="$(read_color '.colors.color8' '#1f2b3d')"
+MUTED="$(read_color '.colors.color7' '#c9ddf7')"
+
+cat > "${WAYBAR_THEME_FILE}" <<EOF
+@define-color shell_panel_start ${PANEL_START};
+@define-color shell_panel_end ${PANEL_END};
+@define-color shell_border ${ACCENT};
+@define-color shell_text ${FOREGROUND};
+@define-color shell_muted ${MUTED};
+@define-color shell_accent ${ACCENT};
+@define-color shell_warning ${WARNING};
+@define-color shell_bg ${BACKGROUND};
+EOF
+
+mkdir -p "$(dirname "${WAYBAR_RENDERED_STYLE}")"
+if [[ -f "${WAYBAR_BASE_STYLE}" ]]; then
+  cat "${WAYBAR_THEME_FILE}" "${WAYBAR_BASE_STYLE}" > "${WAYBAR_RENDERED_STYLE}"
+fi
+
+cat > "${KITTY_THEME_FILE}" <<EOF
+foreground ${FOREGROUND}
+background ${BACKGROUND}
+cursor ${ACCENT}
+
+EOF
+
+for color_index in $(seq 0 15); do
+  color_value="$(read_color ".colors.color${color_index}" "${BACKGROUND}")"
+  printf 'color%s %s\n' "${color_index}" "${color_value}" >> "${KITTY_THEME_FILE}"
+done
+
+cat > "${MAKO_THEME_FILE}" <<EOF
+background-color=${BACKGROUND}e6
+text-color=${FOREGROUND}
+border-color=${ACCENT}aa
+progress-color=over ${PANEL_END}
+EOF
+
+pkill -USR2 waybar >/dev/null 2>&1 || true
+
+if command -v makoctl >/dev/null 2>&1; then
+  makoctl reload >/dev/null 2>&1 || true
+fi

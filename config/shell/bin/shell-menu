@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+HOST_NAME="$(hostname)"
+REPO_ROOT="${NIXOS_CONFIG_REPO:-/etc/nixos}"
+
+MENU_ITEMS=$'Apps\nNext Wallpaper\nScreenshot (edit)\nScreenshot (clipboard)\nRecord Screen\nAudio\nWi-Fi\nBluetooth\nCheck Updates\nUpdate + Rebuild\nRollback\nLock\nSuspend\nReboot\nShutdown'
+
+show_menu() {
+  local prompt="$1"
+  local options="$2"
+
+  if command -v walker >/dev/null 2>&1; then
+    printf '%b\n' "${options}" | walker --dmenu --width 340 --minheight 1 --maxheight 600 -p "${prompt}" 2>/dev/null
+    return
+  fi
+
+  if command -v wofi >/dev/null 2>&1; then
+    printf '%b\n' "${options}" | wofi --dmenu --prompt "${prompt}" 2>/dev/null
+    return
+  fi
+
+  exit 1
+}
+
+run_script() {
+  local script_name="$1"
+  shift
+  "${SCRIPT_DIR}/${script_name}" "$@"
+}
+
+run_command_in_terminal() {
+  "${SCRIPT_DIR}/shell-terminal-run" "$*"
+}
+
+main() {
+  local choice
+  choice="$(show_menu "Shell" "${MENU_ITEMS}")"
+
+  case "${choice}" in
+    "Apps")
+      run_script shell-launcher
+      ;;
+    "Next Wallpaper")
+      run_script shell-next-wallpaper
+      ;;
+    "Screenshot (edit)")
+      run_script shell-cmd-screenshot smart satty
+      ;;
+    "Screenshot (clipboard)")
+      run_script shell-cmd-screenshot smart clipboard
+      ;;
+    "Record Screen")
+      run_script shell-cmd-screenrecord
+      ;;
+    "Audio")
+      run_script shell-launch-audio
+      ;;
+    "Wi-Fi")
+      run_script shell-launch-wifi
+      ;;
+    "Bluetooth")
+      run_script shell-launch-bluetooth
+      ;;
+    "Check Updates")
+      run_script shell-update-check
+      ;;
+    "Update + Rebuild")
+      run_command_in_terminal "cd \"${REPO_ROOT}\" && sudo nix flake update && sudo nixos-rebuild switch --flake \"${REPO_ROOT}\"#${HOST_NAME}"
+      ;;
+    "Rollback")
+      run_command_in_terminal "sudo nixos-rebuild switch --rollback"
+      ;;
+    "Lock")
+      run_script shell-lock-screen
+      ;;
+    "Suspend")
+      systemctl suspend
+      ;;
+    "Reboot")
+      systemctl reboot
+      ;;
+    "Shutdown")
+      systemctl poweroff
+      ;;
+    *)
+      exit 0
+      ;;
+  esac
+}
+
+main

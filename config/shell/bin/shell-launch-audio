@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if command -v pavucontrol >/dev/null 2>&1; then
+  exec pavucontrol
+fi
+
+notify-send "Audio controls missing" "pavucontrol is not installed." -u critical

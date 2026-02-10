@@ -1,0 +1,110 @@
+{
+  "reload_style_on_change": true,
+  "layer": "top",
+  "position": "top",
+  "height": 36,
+  "spacing": 8,
+  "margin-top": 8,
+  "margin-left": 10,
+  "margin-right": 10,
+  "modules-left": ["custom/shell-menu", "niri/workspaces", "niri/window"],
+  "modules-center": ["clock", "custom/system-update"],
+  "modules-right": ["custom/screen-recording", "tray", "bluetooth", "network", "pulseaudio", "backlight", "battery", "cpu", "memory"],
+
+  "custom/shell-menu": {
+    "format": "<span size='12000'>󰣇</span>",
+    "tooltip": false,
+    "on-click": "~/.config/shell/bin/shell-menu",
+    "on-click-right": "~/.config/shell/bin/shell-launcher"
+  },
+
+  "custom/system-update": {
+    "exec": "~/.config/shell/bin/shell-update-indicator",
+    "return-type": "json",
+    "signal": 7,
+    "interval": 21600,
+    "on-click": "~/.config/shell/bin/shell-menu"
+  },
+
+  "custom/screen-recording": {
+    "exec": "~/.config/shell/bin/shell-screenrecord-indicator",
+    "return-type": "json",
+    "signal": 8,
+    "interval": 2,
+    "on-click": "~/.config/shell/bin/shell-cmd-screenrecord"
+  },
+
+  "niri/workspaces": {
+    "format": "{icon}",
+    "format-icons": {
+      "active": "",
+      "default": ""
+    }
+  },
+
+  "niri/window": {
+    "max-length": 70,
+    "separate-outputs": true
+  },
+
+  "clock": {
+    "interval": 1,
+    "format": "{:%a %b %d  %I:%M %p}",
+    "tooltip-format": "<big>{:%Y-%m-%d}</big>\n<tt>{calendar}</tt>",
+    "calendar": {
+      "mode": "month",
+      "weeks-pos": "right"
+    }
+  },
+
+  "bluetooth": {
+    "format": "",
+    "format-connected": "󰂱",
+    "format-off": "󰂲",
+    "tooltip-format": "Devices connected: {num_connections}",
+    "on-click": "~/.config/shell/bin/shell-launch-bluetooth"
+  },
+
+  "network": {
+    "format-wifi": "󰖩  {essid}",
+    "format-ethernet": "󰈁  Wired",
+    "format-disconnected": "󰖪  Offline",
+    "tooltip-format": "{ifname} via {gwaddr}\n{ipaddr}/{cidr}",
+    "on-click": "~/.config/shell/bin/shell-launch-wifi"
+  },
+
+  "pulseaudio": {
+    "format": "{icon}  {volume}%",
+    "format-muted": "󰝟  mute",
+    "format-icons": {
+      "default": ["", "", ""]
+    },
+    "on-click": "~/.config/shell/bin/shell-launch-audio"
+  },
+
+  "backlight": {
+    "format": "󰃠  {percent}%"
+  },
+
+  "battery": {
+    "states": {
+      "warning": 30,
+      "critical": 15
+    },
+    "format": "{icon}  {capacity}%",
+    "format-charging": "󰂄  {capacity}%",
+    "format-icons": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
+  },
+
+  "cpu": {
+    "format": "󰻠  {usage}%"
+  },
+
+  "memory": {
+    "format": "󰍛  {}%"
+  },
+
+  "tray": {
+    "spacing": 10
+  }
+}

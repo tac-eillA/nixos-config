@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+LOW_BATTERY_THRESHOLD="${SHELL_BATTERY_THRESHOLD:-12}"
+NOTIFIED_FLAG_FILE="${XDG_RUNTIME_DIR:-/run/user/${UID}}/shell-battery-notified"
+
+BATTERY_DEVICE="$(upower -e | grep -m1 battery || true)"
+if [[ -z "${BATTERY_DEVICE}" ]]; then
+  exit 0
+fi
+
+BATTERY_DETAILS="$(upower -i "${BATTERY_DEVICE}")"
+BATTERY_STATE="$(awk '/state:/ {print $2; exit}' <<<"${BATTERY_DETAILS}")"
+BATTERY_PERCENT="$(awk '/percentage:/ {gsub("%", "", $2); print $2; exit}' <<<"${BATTERY_DETAILS}")"
+
+if [[ -z "${BATTERY_PERCENT}" || ! "${BATTERY_PERCENT}" =~ ^[0-9]+$ ]]; then
+  exit 0
+fi
+
+if [[ "${BATTERY_STATE}" == "discharging" && "${BATTERY_PERCENT}" -le "${LOW_BATTERY_THRESHOLD}" ]]; then
+  if [[ ! -f "${NOTIFIED_FLAG_FILE}" ]]; then
+    notify-send -u critical "Low battery" "Battery is at ${BATTERY_PERCENT}%"
+    touch "${NOTIFIED_FLAG_FILE}"
+  fi
+else
+  rm -f "${NOTIFIED_FLAG_FILE}"
+fi

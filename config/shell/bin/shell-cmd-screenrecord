@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ENABLE_AUDIO="true"
+STOP_REQUESTED="false"
+
+for arg in "$@"; do
+  case "$arg" in
+    --without-audio) ENABLE_AUDIO="false" ;;
+    --stop-recording) STOP_REQUESTED="true" ;;
+  esac
+done
+
+if [[ -f "${HOME}/.config/user-dirs.dirs" ]]; then
+  # shellcheck disable=SC1090
+  source "${HOME}/.config/user-dirs.dirs"
+fi
+
+RECORDINGS_DIR="${SHELL_SCREENRECORD_DIR:-${XDG_VIDEOS_DIR:-${HOME}/Videos}}"
+mkdir -p "${RECORDINGS_DIR}"
+
+refresh_waybar_indicator() {
+  pkill -RTMIN+8 waybar >/dev/null 2>&1 || true
+}
+
+is_recording_active() {
+  pgrep -x wf-recorder >/dev/null 2>&1
+}
+
+start_recording() {
+  local timestamp recording_file
+  timestamp="$(date +'%Y-%m-%d_%H-%M-%S')"
+  recording_file="${RECORDINGS_DIR}/screenrecord-${timestamp}.mp4"
+
+  if [[ "${ENABLE_AUDIO}" == "true" ]]; then
+    wf-recorder -a -f "${recording_file}" >/dev/null 2>&1 &
+  else
+    wf-recorder -f "${recording_file}" >/dev/null 2>&1 &
+  fi
+
+  disown
+  refresh_waybar_indicator
+  notify-send "Screen recording" "Recording started"
+}
+
+stop_recording() {
+  pkill -INT -x wf-recorder >/dev/null 2>&1 || true
+
+  for _ in $(seq 1 40); do
+    if ! is_recording_active; then
+      break
+    fi
+    sleep 0.1
+  done
+
+  if is_recording_active; then
+    pkill -KILL -x wf-recorder >/dev/null 2>&1 || true
+  fi
+
+  refresh_waybar_indicator
+  notify-send "Screen recording" "Recording stopped"
+}
+
+if is_recording_active; then
+  stop_recording
+elif [[ "${STOP_REQUESTED}" == "false" ]]; then
+  start_recording
+fi
