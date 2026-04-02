@@ -22,6 +22,8 @@
     curl
     wget
     fzf
+    fd
+    ripgrep
     ffmpeg
     vim
     kitty
