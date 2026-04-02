@@ -3,9 +3,19 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    nur = {
+      url = "github:nix-community/NUR";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    lix-module = {
+      url = "git+https://git.lix.systems/lix-project/nixos-module";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, ... }:
+  outputs = { self, nixpkgs, nur, lix-module, ... }:
     let
       system = "x86_64-linux";
       lib = nixpkgs.lib;
@@ -18,8 +28,12 @@
       mkHost = hostname: lib.nixosSystem {
         inherit system;
         modules = [
+	  nur.modules.nixos.default
+	  lix-module.nixosModules.lixFromNixpkgs
+
           ./modules/common.nix
 	  ./modules/plasma.nix
+	  ./modules/browsers.nix
           ./modules/gamedev.nix
 	  ./modules/utils.nix
 	  ./modules/nvidia.nix

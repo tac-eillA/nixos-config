@@ -25,6 +25,8 @@
     fzf
     fd
     ripgrep
+    fastfetch
+    gparted
     ffmpeg
     vim
     kitty

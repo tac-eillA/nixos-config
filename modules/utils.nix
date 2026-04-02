@@ -8,6 +8,12 @@
     blender
     kicad
     krita
+    kdenlive
+    obs-studio
+    vial
+    qbittorrent
+    foliate
+    easyeffects
     opentabletdriver
     pciutils
     usbutils
@@ -18,7 +24,6 @@
     mpv
     cider-2
     wireshark
-    helium-browser
-    zen-browser
+    google-chrome
   ];
 }
