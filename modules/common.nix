@@ -31,4 +31,7 @@
     fprintd
     vlc
   ];
+
+  services.tailscale.enable = true;
+
 }
