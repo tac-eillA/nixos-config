@@ -15,6 +15,7 @@
     isNormalUser = true;
     description = "allison";
     extraGroups = [ "wheel" "networkmanager" ];
+    shell = pkgs.zsh;
   };
 
   environment.systemPackages = with pkgs; [

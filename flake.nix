@@ -21,6 +21,8 @@
           ./modules/common.nix
           ./modules/gamedev.nix
 	  ./modules/utils.nix
+	  ./modules/nvidia.nix
+	  ./modules/zsh.nix
           ./hosts/${hostname}/configuration.nix
         ];
       };
