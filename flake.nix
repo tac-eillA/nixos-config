@@ -19,10 +19,12 @@
         inherit system;
         modules = [
           ./modules/common.nix
+	  ./modules/plasma.nix
           ./modules/gamedev.nix
 	  ./modules/utils.nix
 	  ./modules/nvidia.nix
 	  ./modules/zsh.nix
+	  ./modules/printing.nix
           ./hosts/${hostname}/configuration.nix
         ];
       };
