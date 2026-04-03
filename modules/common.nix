@@ -3,6 +3,12 @@
 {
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  # Use latest kernel.
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
   nixpkgs.config.allowUnfree = true;
 
   networking.networkmanager.enable = true;
@@ -18,6 +24,8 @@
     shell = pkgs.zsh;
   };
 
+  programs.firefox.enable = true;
+
   environment.systemPackages = with pkgs; [
     git
     curl
@@ -31,7 +39,6 @@
     vim
     kitty
     flatpak
-    firefox
     libreoffice-fresh
     brightnessctl
     fprintd
@@ -39,5 +46,6 @@
   ];
 
   services.tailscale.enable = true;
+  services.lact.enable = true;
 
 }

@@ -28,17 +28,17 @@
       mkHost = hostname: lib.nixosSystem {
         inherit system;
         modules = [
-	  nur.modules.nixos.default
-	  lix-module.nixosModules.lixFromNixpkgs
+          nur.modules.nixos.default
+          lix-module.nixosModules.lixFromNixpkgs
 
           ./modules/common.nix
-	  ./modules/plasma.nix
-	  ./modules/browsers.nix
+          ./modules/plasma.nix
+          ./modules/browsers.nix
           ./modules/gamedev.nix
-	  ./modules/utils.nix
-	  ./modules/nvidia.nix
-	  ./modules/zsh.nix
-	  ./modules/printing.nix
+          ./modules/utils.nix
+          ./modules/nvidia.nix
+          ./modules/zsh.nix
+          ./modules/printing.nix
           ./hosts/${hostname}/configuration.nix
         ];
       };
@@ -46,9 +46,9 @@
       nixosConfigurations = {
         athena = mkHost "athena";
         artemis = mkHost "artemis";
-	demeter = mkHost "demeter";
-	hera = mkHost "hera";
-	hestia = mkHost "hestia";
+        demeter = mkHost "demeter";
+        hera = mkHost "hera";
+        hestia = mkHost "hestia";
       };
 
       devShells.${system}.unreal =
@@ -57,4 +57,13 @@
 
       formatter.${system} = (mkPkgs system).nixpkgs-fmt;
     };
+
+  # This value determines the NixOS release from which the default
+  # settings for stateful data, like file locations and database versions
+  # on your system were taken. It‘s perfectly fine and recommended to leave
+  # this value at the release version of the first install of this system.
+  # Before changing this value read the documentation for this option
+  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
+  system.stateVersion = "25.11"; # Did you read the comment?
+
 }
