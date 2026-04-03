@@ -9,10 +9,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    lix-module = {
-      url = "git+https://git.lix.systems/lix-project/nixos-module";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    #lix-module = {
+    #  url = "git+https://git.lix.systems/lix-project/nixos-module";
+    #  inputs.nixpkgs.follows = "nixpkgs";
+    #x};
   };
 
   outputs = { self, nixpkgs, nur, lix-module, ... }:
@@ -64,6 +64,6 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "25.11"; # Did you read the comment?
+  #stateVersion = "25.11"; # Did you read the comment?
 
 }

@@ -8,7 +8,6 @@
     blender
     kicad
     krita
-    kdenlive
     obs-studio
     vial
     qbittorrent
@@ -17,7 +16,6 @@
     opentabletdriver
     pciutils
     usbutils
-    lspci
     lact
     btop
     calibre
