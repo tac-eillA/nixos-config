@@ -10,13 +10,13 @@
       openssl
       curl
 
-      xorg.libX11
-      xorg.libXcursor
-      xorg.libXi
-      xorg.libXinerama
-      xorg.libXrandr
-      xorg.libXxf86vm
-      xorg.libxcb
+      libX11
+      libXcursor
+      libXi
+      libXinerama
+      libXrandr
+      libXxf86vm
+      libxcb
 
       libxkbcommon
       wayland

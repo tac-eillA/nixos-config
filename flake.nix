@@ -15,7 +15,7 @@
     #x};
   };
 
-  outputs = { self, nixpkgs, nur, lix-module, ... }:
+  outputs = { self, nixpkgs, nur,  ... }:
     let
       system = "x86_64-linux";
       lib = nixpkgs.lib;
@@ -29,7 +29,7 @@
         inherit system;
         modules = [
           nur.modules.nixos.default
-          lix-module.nixosModules.lixFromNixpkgs
+          #lix-module.nixosModules.lixFromNixpkgs
 
           ./modules/common.nix
           ./modules/plasma.nix
