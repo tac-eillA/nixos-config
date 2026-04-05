@@ -28,12 +28,13 @@
 
   environment.systemPackages = with pkgs; [
     git
+    gh
     curl
     wget
     fzf
     fd
     ripgrep
-    fastfetch
+    hifetch
     gparted
     ffmpeg
     vim
