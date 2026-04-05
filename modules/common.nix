@@ -34,7 +34,7 @@
     fzf
     fd
     ripgrep
-    hifetch
+    microfetch
     gparted
     ffmpeg
     vim
