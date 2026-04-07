@@ -39,6 +39,7 @@
     ffmpeg
     vim
     kitty
+    ghostty
     flatpak
     libreoffice-fresh
     brightnessctl
