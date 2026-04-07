@@ -36,6 +36,7 @@
           ./modules/browsers.nix
           ./modules/gamedev.nix
           ./modules/utils.nix
+	  ./modules/editors.nix
           ./modules/nvidia.nix
           ./modules/zsh.nix
           ./modules/printing.nix

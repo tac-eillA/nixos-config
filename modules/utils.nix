@@ -3,8 +3,6 @@
 {
 
   environment.systemPackages = with pkgs; [
-    emacs
-    neovim
     blender
     kicad
     krita
