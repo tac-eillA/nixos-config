@@ -29,6 +29,7 @@
   environment.systemPackages = with pkgs; [
     git
     gh
+    bash
     curl
     wget
     fzf
