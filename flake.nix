@@ -1,5 +1,5 @@
 {
-  description = "Allie's systems nixos config";
+  description = "words are hard sometimes... i just want my systems to work how i tell them";
 
   inputs = {
       nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -35,7 +35,8 @@
         artemis = mkHost "artemis";
         demeter = mkHost "demeter";
         hera = mkHost "hera";
-        hestia = mkHost "hestia";
+        hestia = mkHost "pythia";
+	apollo = mkHost "apollo";
       };
 
       devShells.${system}.unreal =
