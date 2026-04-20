@@ -4,7 +4,7 @@
   # Services... self explanatory
   services.lact.enable = true;
   services.netbird.enable = true;
-  services.nordvpn.enable = true;
+  #services.nordvpn.enable = true;
 
   # firewall
   networking.firewall.enable = false;
