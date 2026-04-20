@@ -3,7 +3,7 @@
 
   inputs = {
       nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-      nix-stable.url = "github:NixOS/nixpkgs/nixos-26.05";
+      nix-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
       nixos-hardware.url = "github:nixos/nixos-hardware";
       nix-flatpak.url = "github:gmodena/nix-flatpak";
 
