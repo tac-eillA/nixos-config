@@ -2,7 +2,7 @@
 
 {
 
-  hardware.magic-trackpad-quirks.enable = true;
+  #hardware.magic-trackpad-quirks.enable = true;
 
   # fingerprint & login
   security.polkit.enable = true;
