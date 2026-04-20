@@ -9,7 +9,7 @@
 
   logitech.wireless.enable = false;
   logitech.wireless.enableGraphical = false;
-  keyboard.qmk.enable = true;
+  #keyboard.qmk.enable = true;
 
   hardware.bluetooth = {
     enable = true;
