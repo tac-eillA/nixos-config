@@ -11,7 +11,7 @@
   logitech.wireless.enableGraphical = false;
   keyboard.qmk.enable = true;
 
-  bluetooth = {
+  hardware.bluetooth = {
     enable = true;
     powerOnBoot = true;
     settings.General.Experimental = true;
