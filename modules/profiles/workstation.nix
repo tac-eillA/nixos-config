@@ -12,7 +12,7 @@
     ../../modules/printing.nix
     ../../modules/plasma.nix
     ../../modules/services.nix
-    ../..modules/shell.nix
+    ../../modules/shell.nix
     ../../modules/user.nix
     ../../modules/video.nix
     ../../modules/apps.nix
