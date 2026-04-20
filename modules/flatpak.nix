@@ -18,7 +18,7 @@
       #];
 
       # Optional: Automatically update Flatpaks when you run nixos-rebuild swit ch
-      update.onActivation = true;
+      #update.onActivation = true;
     };
   };
 }
