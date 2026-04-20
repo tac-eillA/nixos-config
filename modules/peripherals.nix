@@ -7,9 +7,9 @@
   # fingerprint & login
   security.polkit.enable = true;
 
-  logitech.wireless.enable = false;
-  logitech.wireless.enableGraphical = false;
-  #keyboard.qmk.enable = true;
+  hardware.logitech.wireless.enable = false;
+  hardware.logitech.wireless.enableGraphical = false;
+  hardware.keyboard.qmk.enable = true;
 
   hardware.bluetooth = {
     enable = true;
