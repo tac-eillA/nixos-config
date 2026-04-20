@@ -18,9 +18,9 @@
       gc = "git commit";
       gp = "git push";
       gl = "git pull";
-      nc = "cd ~/nixos-config";
+      nixc = "cd ~/nixos-config";
       rebuild = "sudo nixos-rebuild switch --flake ~/nixos-config#$(hostname)";
-      update = "nix flake update ~/nixos-config";
+      update = "sudo nix flake update ~/nixos-config";
       c = "clear";
     };
 

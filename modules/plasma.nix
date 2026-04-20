@@ -3,20 +3,15 @@
 
 {
   services.xserver.enable = true;
-
   services.displayManager.plasma-login-manager.enable = true;
-
   services.desktopManager.plasma6.enable = true;
 
   # Keep Plasma/Qt apps behaving nicely with file pickers and open handlers
   xdg.portal.enable = true;
   xdg.portal.xdgOpenUsePortal = true;
 
-  # Good QoL on laptops; harmless on desktops if you want it everywhere
+  # I don't want to learn TLP
   services.power-profiles-daemon.enable = true;
-
-  # Nice if you use headphones/controllers/etc.
-  hardware.bluetooth.enable = true;
 
   # Phone integration
   programs.kdeconnect.enable = true;

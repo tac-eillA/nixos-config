@@ -2,17 +2,15 @@
   description = "Allie's systems nixos config";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+      nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+      nix-stable.url = "github:NixOS/nixpkgs/nixos-26.05";
+      nixos-hardware.url = "github:nixos/nixos-hardware";
+      nix-flatpak.url = "github:gmodena/nix-flatpak";
 
-    nur = {
-      url = "github:nix-community/NUR";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    #lix-module = {
-    #  url = "git+https://git.lix.systems/lix-project/nixos-module";
-    #  inputs.nixpkgs.follows = "nixpkgs";
-    #x};
+      nur = {
+        url = "github:nix-community/NUR";
+        inputs.nixpkgs.follows = "nixpkgs";
+      };
   };
 
   outputs = { self, nixpkgs, nur,  ... }:
@@ -22,24 +20,12 @@
 
       mkPkgs = system: import nixpkgs {
         inherit system;
-        config.allowUnfree = true;
       };
 
       mkHost = hostname: lib.nixosSystem {
         inherit system;
         modules = [
           nur.modules.nixos.default
-          #lix-module.nixosModules.lixFromNixpkgs
-
-          ./modules/common.nix
-          ./modules/plasma.nix
-          ./modules/browsers.nix
-          ./modules/gamedev.nix
-          ./modules/utils.nix
-	  ./modules/editors.nix
-          ./modules/nvidia.nix
-          ./modules/zsh.nix
-          ./modules/printing.nix
           ./hosts/${hostname}/configuration.nix
         ];
       };
@@ -58,13 +44,5 @@
 
       formatter.${system} = (mkPkgs system).nixpkgs-fmt;
     };
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  #stateVersion = "25.11"; # Did you read the comment?
 
 }

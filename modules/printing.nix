@@ -18,7 +18,11 @@
 
   services.ipp-usb.enable = true;
 
-  hardware.sane.enable = true;
+  hardware.sane = {
+    enable = true;
+    extraBackends = [ pkgs.sane-airscan ];
+    disabledDefaultBackends = [ "escl" ];
+  };
 
   environment.systemPackages = with pkgs; [
     system-config-printer

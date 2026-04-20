@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 
 {
   programs.nix-ld = {
@@ -26,30 +26,52 @@
   };
 
   programs.steam.enable = true;
-
   security.rtkit.enable = true;
-
-  services.pipewire = {
+  programs.gamemode.enable = true;
+  programs.git = {
     enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-    jack.enable = true;
+    package = pkgs.gitFull;
+
+    lfs = {
+      enable = true;
+      skipSmudge = true;
+    };
   };
 
-  programs.gamemode.enable = true;
-
   environment.systemPackages = with pkgs; [
+    git
+    gh
+    bash
+    curl
+    wget
+    fzf
+    fd
+    ripgrep
     git-lfs
     unzip
     p7zip
     file
     which
+    vim
+    kitty
+    ghostty
+
+    pciutils
+    usbutils
+    lact
+    btop
 
     vulkan-tools
     mesa-demos
     pavucontrol
     mangohud
     steam-run
+
+    emacs
+    neovim
+    jetbrains.rider
+    jetbrains.clion
+    jetbrains.rust-rover
+    zed-editor-fhs
   ];
 }

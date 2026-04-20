@@ -12,14 +12,16 @@
     foliate
     easyeffects
     opentabletdriver
-    pciutils
-    usbutils
-    lact
-    btop
     calibre
     mpv
     cider-2
     wireshark
     google-chrome
+    hyfetch
+    gparted
+    ffmpeg
+    flatpak
+    libreoffice-fresh
+    vlc
   ];
 }
