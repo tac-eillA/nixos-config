@@ -17,7 +17,7 @@
     heroic
     steam
     steam-run
-    wineWowPackages.staging
+    wineWow64Packages.staging
   ];
   programs = {
     gamemode.enable = true;
