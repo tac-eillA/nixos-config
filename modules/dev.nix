@@ -72,5 +72,6 @@
     jetbrains.clion
     jetbrains.rust-rover
     zed-editor-fhs
+    opencode-desktop
   ];
 }
