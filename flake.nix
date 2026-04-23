@@ -36,7 +36,9 @@
         demeter = mkHost "demeter";
         hera = mkHost "hera";
         hestia = mkHost "pythia";
-	apollo = mkHost "apollo";
+        apollo = mkHost "apollo";
+        forgejo = mkHost "forgejo";
+        netbird = mkHost "netbird";
       };
 
       devShells.${system}.unreal =
