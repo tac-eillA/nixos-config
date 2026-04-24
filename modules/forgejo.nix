@@ -65,6 +65,6 @@ in
 
   environment.systemPackages = with pkgs; [
     forgejo-cli
-    forgejo
+    forgejo-lts
   ];
 }
