@@ -20,7 +20,7 @@ in
       server = {
         DOMAIN = domain;
         ROOT_URL = "http://${domain}/";
-        HTTP_ADDR = "127.0.0.1";
+        HTTP_ADDR = "0.0.0.0";
         HTTP_PORT = httpPort;
 
         START_SSH_SERVER = false;
@@ -60,6 +60,7 @@ in
     allowedTCPPorts = [
       20
       80
+      443
       3000
     ];
   };
