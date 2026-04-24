@@ -93,5 +93,6 @@ in
   environment.systemPackages = with pkgs; [
     podman
     podman-compose
+    openssl
   ];
 }
