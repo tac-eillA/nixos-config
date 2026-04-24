@@ -3,6 +3,7 @@
 
 let
   domain = "netbird.allie.sh";
+  authDomain = "auth.allie.sh";
   coturnPasswordFile = "/var/lib/secrets/netbird-coturn-password";
 in
 {
@@ -20,9 +21,7 @@ in
     };
 
     management = {
-      # Replace this with your IdP OIDC discovery URL.
-      # Examples: Authentik, Keycloak, Zitadel, Auth0, etc.
-      #oidcConfigEndpoint = "https://auth.allie.sh/application/o/netbird/.well-known/openid-configuration";
+      oidcConfigEndpoint = "https://${authDomain}/application/o/netbird/.well-known/openid-configuration";
 
       settings = {
         TURNConfig = {
@@ -36,6 +35,14 @@ in
           ];
         };
       };
+    };
+
+    dashboard.settings = {
+      AUTH_AUTHORITY = "https://${authDomain}/application/o/netbird/";
+      AUTH_REDIRECT_URI = "/auth";
+      AUTH_SILENT_REDIRECT_URI = "/silent-auth";
+      AUTH_SUPPORTED_SCOPES = "openid profile email offline_access api";
+      NETBIRD_TOKEN_SOURCE = "accessToken";
     };
   };
 
