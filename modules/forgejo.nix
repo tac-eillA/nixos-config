@@ -8,7 +8,7 @@ in
 {
   services.forgejo = {
     enable = true;
-    package = pkgs.forgejo-lts;
+    package = pkgs.forgejo;
 
     database = {
       type = "postgres";
@@ -65,6 +65,6 @@ in
 
   environment.systemPackages = with pkgs; [
     forgejo-cli
-    forgejo-lts
+    forgejo
   ];
 }
