@@ -6,11 +6,13 @@ let
   authDomain = "auth.allie.sh";
   secretsDir = "/var/lib/netbird-secrets";
   coturnPasswordFile = "${secretsDir}/netbird-coturn-password";
+  dataStoreEncryptionKeyFile = "${secretsDir}/netbird-datastore-encryption-key";
   clientId = "2RkZ5u5DvOtxGde2MBUPjb28UqUeJfGEZ4jx22Js";
 in
 {
   services.qemuGuest.enable = true;
   services.openssh.enable = true;
+  services.netbird.enable = lib.mkForce false;
   systemd.tmpfiles.rules = [
     "d ${secretsDir} 0750 root turnserver -"
   ];
@@ -31,6 +33,8 @@ in
       oidcConfigEndpoint = "https://${authDomain}/application/o/netbird/.well-known/openid-configuration";
 
       settings = {
+        DataStoreEncryptionKey._secret = dataStoreEncryptionKeyFile;
+
         DeviceAuthorizationFlow.ProviderConfig = {
           Audience = clientId;
           ClientID = clientId;
