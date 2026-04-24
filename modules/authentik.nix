@@ -86,6 +86,7 @@ in
   };
 
   services.openssh.enable = true;
+  services.qemuGuest.enable = true;
 
   networking.firewall = {
     enable = true;
