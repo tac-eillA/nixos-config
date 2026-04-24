@@ -6,6 +6,7 @@ let
   coturnPasswordFile = "/var/lib/secrets/netbird-coturn-password";
 in
 {
+  services.qemuGuest.enable = true;
   services.netbird.server = {
     enable = true;
     enableNginx = false;

@@ -8,6 +8,7 @@ let
   haosHost = "haos.netbird.allie.sh";
 in
 {
+  services.qemuGuest.enable = true;
   services.caddy = {
     enable = true;
 
