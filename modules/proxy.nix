@@ -36,58 +36,58 @@ in
     };
 
   services.openssh.enable = true;
-  services.caddy = {
-    enable = true;
+  # services.caddy = {
+  #   enable = true;
 
-    # Optional, but useful for ACME / Let's Encrypt account notices.
-    email = "email@allie.is";
+  #   # Optional, but useful for ACME / Let's Encrypt account notices.
+  #   email = "email@allie.is";
 
-    virtualHosts = {
-      "git.${domain}" = {
-        extraConfig = ''
-          encode gzip zstd
+  #   virtualHosts = {
+  #     "git.${domain}" = {
+  #       extraConfig = ''
+  #         encode gzip zstd
 
-          reverse_proxy http://${forgejoHost}:3000 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-          }
-        '';
-      };
+  #         reverse_proxy http://${forgejoHost}:3000 {
+  #           header_up X-Real-IP {remote_host}
+  #           header_up X-Forwarded-Proto {scheme}
+  #         }
+  #       '';
+  #     };
 
-      "netbird.${domain}" = {
-        extraConfig = ''
-          encode gzip zstd
+  #     "netbird.${domain}" = {
+  #       extraConfig = ''
+  #         encode gzip zstd
 
-          reverse_proxy http://${netbirdHost}:80 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-          }
-        '';
-      };
+  #         reverse_proxy http://${netbirdHost}:80 {
+  #           header_up X-Real-IP {remote_host}
+  #           header_up X-Forwarded-Proto {scheme}
+  #         }
+  #       '';
+  #     };
 
-      "haos.${domain}" = {
-        extraConfig = ''q
-          encode gzip zstd
+  #     "haos.${domain}" = {
+  #       extraConfig = ''q
+  #         encode gzip zstd
 
-          reverse_proxy http://${haosHost}:8123 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-          }
-        '';
-      };
+  #         reverse_proxy http://${haosHost}:8123 {
+  #           header_up X-Real-IP {remote_host}
+  #           header_up X-Forwarded-Proto {scheme}
+  #         }
+  #       '';
+  #     };
 
-      "auth.${domain}" = {
-        extraConfig = ''
-          encode gzip zstd
+  #     "auth.${domain}" = {
+  #       extraConfig = ''
+  #         encode gzip zstd
 
-          reverse_proxy http://${authHost}:9000 {
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-Proto {scheme}
-          }
-        '';
-      };
-    };
-  };
+  #         reverse_proxy http://${authHost}:9000 {
+  #           header_up X-Real-IP {remote_host}
+  #           header_up X-Forwarded-Proto {scheme}
+  #         }
+  #       '';
+  #     };
+  #   };
+  # };
 
   networking.firewall = {
     enable = true;
