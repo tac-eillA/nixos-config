@@ -63,5 +63,6 @@ in
 
   environment.systemPackages = with pkgs; [
     netbird
+    netbird-ui
   ];
 }
