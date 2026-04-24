@@ -3,7 +3,7 @@
 let
   cfg = config.services.forgejo;
   domain = "git.allie.sh";
-  httpPort = 3000;
+  httpsPort = 3000;
 in
 {
   services.forgejo = {
@@ -19,9 +19,9 @@ in
     settings = {
       server = {
         DOMAIN = domain;
-        ROOT_URL = "http://${domain}/";
-        HTTP_ADDR = "127.0.0.1";
-        HTTP_PORT = httpPort;
+        ROOT_URL = "https://${domain}/";
+        HTTPS_ADDR = "0.0.0.0";
+        HTTPS_PORT = httpPort;
 
         START_SSH_SERVER = false;
         SSH_PORT = lib.head config.services.openssh.ports;
