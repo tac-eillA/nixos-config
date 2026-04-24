@@ -47,7 +47,7 @@ in
           };
 
           ExtraConfig = {
-            Username = "allison";
+            Username = "Netbird";
             Password._secret = authentikServiceAccountPasswordFile;
           };
         };
