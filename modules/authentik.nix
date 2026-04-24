@@ -17,6 +17,7 @@ in
     authentik-postgres = {
       image = "docker.io/library/postgres:16-alpine";
       autoStart = true;
+      extraOptions = [ "--network=authentik" ];
       environment = {
         POSTGRES_DB = "authentik";
         POSTGRES_USER = "authentik";
@@ -30,6 +31,7 @@ in
     authentik-redis = {
       image = "docker.io/library/redis:alpine";
       autoStart = true;
+      extraOptions = [ "--network=authentik" ];
       cmd = [ "redis-server" "--save" "60" "1" "--loglevel" "warning" ];
       volumes = [
         "authentik-redis:/data"
@@ -39,6 +41,7 @@ in
     authentik-server = {
       image = "ghcr.io/goauthentik/server:latest";
       autoStart = true;
+      extraOptions = [ "--network=authentik" ];
 
       ports = [
         "9000:9000"
@@ -65,6 +68,7 @@ in
     authentik-worker = {
       image = "ghcr.io/goauthentik/server:latest";
       autoStart = true;
+      extraOptions = [ "--network=authentik" ];
 
       environment = {
         AUTHENTIK_REDIS__HOST = "authentik-redis";
@@ -84,6 +88,25 @@ in
       cmd = [ "worker" ];
     };
   };
+
+  systemd.services.podman-create-authentik-network = {
+      description = "Create Podman network for Authentik";
+      serviceConfig.Type = "oneshot";
+
+      wantedBy = [ "multi-user.target" ];
+
+      before = [
+        "podman-authentik-postgres.service"
+        "podman-authentik-redis.service"
+        "podman-authentik-server.service"
+        "podman-authentik-worker.service"
+      ];
+
+      script = ''
+        ${pkgs.podman}/bin/podman network exists authentik || \
+        ${pkgs.podman}/bin/podman network create authentik
+      '';
+    };
 
   services.openssh.enable = true;
 
