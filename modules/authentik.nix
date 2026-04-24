@@ -44,7 +44,7 @@ in
     };
 
     authentik-server = {
-      image = "ghcr.io/goauthentik/server:latest";
+      image = "ghcr.io/goauthentik/server:2026.2.2";
       autoStart = true;
       extraOptions = [ "--network=authentik" ];
 
@@ -71,7 +71,7 @@ in
     };
 
     authentik-worker = {
-      image = "ghcr.io/goauthentik/server:latest";
+      image = "ghcr.io/goauthentik/server:2026.2.2";
       autoStart = true;
       extraOptions = [ "--network=authentik" ];
 
