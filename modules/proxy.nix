@@ -22,7 +22,7 @@ in
         extraConfig = ''
           encode gzip zstd
 
-          reverse_proxy https://${forgejoHost}:3000 {
+          reverse_proxy http://${forgejoHost}:3000 {
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-Proto {scheme}
           }
@@ -33,7 +33,7 @@ in
         extraConfig = ''
           encode gzip zstd
 
-          reverse_proxy https://${netbirdHost}:80 {
+          reverse_proxy http://${netbirdHost}:80 {
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-Proto {scheme}
           }
@@ -44,7 +44,7 @@ in
         extraConfig = ''
           encode gzip zstd
 
-          reverse_proxy https://${haosHost}:8123 {
+          reverse_proxy http://${haosHost}:8123 {
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-Proto {scheme}
           }
@@ -55,7 +55,7 @@ in
         extraConfig = ''
           encode gzip zstd
 
-          reverse_proxy https://${authHost}:9000 {
+          reverse_proxy http://${authHost}:9000 {
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-Proto {scheme}
           }
