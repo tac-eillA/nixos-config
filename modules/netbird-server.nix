@@ -9,7 +9,7 @@ in
   services.qemuGuest.enable = true;
   services.netbird.server = {
     enable = true;
-    enableNginx = false;
+    enableNginx = true;
 
     domain = domain;
 
@@ -22,7 +22,7 @@ in
     management = {
       # Replace this with your IdP OIDC discovery URL.
       # Examples: Authentik, Keycloak, Zitadel, Auth0, etc.
-      oidcConfigEndpoint = "https://auth.allie.sh/application/o/netbird/.well-known/openid-configuration";
+      #oidcConfigEndpoint = "https://auth.allie.sh/application/o/netbird/.well-known/openid-configuration";
 
       settings = {
         TURNConfig = {
