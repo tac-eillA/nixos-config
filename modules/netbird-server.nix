@@ -5,8 +5,7 @@ let
   domain = "netbird.allie.sh";
   authDomain = "auth.allie.sh";
   coturnPasswordFile = "/home/allison/.netbird/netbird-coturn-password";
-  clientIdFile = "${builtins.dirOf coturnPasswordFile}/netbird-client-id";
-  clientId = lib.removeSuffix "\n" (builtins.readFile clientIdFile);
+  clientId = "/home/allison/.netbird/netbird-client-id";
 in
 {
   services.qemuGuest.enable = true;
