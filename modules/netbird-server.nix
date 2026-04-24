@@ -8,6 +8,7 @@ let
 in
 {
   services.qemuGuest.enable = true;
+  services.openssh.enable = true;
   services.netbird.server = {
     enable = true;
     enableNginx = true;
@@ -50,6 +51,7 @@ in
     enable = true;
 
     allowedTCPPorts = [
+      22
       80
       443
       33073 # NetBird signal/management depending on proxy layout
@@ -71,5 +73,6 @@ in
   environment.systemPackages = with pkgs; [
     netbird
     netbird-ui
+    openssl
   ];
 }
