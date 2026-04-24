@@ -19,15 +19,15 @@ in
           ingress = {
             "git.allie.sh" = {
               service = "http://${forgejoHost}:3000";
-              path = "/*.(jpg|png|css|js)";
+              #path = "/*.(jpg|png|css|js)";
             };
             "netbird.allie.sh" = {
               service = "http://${netbirdHost}:80";
-              path = "/*.(jpg|png|css|js)";
+              #path = "/*.(jpg|png|css|js)";
             };
             "auth.allie.sh" = {
-              service = "10.254.1.163";
-              path = "/*.(jpg|png|css|js)";
+              service = "http://${authHost}:9000";
+              #path = "/*.(jpg|png|css|js)";
             };
           };
           default = "http_status:404";
