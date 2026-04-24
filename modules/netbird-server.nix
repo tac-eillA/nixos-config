@@ -4,12 +4,18 @@
 let
   domain = "netbird.allie.sh";
   authDomain = "auth.allie.sh";
-  coturnPasswordFile = "/home/allison/.netbird/netbird-coturn-password";
-  clientId = "/home/allison/.netbird/netbird-client-id";
+  secretsDir = "/var/lib/netbird-secrets";
+  coturnPasswordFile = "${secretsDir}/netbird-coturn-password";
+  clientIdFile = "${secretsDir}/netbird-client-id";
+  clientId = lib.removeSuffix "\n" (builtins.readFile clientIdFile);
 in
 {
   services.qemuGuest.enable = true;
   services.openssh.enable = true;
+  systemd.tmpfiles.rules = [
+    "d ${secretsDir} 0750 root turnserver -"
+  ];
+
   services.netbird.server = {
     enable = true;
     enableNginx = true;
