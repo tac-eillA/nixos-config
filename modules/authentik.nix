@@ -85,9 +85,14 @@ in
     };
   };
 
+  services.openssh.enable = true;
+
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 9000 ];
+    allowedTCPPorts = [
+      9000
+      22
+    ];
   };
 
   environment.systemPackages = with pkgs; [
