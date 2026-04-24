@@ -10,7 +10,31 @@ let
 in
 {
   services.qemuGuest.enable = true;
-  services.cloudflared.enable = true;
+
+  services.cloudflared = {
+      enable = true;
+      tunnels = {
+        "8eaa3da2-b2ae-4cbf-86f0-73bda6de85bd" = {
+          credentialsFile = "${config.sops.secrets.cloudflared-creds.path}";
+          ingress = {
+            "git.allie.sh" = {
+              service = "http://${forgejoHost}:3000";
+              path = "/*.(jpg|png|css|js)";
+            };
+            "netbird.allie.sh" = {
+              service = "http://${netbirdHost}:80";
+              path = "/*.(jpg|png|css|js)";
+            };
+            "auth.allie.sh" = {
+              service = "10.254.1.163";
+              path = "/*.(jpg|png|css|js)";
+            };
+          };
+          default = "http_status:404";
+        };
+      };
+    };
+
   services.openssh.enable = true;
   services.caddy = {
     enable = true;
