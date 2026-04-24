@@ -128,12 +128,16 @@ in
       locations."/" = {
         proxyPass = authentikUpstream;
         recommendedProxySettings = true;
+        extraConfig = ''
+          proxy_set_header X-Forwarded-Proto https;
+        '';
       };
 
       locations."= /application/o/netbird/.well-known/openid-configuration" = {
         proxyPass = "${authentikUpstream}/application/o/netbird/.well-known/openid-configuration";
         recommendedProxySettings = true;
         extraConfig = ''
+          proxy_set_header X-Forwarded-Proto https;
           add_header Access-Control-Allow-Origin "https://netbird.allie.sh" always;
           add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
           add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
@@ -147,6 +151,7 @@ in
         proxyPass = "${authentikUpstream}/application/o/netbird/jwks/";
         recommendedProxySettings = true;
         extraConfig = ''
+          proxy_set_header X-Forwarded-Proto https;
           add_header Access-Control-Allow-Origin "https://netbird.allie.sh" always;
           add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
           add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;

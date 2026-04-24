@@ -35,6 +35,10 @@ in
       settings = {
         DataStoreEncryptionKey._secret = dataStoreEncryptionKeyFile;
 
+        IdpManagerConfig.ClientConfig = {
+          ClientID = clientId;
+        };
+
         DeviceAuthorizationFlow.ProviderConfig = {
           Audience = clientId;
           ClientID = clientId;
