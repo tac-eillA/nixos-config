@@ -6,6 +6,7 @@ let
   forgejoHost = "git.netbird.allie.sh";
   netbirdHost = "host.netbird.allie.sh";
   haosHost = "haos.netbird.allie.sh";
+  authHost = "auth.netbird.allie.sh";
 in
 {
   services.qemuGuest.enable = true;
@@ -43,6 +44,17 @@ in
           encode gzip zstd
 
           reverse_proxy http://${haosHost}:8123 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+          }
+        '';
+      };
+
+      "auth.${domain}" = {
+        extraConfig = ''
+          encode gzip zstd
+
+          reverse_proxy http://${authHost}:9000 {
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-Proto {scheme}
           }
