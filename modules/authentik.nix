@@ -89,24 +89,33 @@ in
     };
   };
 
-  systemd.services.podman-create-authentik-network = {
-      description = "Create Podman network for Authentik";
-      serviceConfig.Type = "oneshot";
+  systemd.services.authentik-podman-network = {
+    description = "Create Authentik Podman network";
 
-      wantedBy = [ "multi-user.target" ];
+    wantedBy = [
+      "podman-authentik-postgres.service"
+      "podman-authentik-redis.service"
+      "podman-authentik-server.service"
+      "podman-authentik-worker.service"
+    ];
 
-      before = [
-        "podman-authentik-postgres.service"
-        "podman-authentik-redis.service"
-        "podman-authentik-server.service"
-        "podman-authentik-worker.service"
-      ];
+    before = [
+      "podman-authentik-postgres.service"
+      "podman-authentik-redis.service"
+      "podman-authentik-server.service"
+      "podman-authentik-worker.service"
+    ];
 
-      script = ''
-        ${pkgs.podman}/bin/podman network exists authentik || \
-        ${pkgs.podman}/bin/podman network create authentik
-      '';
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
     };
+
+    script = ''
+      ${pkgs.podman}/bin/podman network exists authentik || \
+      ${pkgs.podman}/bin/podman network create authentik
+    '';
+  };
 
   services.openssh.enable = true;
   services.qemuGuest.enable = true;
