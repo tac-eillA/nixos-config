@@ -2,7 +2,12 @@
 
 let
   domain = "auth.allie.sh";
-
+  authentikContainers = [
+    "podman-authentik-postgres.service"
+    "podman-authentik-redis.service"
+    "podman-authentik-server.service"
+    "podman-authentik-worker.service"
+  ];
   authentikEnv = "/var/lib/secrets/authentik.env";
 in
 {
@@ -89,14 +94,6 @@ in
     };
   };
 
-  let
-  authentikContainers = [
-    "podman-authentik-postgres.service"
-    "podman-authentik-redis.service"
-    "podman-authentik-server.service"
-    "podman-authentik-worker.service"
-  ];
-in
 {
   systemd.services.authentik-podman-network = {
     description = "Create Authentik Podman network";
