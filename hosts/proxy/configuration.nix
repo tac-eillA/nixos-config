@@ -4,9 +4,9 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/profiles/server.nix
-    ../../modules/forgejo.nix
+    ../../modules/proxy.nix
   ];
 
-  networking.hostName = "forgejo";
+  networking.hostName = "proxy";
 
 }
