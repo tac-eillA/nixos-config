@@ -7,6 +7,7 @@ let
   secretsDir = "/var/lib/netbird-secrets";
   coturnPasswordFile = "${secretsDir}/netbird-coturn-password";
   dataStoreEncryptionKeyFile = "${secretsDir}/netbird-datastore-encryption-key";
+  authentikServiceAccountPasswordFile = "${secretsDir}/authentik-netbird-app-password";
   clientId = "2RkZ5u5DvOtxGde2MBUPjb28UqUeJfGEZ4jx22Js";
 in
 {
@@ -35,8 +36,20 @@ in
       settings = {
         DataStoreEncryptionKey._secret = dataStoreEncryptionKeyFile;
 
-        IdpManagerConfig.ClientConfig = {
-          ClientID = clientId;
+        IdpManagerConfig = {
+          ManagerType = "authentik";
+
+          ClientConfig = {
+            Issuer = "https://${authDomain}/";
+            TokenEndpoint = "https://${authDomain}/application/o/token/";
+            ClientID = clientId;
+            GrantType = "password";
+          };
+
+          ExtraConfig = {
+            Username = "Netbird";
+            Password._secret = authentikServiceAccountPasswordFile;
+          };
         };
 
         DeviceAuthorizationFlow.ProviderConfig = {
