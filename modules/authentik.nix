@@ -2,6 +2,7 @@
 
 let
   domain = "auth.allie.sh";
+  authentikUpstream = "http://127.0.0.1:9001";
   authentikContainers = [
     "podman-authentik-postgres.service"
     "podman-authentik-redis.service"
@@ -49,7 +50,7 @@ in
       extraOptions = [ "--network=authentik" ];
 
       ports = [
-        "9000:9000"
+        "127.0.0.1:9001:9000"
       ];
 
       environment = {
@@ -113,6 +114,49 @@ in
 
   services.openssh.enable = true;
   services.qemuGuest.enable = true;
+  services.nginx = {
+    enable = true;
+
+    virtualHosts.${domain} = {
+      listen = [
+        {
+          addr = "0.0.0.0";
+          port = 9000;
+        }
+      ];
+
+      locations."/" = {
+        proxyPass = authentikUpstream;
+        recommendedProxySettings = true;
+      };
+
+      locations."= /application/o/netbird/.well-known/openid-configuration" = {
+        proxyPass = "${authentikUpstream}/application/o/netbird/.well-known/openid-configuration";
+        recommendedProxySettings = true;
+        extraConfig = ''
+          add_header Access-Control-Allow-Origin "https://netbird.allie.sh" always;
+          add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
+          add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
+          if ($request_method = OPTIONS) {
+            return 204;
+          }
+        '';
+      };
+
+      locations."= /application/o/netbird/jwks/" = {
+        proxyPass = "${authentikUpstream}/application/o/netbird/jwks/";
+        recommendedProxySettings = true;
+        extraConfig = ''
+          add_header Access-Control-Allow-Origin "https://netbird.allie.sh" always;
+          add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
+          add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
+          if ($request_method = OPTIONS) {
+            return 204;
+          }
+        '';
+      };
+    };
+  };
 
   networking.firewall = {
     enable = true;
