@@ -15,7 +15,7 @@ in
       enable = true;
       tunnels = {
         "8eaa3da2-b2ae-4cbf-86f0-73bda6de85bd" = {
-          credentialsFile = "~/.cloudflared/cert.pem";
+          credentialsFile = "/home/allison/.cloudflared";
           ingress = {
             "git.allie.sh" = {
               service = "http://${forgejoHost}:3000";
