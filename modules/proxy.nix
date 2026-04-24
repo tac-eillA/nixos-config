@@ -72,5 +72,6 @@ in
 
   environment.systemPackages = with pkgs; [
     caddy
+    cloudflared
   ];
 }
