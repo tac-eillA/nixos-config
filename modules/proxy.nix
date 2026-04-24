@@ -16,6 +16,7 @@ in
       tunnels = {
         "8eaa3da2-b2ae-4cbf-86f0-73bda6de85bd" = {
           credentialsFile = "/home/allison/.cloudflared/8eaa3da2-b2ae-4cbf-86f0-73bda6de85bd.json";
+          warp-routing.enabled = true;
           ingress = {
             "git.allie.sh" = {
               service = "http://${forgejoHost}:3000";
