@@ -7,9 +7,9 @@
     ../../modules/network.nix
     ../../modules/dev-min.nix
     #../../modules/gaming.nix
-    ../../modules/peripherals.nix
+    #../../modules/peripherals.nix
     #../../modules/fonts.nix
-    ../../modules/printing.nix
+    #../../modules/printing.nix
     #../../modules/plasma.nix
     ../../modules/services.nix
     ../../modules/shell.nix

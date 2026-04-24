@@ -9,10 +9,6 @@
   # firewall
   networking.firewall.enable = true;
 
-  # tailscale
-  services.tailscale.enable = true;
-  services.tailscale.useRoutingFeatures = "both";
-
   services.fwupd.enable = true;
 
   services.pipewire = {
