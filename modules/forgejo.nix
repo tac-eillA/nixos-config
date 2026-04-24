@@ -52,7 +52,7 @@ in
   };
 
   services.postgresql.enable = true;
-
+  services.qemuGuest.enable = true;
   services.openssh.enable = true;
 
   networking.firewall = {
