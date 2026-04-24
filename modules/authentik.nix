@@ -2,64 +2,96 @@
 
 let
   domain = "auth.allie.sh";
-  listenPort = 9000;
 
-  # Create this manually for now:
-  # sudo mkdir -p /var/lib/secrets
-  # sudo openssl rand -base64 60 | sudo tee /var/lib/secrets/authentik-env
-  # sudo chmod 600 /var/lib/secrets/authentik-env
-  #
-  # Then edit the file so it contains:
-  # AUTHENTIK_SECRET_KEY=<generated-secret>
-  envFile = "/var/lib/secrets/authentik-env";
+  authentikEnv = "/var/lib/secrets/authentik.env";
 in
 {
-  services.authentik = {
+  virtualisation.oci-containers.backend = "podman";
+
+  virtualisation.podman = {
     enable = true;
+    dockerCompat = true;
+  };
 
-    environmentFile = envFile;
-
-    settings = {
-      disable_startup_analytics = true;
-      avatars = "initials";
-
-      web = {
-        path = "https://${domain}/";
+  virtualisation.oci-containers.containers = {
+    authentik-postgres = {
+      image = "docker.io/library/postgres:16-alpine";
+      autoStart = true;
+      environment = {
+        POSTGRES_DB = "authentik";
+        POSTGRES_USER = "authentik";
       };
+      environmentFiles = [ authentikEnv ];
+      volumes = [
+        "authentik-postgres:/var/lib/postgresql/data"
+      ];
     };
-  };
 
-  services.redis.servers.authentik = {
-    enable = true;
-  };
+    authentik-redis = {
+      image = "docker.io/library/redis:alpine";
+      autoStart = true;
+      cmd = [ "redis-server" "--save" "60" "1" "--loglevel" "warning" ];
+      volumes = [
+        "authentik-redis:/data"
+      ];
+    };
 
-  services.postgresql = {
-    enable = true;
+    authentik-server = {
+      image = "ghcr.io/goauthentik/server:latest";
+      autoStart = true;
 
-    ensureDatabases = [
-      "authentik"
-    ];
+      ports = [
+        "9000:9000"
+      ];
 
-    ensureUsers = [
-      {
-        name = "authentik";
-        ensureDBOwnership = true;
-      }
-    ];
+      environment = {
+        AUTHENTIK_REDIS__HOST = "authentik-redis";
+        AUTHENTIK_POSTGRESQL__HOST = "authentik-postgres";
+        AUTHENTIK_POSTGRESQL__USER = "authentik";
+        AUTHENTIK_POSTGRESQL__NAME = "authentik";
+        AUTHENTIK_ERROR_REPORTING__ENABLED = "false";
+      };
+
+      environmentFiles = [ authentikEnv ];
+
+      dependsOn = [
+        "authentik-postgres"
+        "authentik-redis"
+      ];
+
+      cmd = [ "server" ];
+    };
+
+    authentik-worker = {
+      image = "ghcr.io/goauthentik/server:latest";
+      autoStart = true;
+
+      environment = {
+        AUTHENTIK_REDIS__HOST = "authentik-redis";
+        AUTHENTIK_POSTGRESQL__HOST = "authentik-postgres";
+        AUTHENTIK_POSTGRESQL__USER = "authentik";
+        AUTHENTIK_POSTGRESQL__NAME = "authentik";
+        AUTHENTIK_ERROR_REPORTING__ENABLED = "false";
+      };
+
+      environmentFiles = [ authentikEnv ];
+
+      dependsOn = [
+        "authentik-postgres"
+        "authentik-redis"
+      ];
+
+      cmd = [ "worker" ];
+    };
   };
 
   networking.firewall = {
     enable = true;
-
-    # Expose only to your reverse proxy / internal LAN.
-    allowedTCPPorts = [
-      listenPort
-    ];
+    allowedTCPPorts = [ 9000 ];
   };
 
   environment.systemPackages = with pkgs; [
-    authentik
-    postgresql
-    redis
+    podman
+    podman-compose
   ];
 }
