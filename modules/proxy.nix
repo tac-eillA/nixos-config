@@ -21,7 +21,7 @@ in
         extraConfig = ''
           encode gzip zstd
 
-          reverse_proxy https://${forgejoHost}:3000 {
+          reverse_proxy http://${forgejoHost}:3000 {
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-Proto {scheme}
           }

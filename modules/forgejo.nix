@@ -19,9 +19,9 @@ in
     settings = {
       server = {
         DOMAIN = domain;
-        ROOT_URL = "https://${domain}/";
-        HTTPS_ADDR = "0.0.0.0";
-        HTTPS_PORT = httpPort;
+        ROOT_URL = "http://${domain}/";
+        HTTP_ADDR = "0.0.0.0";
+        HTTP_PORT = httpPort;
 
         START_SSH_SERVER = false;
         SSH_PORT = lib.head config.services.openssh.ports;
