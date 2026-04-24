@@ -4,9 +4,9 @@ let
   domain = "allie.sh";
 
   forgejoHost = "10.254.1.75";
-  netbirdHost = "host.netbird.allie.sh";
-  haosHost = "haos.netbird.allie.sh";
-  authHost = "auth.netbird.allie.sh";
+  netbirdHost = "10.254.1.170";
+  haosHost = "10.254.1.251";
+  authHost = "10.254.1.163";
 in
 {
   services.qemuGuest.enable = true;
