@@ -3,7 +3,7 @@
 let
   cfg = config.services.forgejo;
   domain = "git.allie.sh";
-  httpsPort = 3000;
+  httpPort = 3000;
 in
 {
   services.forgejo = {
