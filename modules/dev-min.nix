@@ -1,0 +1,32 @@
+{ pkgs, config, ... }:
+
+{
+  programs.git = {
+    enable = true;
+    package = pkgs.gitFull;
+
+    lfs = {
+      enable = true;
+    };
+  };
+
+  environment.systemPackages = with pkgs; [
+    git
+    gh
+    bash
+    curl
+    wget
+    fzf
+    fd
+    ripgrep
+    git-lfs
+    unzip
+    p7zip
+    file
+    which
+    vim
+    ghostty
+
+    neovim
+  ];
+}
