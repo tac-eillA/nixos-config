@@ -11,6 +11,7 @@ in
 {
   services.qemuGuest.enable = true;
   services.cloudflared.enable = true;
+  services.openssh.enable = true;
   services.caddy = {
     enable = true;
 
@@ -41,7 +42,7 @@ in
       };
 
       "haos.${domain}" = {
-        extraConfig = ''
+        extraConfig = ''q
           encode gzip zstd
 
           reverse_proxy http://${haosHost}:8123 {
@@ -69,6 +70,7 @@ in
     allowedTCPPorts = [
       443
       80
+      22
     ];
   };
 
