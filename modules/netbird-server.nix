@@ -1,10 +1,12 @@
 # modules/netbird-server.nix
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
   domain = "netbird.allie.sh";
   authDomain = "auth.allie.sh";
   coturnPasswordFile = "/home/allison/.netbird/netbird-coturn-password";
+  clientIdFile = "${builtins.dirOf coturnPasswordFile}/netbird-client-id";
+  clientId = lib.removeSuffix "\n" (builtins.readFile clientIdFile);
 in
 {
   services.qemuGuest.enable = true;
@@ -25,6 +27,20 @@ in
       oidcConfigEndpoint = "https://${authDomain}/application/o/netbird/.well-known/openid-configuration";
 
       settings = {
+        DeviceAuthorizationFlow.ProviderConfig = {
+          Audience = clientId;
+          ClientID = clientId;
+          Scope = "openid profile email offline_access api";
+          UseIDToken = false;
+        };
+
+        PKCEAuthorizationFlow.ProviderConfig = {
+          Audience = clientId;
+          ClientID = clientId;
+          Scope = "openid profile email offline_access api";
+          UseIDToken = false;
+        };
+
         TURNConfig = {
           Turns = [
             {
@@ -39,7 +55,9 @@ in
     };
 
     dashboard.settings = {
+      AUTH_AUDIENCE = clientId;
       AUTH_AUTHORITY = "https://${authDomain}/application/o/netbird/";
+      AUTH_CLIENT_ID = clientId;
       AUTH_REDIRECT_URI = "/auth";
       AUTH_SILENT_REDIRECT_URI = "/silent-auth";
       AUTH_SUPPORTED_SCOPES = "openid profile email offline_access api";
