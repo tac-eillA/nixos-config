@@ -39,6 +39,8 @@
         apollo = mkHost "apollo";
         forgejo = mkHost "forgejo";
         netbird = mkHost "netbird";
+        authentik = mkHost "authentik";
+        proxy = mkHost "proxy";
       };
 
       devShells.${system}.unreal =
