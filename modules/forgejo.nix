@@ -8,7 +8,7 @@ in
 {
   services.forgejo = {
     enable = true;
-    package = pkgs.forgejo-lts;
+    package = pkgs.forgejo;
 
     database = {
       type = "postgres";
@@ -20,7 +20,7 @@ in
       server = {
         DOMAIN = domain;
         ROOT_URL = "http://${domain}/";
-        HTTP_ADDR = "127.0.0.1";
+        HTTP_ADDR = "0.0.0.0";
         HTTP_PORT = httpPort;
 
         START_SSH_SERVER = false;
@@ -58,13 +58,15 @@ in
   networking.firewall = {
     enable = true;
     allowedTCPPorts = [
-      22
+      20
       80
+      443
+      3000
     ];
   };
 
   environment.systemPackages = with pkgs; [
     forgejo-cli
-    forgejo-lts
+    forgejo
   ];
 }

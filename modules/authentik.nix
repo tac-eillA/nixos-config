@@ -2,7 +2,12 @@
 
 let
   domain = "auth.allie.sh";
-
+  authentikContainers = [
+    "podman-authentik-postgres.service"
+    "podman-authentik-redis.service"
+    "podman-authentik-server.service"
+    "podman-authentik-worker.service"
+  ];
   authentikEnv = "/var/lib/secrets/authentik.env";
 in
 {
@@ -17,6 +22,7 @@ in
     authentik-postgres = {
       image = "docker.io/library/postgres:16-alpine";
       autoStart = true;
+      extraOptions = [ "--network=authentik" ];
       environment = {
         POSTGRES_DB = "authentik";
         POSTGRES_USER = "authentik";
@@ -30,6 +36,7 @@ in
     authentik-redis = {
       image = "docker.io/library/redis:alpine";
       autoStart = true;
+      extraOptions = [ "--network=authentik" ];
       cmd = [ "redis-server" "--save" "60" "1" "--loglevel" "warning" ];
       volumes = [
         "authentik-redis:/data"
@@ -37,8 +44,9 @@ in
     };
 
     authentik-server = {
-      image = "ghcr.io/goauthentik/server:latest";
+      image = "ghcr.io/goauthentik/server:2026.2.2";
       autoStart = true;
+      extraOptions = [ "--network=authentik" ];
 
       ports = [
         "9000:9000"
@@ -63,8 +71,9 @@ in
     };
 
     authentik-worker = {
-      image = "ghcr.io/goauthentik/server:latest";
+      image = "ghcr.io/goauthentik/server:2026.2.2";
       autoStart = true;
+      extraOptions = [ "--network=authentik" ];
 
       environment = {
         AUTHENTIK_REDIS__HOST = "authentik-redis";
@@ -84,14 +93,38 @@ in
       cmd = [ "worker" ];
     };
   };
+  systemd.services.authentik-podman-network = {
+    description = "Create Authentik Podman network";
+
+    wantedBy = [ "multi-user.target" ];
+    requiredBy = authentikContainers;
+    before = authentikContainers;
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+
+    	script = ''
+      		${pkgs.podman}/bin/podman network exists authentik || \
+      		${pkgs.podman}/bin/podman network create authentik
+    		'';
+  	};
+
+  services.openssh.enable = true;
+  services.qemuGuest.enable = true;
 
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 9000 ];
+    allowedTCPPorts = [
+      9000
+      22
+    ];
   };
 
   environment.systemPackages = with pkgs; [
     podman
     podman-compose
+    openssl
   ];
 }

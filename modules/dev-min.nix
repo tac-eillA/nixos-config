@@ -16,17 +16,9 @@
     bash
     curl
     wget
-    fzf
-    fd
-    ripgrep
     git-lfs
-    unzip
-    p7zip
-    file
     which
-    vim
     ghostty
-
     neovim
   ];
 }
