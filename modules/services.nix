@@ -7,7 +7,7 @@
   #services.nordvpn.enable = true;
 
   # firewall
-  networking.firewall.enable = false;
+  networking.firewall.enable = true;
 
   # tailscale
   services.tailscale.enable = true;
