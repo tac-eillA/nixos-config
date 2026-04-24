@@ -10,6 +10,7 @@ let
 in
 {
   services.qemuGuest.enable = true;
+  servuces.cloudflared.enable = true;
   services.caddy = {
     enable = true;
 
