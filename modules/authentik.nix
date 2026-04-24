@@ -93,8 +93,6 @@ in
       cmd = [ "worker" ];
     };
   };
-
-{
   systemd.services.authentik-podman-network = {
     description = "Create Authentik Podman network";
 
@@ -112,7 +110,6 @@ in
       		${pkgs.podman}/bin/podman network create authentik
     		'';
   	};
-	}
 
   services.openssh.enable = true;
   services.qemuGuest.enable = true;
