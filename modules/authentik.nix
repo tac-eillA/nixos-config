@@ -138,6 +138,9 @@ in
         recommendedProxySettings = true;
         extraConfig = ''
           proxy_set_header X-Forwarded-Proto https;
+          proxy_hide_header Access-Control-Allow-Origin;
+          proxy_hide_header Access-Control-Allow-Methods;
+          proxy_hide_header Access-Control-Allow-Headers;
           add_header Access-Control-Allow-Origin "https://netbird.allie.sh" always;
           add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
           add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
@@ -152,6 +155,9 @@ in
         recommendedProxySettings = true;
         extraConfig = ''
           proxy_set_header X-Forwarded-Proto https;
+          proxy_hide_header Access-Control-Allow-Origin;
+          proxy_hide_header Access-Control-Allow-Methods;
+          proxy_hide_header Access-Control-Allow-Headers;
           add_header Access-Control-Allow-Origin "https://netbird.allie.sh" always;
           add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
           add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
