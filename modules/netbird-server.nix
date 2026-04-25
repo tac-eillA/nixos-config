@@ -86,7 +86,7 @@ in
       AUTH_REDIRECT_URI = "/auth";
       AUTH_SILENT_REDIRECT_URI = "/silent-auth";
       AUTH_SUPPORTED_SCOPES = "openid profile email offline_access api";
-      NETBIRD_TOKEN_SOURCE = "accessToken";
+      NETBIRD_TOKEN_SOURCE = "idToken";
     };
   };
 
