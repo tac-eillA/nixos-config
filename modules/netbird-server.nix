@@ -56,14 +56,14 @@ in
           Audience = clientId;
           ClientID = clientId;
           Scope = "openid profile email offline_access api";
-          UseIDToken = false;
+          UseIDToken = true;
         };
 
         PKCEAuthorizationFlow.ProviderConfig = {
           Audience = clientId;
           ClientID = clientId;
           Scope = "openid profile email offline_access api";
-          UseIDToken = false;
+          UseIDToken = true;
         };
 
         TURNConfig = {
