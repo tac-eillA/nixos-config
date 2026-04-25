@@ -55,14 +55,14 @@ in
         DeviceAuthorizationFlow.ProviderConfig = {
           Audience = clientId;
           ClientID = clientId;
-          Scope = "openid profile email offline_access api";
+          Scope = "openid profile email";
           UseIDToken = true;
         };
 
         PKCEAuthorizationFlow.ProviderConfig = {
           Audience = clientId;
           ClientID = clientId;
-          Scope = "openid profile email offline_access api";
+          Scope = "openid profile email";
           UseIDToken = true;
         };
 
