@@ -3,7 +3,14 @@
 let
   cfg = config.services.forgejo;
   domain = "git.allie.sh";
+  authDomain = "auth.allie.sh";
   httpPort = 3000;
+  oidcSourceName = "Authentik";
+  oidcClientId = "forgejo";
+  oidcClientSecretFile = "/var/lib/secrets/forgejo-authentik-client-secret";
+  oidcDiscoveryUrl = "https://${authDomain}/application/o/forgejo/.well-known/openid-configuration";
+  forgejoExe = lib.getExe cfg.package;
+  psqlExe = "${config.services.postgresql.package}/bin/psql";
 in
 {
   services.forgejo = {
@@ -19,7 +26,7 @@ in
     settings = {
       server = {
         DOMAIN = domain;
-        ROOT_URL = "http://${domain}/";
+        ROOT_URL = "https://${domain}/";
         HTTP_ADDR = "0.0.0.0";
         HTTP_PORT = httpPort;
 
@@ -46,7 +53,7 @@ in
       };
 
       session = {
-        COOKIE_SECURE = false;
+        COOKIE_SECURE = true;
       };
     };
   };
@@ -54,6 +61,64 @@ in
   services.postgresql.enable = true;
   services.qemuGuest.enable = true;
   services.openssh.enable = true;
+
+  systemd.services.forgejo-authentik-oidc = {
+    description = "Ensure Forgejo Authentik OIDC source exists";
+    after = [
+      "forgejo.service"
+      "postgresql.service"
+    ];
+    requires = [
+      "forgejo.service"
+      "postgresql.service"
+    ];
+    wantedBy = [ "multi-user.target" ];
+    path = [
+      cfg.package
+      config.services.postgresql.package
+      pkgs.coreutils
+      pkgs.gnugrep
+      pkgs.gawk
+    ];
+    script = ''
+      set -euo pipefail
+
+      client_secret="$(<"$CREDENTIALS_DIRECTORY/client_secret")"
+      auth_id="$(${psqlExe} -Atqc "select id from login_source where name = '${oidcSourceName}' limit 1;" forgejo || true)"
+
+      common_args=(
+        --config "${cfg.customDir}/conf/app.ini"
+        --work-path "${cfg.stateDir}"
+        --name "${oidcSourceName}"
+        --provider openidConnect
+        --key "${oidcClientId}"
+        --secret "$client_secret"
+        --auto-discover-url "${oidcDiscoveryUrl}"
+        --scopes openid
+        --scopes profile
+        --scopes email
+        --skip-local-2fa
+      )
+
+      if [ -n "$auth_id" ]; then
+        ${forgejoExe} admin auth update-oauth --id "$auth_id" ''${common_args[@]}
+      else
+        ${forgejoExe} admin auth add-oauth ''${common_args[@]}
+      fi
+    '';
+    serviceConfig = {
+      Type = "oneshot";
+      User = cfg.user;
+      Group = cfg.group;
+      LoadCredential = [ "client_secret:${oidcClientSecretFile}" ];
+    };
+    environment = {
+      USER = cfg.user;
+      HOME = cfg.stateDir;
+      FORGEJO_WORK_DIR = cfg.stateDir;
+      FORGEJO_CUSTOM = cfg.customDir;
+    };
+  };
 
   networking.firewall = {
     enable = true;
