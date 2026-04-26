@@ -37,6 +37,8 @@
         hera = mkHost "hera";
         hestia = mkHost "pythia";
         apollo = mkHost "apollo";
+        dns1 = mkHost "dns1";
+        dns2 = mkHost "dns2";
         forgejo = mkHost "forgejo";
         netbird = mkHost "netbird";
         authentik = mkHost "authentik";
