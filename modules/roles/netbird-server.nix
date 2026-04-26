@@ -1,4 +1,4 @@
-# modules/netbird-server.nix
+# modules/roles/netbird-server.nix
 { lib, pkgs, ... }:
 
 let
@@ -98,7 +98,7 @@ in
       80
       443
       33073 # NetBird signal/management depending on proxy layout
-      3478  # TURN TCP fallback
+      3478 # TURN TCP fallback
     ];
 
     allowedUDPPorts = [

@@ -1,4 +1,4 @@
-# modules/printing.nix
+# modules/desktop/printing.nix
 { pkgs, ... }:
 
 {

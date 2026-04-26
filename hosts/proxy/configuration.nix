@@ -4,7 +4,7 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/profiles/server.nix
-    ../../modules/proxy.nix
+    ../../modules/roles/proxy.nix
   ];
 
   networking.hostName = "proxy";

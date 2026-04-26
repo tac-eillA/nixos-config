@@ -1,4 +1,4 @@
-# modules/zsh.nix
+# modules/core/shell.nix
 { pkgs, ... }:
 
 {

@@ -1,6 +1,6 @@
-{ inputs, pkg, ... }:
+{ ... }:
+
 {
-  #imports = [ inputs.nix-flatpak.nixosModules.nix-flatpak ];
   services = {
     flatpak = {
       enable = true;
@@ -14,10 +14,10 @@
       #  "com.discordapp.Discord"
       #  "com.core447.StreamController"
 
-        # Add other Flatpak IDs here, e.g., "org.mozilla.firefox"
+      # Add other Flatpak IDs here, e.g., "org.mozilla.firefox"
       #];
 
-      # Optional: Automatically update Flatpaks when you run nixos-rebuild swit ch
+      # Optional: Automatically update Flatpaks when you run nixos-rebuild switch
       #update.onActivation = true;
     };
   };

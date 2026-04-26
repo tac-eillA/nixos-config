@@ -4,7 +4,7 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/profiles/server.nix
-    ../../modules/forgejo.nix
+    ../../modules/roles/forgejo.nix
   ];
 
   networking.hostName = "forgejo";

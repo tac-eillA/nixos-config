@@ -4,7 +4,7 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/profiles/server.nix
-    ../../modules/technitium-dns.nix
+    ../../modules/roles/technitium-dns.nix
   ];
 
   networking.hostName = "dns2";

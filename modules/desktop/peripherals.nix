@@ -1,7 +1,6 @@
 { pkgs, ... }:
 
 {
-
   #hardware.magic-trackpad-quirks.enable = true;
 
   # fingerprint & login
@@ -23,5 +22,4 @@
     fwupd
     librepods
   ];
-
 }

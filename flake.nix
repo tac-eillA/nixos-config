@@ -13,10 +13,11 @@
       };
   };
 
-  outputs = { self, nixpkgs, nur,  ... }:
+  outputs = inputs@{ self, nixpkgs, nur, ... }:
     let
       system = "x86_64-linux";
       lib = nixpkgs.lib;
+      flatpakModule = inputs."nix-flatpak".nixosModules.nix-flatpak;
 
       mkPkgs = system: import nixpkgs {
         inherit system;
@@ -26,6 +27,7 @@
         inherit system;
         modules = [
           nur.modules.nixos.default
+          flatpakModule
           ./hosts/${hostname}/configuration.nix
         ];
       };

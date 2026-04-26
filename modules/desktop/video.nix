@@ -1,9 +1,5 @@
-# modules/nvidia.nix
-{
-  config,
-  pkgs,
-  ...
-}:
+# modules/desktop/video.nix
+{ config, pkgs, ... }:
 
 {
   nixpkgs.config.allowUnfree = true;

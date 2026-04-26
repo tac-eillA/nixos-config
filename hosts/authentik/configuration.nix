@@ -4,7 +4,7 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/profiles/server.nix
-    ../../modules/authentik.nix
+    ../../modules/roles/authentik.nix
   ];
 
   networking.hostName = "authentik";

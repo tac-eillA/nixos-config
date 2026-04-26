@@ -3,6 +3,7 @@
 {
   imports = [
     ./base.nix
-    ../dev/minimal.nix
+    ../desktop
+    ../packages
   ];
 }
