@@ -10,7 +10,6 @@
     ];
 
   environment.systemPackages = with pkgs; [
-    lutris
     heroic
     steam
     steam-run
