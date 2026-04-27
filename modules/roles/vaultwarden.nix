@@ -20,7 +20,7 @@ in
     config = {
       ROCKET_ADDRESS = "0.0.0.0";
       ROCKET_PORT = port;
-      SIGNUPS_ALLOWED = false;
+      SIGNUPS_ALLOWED = true;
       INVITATIONS_ALLOWED = true;
       WEBSOCKET_ENABLED = true;
       ROCKET_LOG = "critical";
