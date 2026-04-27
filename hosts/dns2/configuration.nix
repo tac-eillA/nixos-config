@@ -8,4 +8,6 @@
   ];
 
   networking.hostName = "dns2";
+
+  systemd.network.networks."10-uplink".address = [ "10.254.1.212/24" ];
 }

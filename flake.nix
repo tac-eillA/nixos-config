@@ -31,7 +31,8 @@
           ./hosts/${hostname}/configuration.nix
         ];
       };
-    in {
+    in
+    {
       nixosConfigurations = {
         athena = mkHost "athena";
         artemis = mkHost "artemis";

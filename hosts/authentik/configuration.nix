@@ -9,4 +9,6 @@
 
   networking.hostName = "authentik";
 
+  systemd.network.networks."10-uplink".address = [ "10.254.1.210/24" ];
+
 }

@@ -9,4 +9,6 @@
 
   networking.hostName = "netbird";
 
+  systemd.network.networks."10-uplink".address = [ "10.254.1.214/24" ];
+
 }

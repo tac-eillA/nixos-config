@@ -9,4 +9,6 @@
 
   networking.hostName = "proxy";
 
+  systemd.network.networks."10-uplink".address = [ "10.254.1.215/24" ];
+
 }
