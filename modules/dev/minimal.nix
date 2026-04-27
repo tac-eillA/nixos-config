@@ -13,5 +13,6 @@
     neovim
     openssl
     libargon2
+    tailscale
   ];
 }

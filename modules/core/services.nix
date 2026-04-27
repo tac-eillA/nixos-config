@@ -6,7 +6,7 @@
   services = {
     fwupd.enable = true;
     lact.enable = true;
-    netbird.enable = true;
+    tailscale.enable = true;
 
     pipewire = {
       enable = true;
