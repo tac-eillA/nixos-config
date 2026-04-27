@@ -20,7 +20,9 @@
       gl = "git pull";
       nixc = "cd ~/nixos-config";
       rebuild = "sudo nixos-rebuild switch --flake ~/nixos-config#$(hostname)";
+      rebuild-boot = "sudo nixos-rebuild boot --flake ~/nixos-config#$(hostname)";
       update = "sudo nix flake update ~/nixos-config";
+      garbage = "sudo nix-collect-garbage -d";
       c = "clear";
     };
 
