@@ -3,7 +3,7 @@
 {
   programs.firefox.enable = true;
 
-  environment.systemPackages = [
-    pkgs.nur.repos.lonerOrz.helium
+  environment.systemPackages = with pkgs; [
+    nur.repos.lonerOrz.helium
   ];
 }

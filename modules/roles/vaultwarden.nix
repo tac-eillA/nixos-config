@@ -8,9 +8,6 @@ let
   secretsFile = "/var/lib/secrets/vaultwarden.env";
 in
 {
-  services.openssh.enable = true;
-  services.qemuGuest.enable = true;
-
   services.vaultwarden = {
     enable = true;
     dbBackend = "sqlite";
@@ -36,7 +33,6 @@ in
   };
 
   networking.firewall = {
-    enable = true;
     allowedTCPPorts = [
       22
       port

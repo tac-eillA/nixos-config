@@ -7,5 +7,4 @@
   ];
 
   networking.hostName = "athena";
-
-  }
+}

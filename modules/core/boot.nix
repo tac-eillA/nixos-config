@@ -2,7 +2,6 @@
 
 {
   boot = {
-    # Filesystems support
     supportedFilesystems = [
       "ntfs"
       "exfat"
@@ -10,20 +9,18 @@
       "fat32"
       "btrfs"
     ];
+
     tmp.cleanOnBoot = true;
-    kernelPackages = pkgs.linuxPackages_latest; # _latest, _zen, _xanmod_latest, _hardened, _rt, _OTHER_CHANNEL, etc.
-    #kernelParams = [
-    #  "preempt=full" # lower latency but less throughput
-    #];
+    kernelPackages = pkgs.linuxPackages_latest;
+
     loader = {
       systemd-boot.enable = true;
       systemd-boot.configurationLimit = 5;
       efi.canTouchEfiVariables = true;
-      #efi.efiSysMountPoint = "/boot";
-      timeout = 20; # bootloader display duration
+      timeout = 20;
     };
 
-    # Appimage Support
+    # Support running AppImages without extra setup.
     binfmt.registrations.appimage = {
       wrapInterpreterInShell = false;
       interpreter = "${pkgs.appimage-run}/bin/appimage-run";

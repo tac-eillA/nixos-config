@@ -1,4 +1,3 @@
-# modules/roles/netbird-server.nix
 { lib, pkgs, ... }:
 
 let
@@ -11,8 +10,6 @@ let
   clientId = "2RkZ5u5DvOtxGde2MBUPjb28UqUeJfGEZ4jx22Js";
 in
 {
-  services.qemuGuest.enable = true;
-  services.openssh.enable = true;
   services.netbird.enable = lib.mkForce false;
   systemd.tmpfiles.rules = [
     "d ${secretsDir} 0750 root turnserver -"
@@ -67,6 +64,10 @@ in
         };
 
         TURNConfig = {
+          Secret = {
+            _secret = coturnPasswordFile;
+          };
+
           Turns = [
             {
               Proto = "udp";
@@ -91,8 +92,6 @@ in
   };
 
   networking.firewall = {
-    enable = true;
-
     allowedTCPPorts = [
       22
       80

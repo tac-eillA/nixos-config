@@ -1,19 +1,14 @@
-{ config, lib, pkgs, ... }:
+{ pkgs, ... }:
 
 let
-  domain = "allie.sh";
-
   forgejoHost = "10.254.1.75";
   netbirdHost = "10.254.1.170";
-  haosHost = "10.254.1.251";
   authHost = "10.254.1.163";
   vaultwardenHost = "10.254.1.183";
   dns1Host = "10.254.1.171";
   dns2Host = "10.254.1.62";
 in
 {
-  services.qemuGuest.enable = true;
-
   services.cloudflared = {
     enable = true;
     tunnels = {
@@ -23,15 +18,12 @@ in
         ingress = {
           "git.allie.sh" = {
             service = "http://${forgejoHost}:3000";
-            #path = "/*.(jpg|png|css|js)";
           };
           "netbird.allie.sh" = {
             service = "http://${netbirdHost}:80";
-            #path = "/*.(jpg|png|css|js)";
           };
           "auth.allie.sh" = {
             service = "http://${authHost}:9000";
-            #path = "/*.(jpg|png|css|js)";
           };
           "vault.allie.sh" = {
             service = "http://${vaultwardenHost}:8222";
@@ -54,19 +46,16 @@ in
     };
   };
 
-  services.openssh.enable = true;
-
   networking.firewall = {
-    enable = true;
     allowedTCPPorts = [
-      443
-      80
       22
-      3000
-      9000
-      8222
-      5380
       53
+      80
+      443
+      3000
+      5380
+      8222
+      9000
     ];
   };
 

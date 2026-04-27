@@ -3,8 +3,8 @@
 {
   imports = [
     ./hardware-configuration.nix
+    ../../modules/profiles/base.nix
   ];
 
-  networking.hostName = "artemis";
-
+  networking.hostName = "apollo";
 }

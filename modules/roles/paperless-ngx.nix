@@ -6,9 +6,6 @@ let
   passwordFile = "/var/lib/secrets/paperless-admin-password";
 in
 {
-  services.openssh.enable = true;
-  services.qemuGuest.enable = true;
-
   services.paperless = {
     enable = true;
     address = "0.0.0.0";
@@ -23,7 +20,6 @@ in
   };
 
   networking.firewall = {
-    enable = true;
     allowedTCPPorts = [
       22
       port

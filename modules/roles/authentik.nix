@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ pkgs, ... }:
 
 let
   domain = "auth.allie.sh";
@@ -113,8 +113,6 @@ in
     '';
   };
 
-  services.openssh.enable = true;
-  services.qemuGuest.enable = true;
   services.nginx = {
     enable = true;
 
@@ -171,10 +169,9 @@ in
   };
 
   networking.firewall = {
-    enable = true;
     allowedTCPPorts = [
-      9000
       22
+      9000
     ];
   };
 

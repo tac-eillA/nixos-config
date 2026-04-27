@@ -1,7 +1,6 @@
 { ... }:
 
 {
-  # Enable Network Manager and set timezone
   networking.networkmanager.enable = true;
 
   time.timeZone = "America/Vancouver";

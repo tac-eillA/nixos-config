@@ -1,6 +1,8 @@
-{ pkgs, config, ... }:
+{ pkgs, ... }:
 
 {
+  imports = [ ./minimal.nix ];
+
   programs.nix-ld = {
     enable = true;
     libraries = with pkgs; [
@@ -25,35 +27,17 @@
     ];
   };
 
-  programs.steam.enable = true;
   security.rtkit.enable = true;
-  programs.gamemode.enable = true;
-  programs.git = {
-    enable = true;
-    package = pkgs.gitFull;
-
-    lfs = {
-      enable = true;
-    };
-  };
 
   environment.systemPackages = with pkgs; [
-    git
-    gh
-    bash
-    curl
-    wget
     fzf
     fd
     ripgrep
-    git-lfs
     unzip
     p7zip
     file
-    which
     vim
     kitty
-    ghostty
 
     pciutils
     usbutils
@@ -67,7 +51,6 @@
     steam-run
 
     emacs
-    neovim
     jetbrains.rider
     jetbrains.clion
     jetbrains.rust-rover

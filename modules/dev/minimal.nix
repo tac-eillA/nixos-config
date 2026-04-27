@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, ... }:
 
 {
   programs.git = {
@@ -11,12 +11,10 @@
   };
 
   environment.systemPackages = with pkgs; [
-    git
     gh
     bash
     curl
     wget
-    git-lfs
     which
     ghostty
     neovim

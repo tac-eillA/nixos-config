@@ -1,4 +1,3 @@
-# modules/desktop/printing.nix
 { pkgs, ... }:
 
 {
@@ -20,7 +19,7 @@
 
   hardware.sane = {
     enable = true;
-    extraBackends = [ pkgs.sane-airscan ];
+    extraBackends = with pkgs; [ sane-airscan ];
     disabledDefaultBackends = [ "escl" ];
   };
 

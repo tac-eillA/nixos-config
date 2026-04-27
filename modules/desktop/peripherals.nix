@@ -1,9 +1,6 @@
 { pkgs, ... }:
 
 {
-  #hardware.magic-trackpad-quirks.enable = true;
-
-  # fingerprint & login
   security.polkit.enable = true;
 
   hardware.logitech.wireless.enable = false;

@@ -1,4 +1,3 @@
-# modules/core/shell.nix
 { pkgs, ... }:
 
 {

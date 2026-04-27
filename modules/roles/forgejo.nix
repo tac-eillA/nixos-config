@@ -59,8 +59,6 @@ in
   };
 
   services.postgresql.enable = true;
-  services.qemuGuest.enable = true;
-  services.openssh.enable = true;
 
   systemd.services.forgejo-authentik-oidc = {
     description = "Ensure Forgejo Authentik OIDC source exists";
@@ -121,9 +119,8 @@ in
   };
 
   networking.firewall = {
-    enable = true;
     allowedTCPPorts = [
-      20
+      22
       80
       443
       3000

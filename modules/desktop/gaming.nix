@@ -1,14 +1,6 @@
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 
 {
-  nixpkgs.config.allowUnfreePredicate =
-    pkg:
-    builtins.elem (lib.getName pkg) [
-      "steam"
-      "steam-original"
-      "steam-run"
-    ];
-
   environment.systemPackages = with pkgs; [
     heroic
     steam

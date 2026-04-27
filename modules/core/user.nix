@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 {
-  users.users."allison" = {
+  users.users.allison = {
     isNormalUser = true;
     description = "allison";
     extraGroups = [ "wheel" "networkmanager" "nordvpn" "netbird" ];

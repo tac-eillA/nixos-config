@@ -6,9 +6,9 @@
     packages = with pkgs; [
       # Nerd Fonts
       maple-mono.NF
-      pkgs.nerd-fonts.jetbrains-mono
-      pkgs.nerd-fonts.roboto-mono
-      pkgs.nerd-fonts.symbols-only
+      nerd-fonts.jetbrains-mono
+      nerd-fonts.roboto-mono
+      nerd-fonts.symbols-only
 
       # Normal Fonts
       noto-fonts
