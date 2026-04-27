@@ -7,6 +7,9 @@ let
   netbirdHost = "10.254.1.170";
   haosHost = "10.254.1.251";
   authHost = "10.254.1.163";
+  vaultwardenHost = "10.254.1.183";
+  dns1Host = "10.254.1.171";
+  dns2Host = "10.254.1.62";
 in
 {
   services.qemuGuest.enable = true;
@@ -30,6 +33,21 @@ in
             service = "http://${authHost}:9000";
             #path = "/*.(jpg|png|css|js)";
           };
+          "vault.allie.sh" = {
+            service = "http://${vaultwardenHost}:8222";
+          };
+          "dns1-dash.allie.sh" = {
+            service = "http://${dns1Host}:5380";
+          };
+          "dns2-dash.allie.sh" = {
+            service = "http://${dns2Host}:5380";
+          };
+          "dns1.allie.sh" = {
+            service = "http://${dns1Host}:53";
+          };
+          "dns2.allie.sh" = {
+            service = "http://${dns2Host}:53";
+          };
         };
         default = "http_status:404";
       };
@@ -46,6 +64,8 @@ in
       22
       3000
       9000
+      8222
+      5380
     ];
   };
 
