@@ -20,5 +20,7 @@
     which
     ghostty
     neovim
+    openssl
+    argon2
   ];
 }
