@@ -56,5 +56,6 @@
     jetbrains.rust-rover
     zed-editor-fhs
     opencode
+    opencode-desktop
   ];
 }
