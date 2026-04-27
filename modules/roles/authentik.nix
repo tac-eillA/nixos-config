@@ -131,40 +131,6 @@ in
           proxy_set_header X-Forwarded-Proto https;
         '';
       };
-
-      locations."= /application/o/netbird/.well-known/openid-configuration" = {
-        proxyPass = "${authentikUpstream}/application/o/netbird/.well-known/openid-configuration";
-        recommendedProxySettings = true;
-        extraConfig = ''
-          proxy_set_header X-Forwarded-Proto https;
-          proxy_hide_header Access-Control-Allow-Origin;
-          proxy_hide_header Access-Control-Allow-Methods;
-          proxy_hide_header Access-Control-Allow-Headers;
-          add_header Access-Control-Allow-Origin "https://netbird.allie.sh" always;
-          add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
-          add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
-          if ($request_method = OPTIONS) {
-            return 204;
-          }
-        '';
-      };
-
-      locations."= /application/o/netbird/jwks/" = {
-        proxyPass = "${authentikUpstream}/application/o/netbird/jwks/";
-        recommendedProxySettings = true;
-        extraConfig = ''
-          proxy_set_header X-Forwarded-Proto https;
-          proxy_hide_header Access-Control-Allow-Origin;
-          proxy_hide_header Access-Control-Allow-Methods;
-          proxy_hide_header Access-Control-Allow-Headers;
-          add_header Access-Control-Allow-Origin "https://netbird.allie.sh" always;
-          add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
-          add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
-          if ($request_method = OPTIONS) {
-            return 204;
-          }
-        '';
-      };
     };
   };
 

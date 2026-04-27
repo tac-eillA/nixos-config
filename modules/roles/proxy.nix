@@ -2,7 +2,7 @@
 
 let
   forgejoHost = "10.254.1.213";
-  netbirdHost = "10.254.1.214";
+  headscaleHost = "10.254.1.214";
   authHost = "10.254.1.210";
   vaultwardenHost = "10.254.1.216";
   dns1Host = "10.254.1.211";
@@ -19,8 +19,8 @@ in
           "git.allie.sh" = {
             service = "http://${forgejoHost}:3000";
           };
-          "netbird.allie.sh" = {
-            service = "http://${netbirdHost}:80";
+          "headscale.allie.sh" = {
+            service = "http://${headscaleHost}:80";
           };
           "auth.allie.sh" = {
             service = "http://${authHost}:9000";

@@ -43,7 +43,7 @@
         dns1 = mkHost "dns1";
         dns2 = mkHost "dns2";
         forgejo = mkHost "forgejo";
-        netbird = mkHost "netbird";
+        headscale = mkHost "headscale";
         authentik = mkHost "authentik";
         proxy = mkHost "proxy";
         vaultwarden = mkHost "vaultwarden";
