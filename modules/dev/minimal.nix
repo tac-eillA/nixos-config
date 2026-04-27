@@ -1,14 +1,7 @@
 { pkgs, ... }:
 
 {
-  programs.git = {
-    enable = true;
-    package = pkgs.gitFull;
-
-    lfs = {
-      enable = true;
-    };
-  };
+  imports = [ ./git.nix ];
 
   environment.systemPackages = with pkgs; [
     gh
