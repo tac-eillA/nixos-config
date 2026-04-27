@@ -45,6 +45,7 @@
         netbird = mkHost "netbird";
         authentik = mkHost "authentik";
         proxy = mkHost "proxy";
+        vaultwarden = mkHost "vaultwarden";
       };
 
       devShells.${system}.unreal =
