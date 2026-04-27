@@ -21,6 +21,6 @@
     ghostty
     neovim
     openssl
-    argon2
+    libargon2
   ];
 }
