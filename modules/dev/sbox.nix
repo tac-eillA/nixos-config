@@ -220,6 +220,22 @@ let
     }
   '';
 
+  sboxShaderCompilerCompatFn = ''
+    ensure_sbox_shadercompiler_compat() {
+      local managed_dir="$SBOX_ROOT/game/bin/managed"
+      local expected="$managed_dir/shadercompiler.exe"
+      local native_linux="$managed_dir/ShaderCompiler"
+
+      if [ -e "$expected" ]; then
+        return 0
+      fi
+
+      if [ -x "$native_linux" ]; then
+        ln -s "$native_linux" "$expected"
+      fi
+    }
+  '';
+
   sbox-shell = pkgs.writeShellScriptBin "sbox-shell" ''
     set -euo pipefail
 
@@ -276,10 +292,12 @@ let
   sbox-bootstrap = mkSboxScript "sbox-bootstrap" ''
     ${needEngine}
     ${sboxBuildFn}
+    ${sboxShaderCompilerCompatFn}
 
     cd "$SBOX_ROOT"
 
     sboxbuild build --config "$SBOX_CONFIG"
+    ensure_sbox_shadercompiler_compat
     sboxbuild build-shaders
     sboxbuild build-content
   '';
@@ -295,8 +313,10 @@ let
   sbox-build-shaders = mkSboxScript "sbox-build-shaders" ''
     ${needEngine}
     ${sboxBuildFn}
+    ${sboxShaderCompilerCompatFn}
 
     cd "$SBOX_ROOT"
+    ensure_sbox_shadercompiler_compat
     sboxbuild build-shaders "$@"
   '';
 
@@ -311,10 +331,12 @@ let
   sbox-rebuild = mkSboxScript "sbox-rebuild" ''
     ${needEngine}
     ${sboxBuildFn}
+    ${sboxShaderCompilerCompatFn}
 
     cd "$SBOX_ROOT"
 
     sboxbuild build --config "$SBOX_CONFIG"
+    ensure_sbox_shadercompiler_compat
     sboxbuild build-shaders
     sboxbuild build-content
   '';
