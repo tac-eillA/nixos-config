@@ -604,11 +604,11 @@ in
       dedicatedServer.openFirewall = lib.mkDefault true;
     };
 
-    boot.kernel.sysctl = lib.mkIf cfg.enableKernelTweaks {
-      "fs.inotify.max_user_watches" = lib.mkForce 1048576;
-      "fs.inotify.max_user_instances" = lib.mkForce 1024;
-      "vm.max_map_count" = lib.mkForce 1048576;
-    };
+    # boot.kernel.sysctl = lib.mkIf cfg.enableKernelTweaks {
+    #   "fs.inotify.max_user_watches" = lib.mkForce 1048576;
+    #   "fs.inotify.max_user_instances" = lib.mkForce 1024;
+    #   "vm.max_map_count" = lib.mkForce 1048576;
+    # };
 
     users.users = lib.mkIf (cfg.user != null) {
       ${cfg.user}.extraGroups =
