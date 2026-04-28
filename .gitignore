@@ -2,6 +2,7 @@
 
 # Codex / OpenAI
 .codex/
+.codex
 AGENTS.md
 agents.md
 
