@@ -225,13 +225,15 @@ let
       local managed_dir="$SBOX_ROOT/game/bin/managed"
       local expected="$managed_dir/shadercompiler.exe"
       local native_linux="$managed_dir/ShaderCompiler"
-
-      if [ -e "$expected" ]; then
-        return 0
-      fi
+      local fake_argv0="$SBOX_ROOT/game/.linux-compat/bin\\managed/shadercompiler.exe"
 
       if [ -x "$native_linux" ]; then
-        ln -s "$native_linux" "$expected"
+        mkdir -p "$SBOX_ROOT/game/.linux-compat"
+        cat > "$expected" <<EOF
+#!/usr/bin/env bash
+exec -a "$fake_argv0" "$native_linux" "\$@"
+EOF
+        chmod +x "$expected"
       fi
     }
   '';
