@@ -576,11 +576,11 @@ in
 
     programs.steam.enable = lib.mkIf cfg.enableSteamCompat (lib.mkDefault true);
 
-    boot.kernel.sysctl = lib.mkIf cfg.enableKernelTweaks {
-      "fs.inotify.max_user_watches" = lib.mkDefault 1048576;
-      "fs.inotify.max_user_instances" = lib.mkDefault 8192;
-      "vm.max_map_count" = lib.mkDefault 1048576;
-    };
+    # boot.kernel.sysctl = lib.mkIf cfg.enableKernelTweaks {
+    #   "fs.inotify.max_user_watches" = lib.mkDefault 1048576;
+    #   "fs.inotify.max_user_instances" = lib.mkDefault 8192;
+    #   "vm.max_map_count" = lib.mkDefault 1048576;
+    # };
 
     users.users = lib.mkIf (cfg.user != null) {
       "${cfg.user}".extraGroups = [
