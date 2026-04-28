@@ -27,6 +27,7 @@ let
     nss
     nspr
     glib
+    libgbm
 
     # Audio
     alsa-lib
