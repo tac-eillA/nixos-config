@@ -604,10 +604,6 @@ in
       dedicatedServer.openFirewall = lib.mkDefault true;
     };
 
-    boot.kernel.sysctl = lib.mkIf cfg.enableKernelTweaks {
-      "vm.max_map_count" = lib.mkDefault 1048576;
-    };
-
     users.users = lib.mkIf (cfg.user != null) {
       ${cfg.user}.extraGroups =
         [
