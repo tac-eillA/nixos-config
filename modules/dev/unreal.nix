@@ -575,7 +575,7 @@ in
           vulkan-validation-layers
         ]
         ++ lib.optionals (cfg.gpu == "amd") [
-          amdvlk
+          radv
         ]
         ++ lib.optionals (cfg.gpu == "intel") [
           intel-media-driver
