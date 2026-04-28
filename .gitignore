@@ -1,0 +1,17 @@
+.gitignore
+
+# Codex / OpenAI
+.codex/
+AGENTS.md
+agents.md
+
+# Claude / Anthropic
+.claude/
+CLAUDE.md
+claude.md
+
+# Copilot / generic AI notes
+.github/copilot-instructions.md
+llm-context.md
+prompt.md
+prompts/
