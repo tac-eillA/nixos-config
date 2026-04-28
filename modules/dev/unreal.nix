@@ -120,8 +120,8 @@ let
     python3
     perl
     mono
-    (dotnet-sdk_8 or dotnet-sdk)
-    (jdk17 or jdk)
+    dotnet-sdk_8
+    jdk17
 
     # Debug/inspection
     util-linux
