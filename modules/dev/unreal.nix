@@ -29,6 +29,13 @@ let
     glib
     libgbm
 
+    # Device/input runtime needed by SDL/Unreal
+    systemd
+    udev
+    libinput
+    libevdev
+    libusb1
+
     # Audio
     alsa-lib
     libpulseaudio
