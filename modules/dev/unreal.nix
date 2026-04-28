@@ -292,8 +292,15 @@ let
 
     cd "$UE_ROOT"
 
-    echo "Building Unreal Engine with $UE_JOBS jobs..."
-    exec make -j"$UE_JOBS" "$@"
+    if [ "$#" -eq 0 ]; then
+      echo "Building Unreal Engine with plain make..."
+      echo "Note: do not use make -j here; UnrealBuildTool manages its own parallelism."
+      exec make
+    else
+      echo "Building Unreal Engine target(s): $*"
+      echo "Note: do not use make -j here; UnrealBuildTool manages its own parallelism."
+      exec make "$@"
+    fi
   '';
 
   ue-rebuild = mkUeScript "ue-rebuild" ''
@@ -303,7 +310,12 @@ let
 
     ./Setup.sh
     ./GenerateProjectFiles.sh
-    exec make -j"$UE_JOBS" "$@"
+
+    if [ "$#" -eq 0 ]; then
+      exec make
+    else
+      exec make "$@"
+    fi
   '';
 
   ue-editor = mkUeScript "ue-editor" ''
