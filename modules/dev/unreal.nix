@@ -51,26 +51,26 @@ let
     at-spi2-atk
 
     # X11
-    xorg.libX11
-    xorg.libXext
-    xorg.libXcursor
-    xorg.libXi
-    xorg.libXrandr
-    xorg.libXrender
-    xorg.libXinerama
-    xorg.libXfixes
-    xorg.libXcomposite
-    xorg.libXdamage
-    xorg.libXtst
-    xorg.libSM
-    xorg.libICE
-    xorg.libxcb
-    xorg.libXxf86vm
-    xorg.xcbutil
-    xorg.xcbutilwm
-    xorg.xcbutilimage
-    xorg.xcbutilkeysyms
-    xorg.xcbutilrenderutil
+    libX11
+    libXext
+    libXcursor
+    libXi
+    libXrandr
+    libXrender
+    libXinerama
+    libXfixes
+    libXcomposite
+    libXdamage
+    libXtst
+    libSM
+    libICE
+    libxcb
+    libXxf86vm
+    xcbutil
+    xcbutilwm
+    xcbutilimage
+    xcbutilkeysyms
+    xcbutilrenderutil
   ];
 
   buildTools = with pkgs; [
