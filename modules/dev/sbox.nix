@@ -214,8 +214,10 @@ let
     fi
   '';
 
-  sboxBuildCmd = ''
-    dotnet run --project engine/Tools/SboxBuild/SboxBuild.csproj -- "$@"
+  sboxBuildFn = ''
+    sboxbuild() {
+      dotnet run --project engine/Tools/SboxBuild/SboxBuild.csproj -- "$@"
+    }
   '';
 
   sbox-shell = pkgs.writeShellScriptBin "sbox-shell" ''
@@ -273,43 +275,48 @@ let
 
   sbox-bootstrap = mkSboxScript "sbox-bootstrap" ''
     ${needEngine}
+    ${sboxBuildFn}
 
     cd "$SBOX_ROOT"
 
-    ${sboxBuildCmd} build --config "$SBOX_CONFIG"
-    ${sboxBuildCmd} build-shaders
-    ${sboxBuildCmd} build-content
+    sboxbuild build --config "$SBOX_CONFIG"
+    sboxbuild build-shaders
+    sboxbuild build-content
   '';
 
   sbox-build = mkSboxScript "sbox-build" ''
     ${needEngine}
+    ${sboxBuildFn}
 
     cd "$SBOX_ROOT"
-    ${sboxBuildCmd} build --config "$SBOX_CONFIG" "$@"
+    sboxbuild build --config "$SBOX_CONFIG" "$@"
   '';
 
   sbox-build-shaders = mkSboxScript "sbox-build-shaders" ''
     ${needEngine}
+    ${sboxBuildFn}
 
     cd "$SBOX_ROOT"
-    ${sboxBuildCmd} build-shaders "$@"
+    sboxbuild build-shaders "$@"
   '';
 
   sbox-build-content = mkSboxScript "sbox-build-content" ''
     ${needEngine}
+    ${sboxBuildFn}
 
     cd "$SBOX_ROOT"
-    ${sboxBuildCmd} build-content "$@"
+    sboxbuild build-content "$@"
   '';
 
   sbox-rebuild = mkSboxScript "sbox-rebuild" ''
     ${needEngine}
+    ${sboxBuildFn}
 
     cd "$SBOX_ROOT"
 
-    ${sboxBuildCmd} build --config "$SBOX_CONFIG"
-    ${sboxBuildCmd} build-shaders
-    ${sboxBuildCmd} build-content
+    sboxbuild build --config "$SBOX_CONFIG"
+    sboxbuild build-shaders
+    sboxbuild build-content
   '';
 
   sbox-solution = mkSboxScript "sbox-solution" ''
