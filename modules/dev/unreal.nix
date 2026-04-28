@@ -606,7 +606,6 @@ in
 
     boot.kernel.sysctl = lib.mkIf cfg.enableKernelTweaks {
       "fs.inotify.max_user_watches" = lib.mkDefault 1048576;
-      "fs.inotify.max_user_instances" = lib.mkDefault 1024;
       "vm.max_map_count" = lib.mkDefault 1048576;
     };
 
