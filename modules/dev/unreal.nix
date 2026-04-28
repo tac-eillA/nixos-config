@@ -26,6 +26,7 @@ let
     dbus
     nss
     nspr
+    glib
 
     # Audio
     alsa-lib
