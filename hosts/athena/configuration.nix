@@ -5,6 +5,7 @@
     ./hardware-configuration.nix
     ../../modules/profiles/workstation.nix
     ../../modules/dev/unreal.nix
+    ../../modules/dev/sbox.nix
   ];
 
   programs.unrealEngine = {
@@ -21,6 +22,23 @@
       jobs = null;
       enableSteamCompat = false;
       enableGamemode = true;
+    };
+
+  programs.sbox = {
+      enable = true;
+      user = "allison";
+
+      gpu = "amd";
+
+      engineRoot = "$HOME/src/sbox-public";
+      engineRef = "master";
+      buildConfig = "Developer";
+
+      enableSteamCompat = false;
+      enableGamemode = true;
+      enableGraphics = true;
+      enableNixLd = true;
+      enablePipeWire = true;
     };
 
     # programs.unrealEnginePrebuilt = {
