@@ -372,29 +372,46 @@ EOF
 
     cd "$game_dir"
 
+    wants_editor=0
+    for arg in "$@"
+    do
+      case "$arg" in
+        -project|-test)
+          wants_editor=1
+          break
+          ;;
+      esac
+    done
+
+    if [ "$wants_editor" -eq 1 ] && [ -x "$game_dir/sbox-dev" ]; then
+      exec "$game_dir/sbox-dev" "$@"
+    fi
+
     for candidate in \
-      "$game_dir/sbox-dev" \
       "$game_dir/sbox-launcher" \
       "$game_dir/Sandbox" \
       "$game_dir/sbox" \
       "$game_dir/sbox-standalone" \
+      "$game_dir/sbox-dev" \
       "$game_dir/Sandbox.exe" \
       "$game_dir/sbox.exe"
     do
-      if [ -x "$candidate" ]; then
-        case "$candidate" in
-          *.exe)
-            if command -v wine64 >/dev/null 2>&1; then
-              exec wine64 "$candidate" "$@"
-            fi
-            echo "Found a Windows executable but wine64 is not installed: $candidate" >&2
-            exit 1
-            ;;
-          *)
-            exec "$candidate" "$@"
-            ;;
-        esac
+      if [ ! -x "$candidate" ]; then
+        continue
       fi
+
+      case "$candidate" in
+        *.exe)
+          if command -v wine64 >/dev/null 2>&1; then
+            exec wine64 "$candidate" "$@"
+          fi
+          echo "Found a Windows executable but wine64 is not installed: $candidate" >&2
+          exit 1
+          ;;
+        *)
+          exec "$candidate" "$@"
+          ;;
+      esac
     done
 
     echo "No obvious s&box executable was found in $SBOX_ROOT/game." >&2
