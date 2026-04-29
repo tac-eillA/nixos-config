@@ -238,6 +238,18 @@ EOF
     }
   '';
 
+  sboxSteamCompatFn = ''
+    ensure_sbox_steam_compat() {
+      local game_dir="$SBOX_ROOT/game"
+      local linux_steam_api="$game_dir/bin/linuxsteamrt64/libsteam_api.so"
+      local weird_win_path="$SBOX_ROOT/game\\bin\\win64\\steam_api64.dll"
+
+      if [ -f "$linux_steam_api" ]; then
+        ln -sf "$linux_steam_api" "$weird_win_path"
+      fi
+    }
+  '';
+
   sbox-shell = pkgs.writeShellScriptBin "sbox-shell" ''
     set -euo pipefail
 
@@ -350,6 +362,7 @@ EOF
 
   sbox-run = mkSboxScript "sbox-run" ''
     ${needEngine}
+    ${sboxSteamCompatFn}
 
     game_dir="$SBOX_ROOT/game"
 
@@ -369,6 +382,8 @@ EOF
     if [ ! -f "$game_dir/steam_appid.txt" ]; then
       printf '%s\n' '590830' > "$game_dir/steam_appid.txt"
     fi
+
+    ensure_sbox_steam_compat
 
     cd "$game_dir"
 
