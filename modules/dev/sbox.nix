@@ -373,8 +373,11 @@ EOF
     cd "$game_dir"
 
     for candidate in \
+      "$game_dir/sbox-dev" \
+      "$game_dir/sbox-launcher" \
       "$game_dir/Sandbox" \
       "$game_dir/sbox" \
+      "$game_dir/sbox-standalone" \
       "$game_dir/Sandbox.exe" \
       "$game_dir/sbox.exe"
     do
