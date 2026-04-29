@@ -387,6 +387,11 @@ EOF
 
     cd "$game_dir"
 
+    have_linux_editor_natives=0
+    if [ -f "$game_dir/bin/linuxsteamrt64/libtoolframework2.so" ]; then
+      have_linux_editor_natives=1
+    fi
+
     wants_editor=0
     for arg in "$@"
     do
@@ -398,16 +403,21 @@ EOF
       esac
     done
 
-    if [ "$wants_editor" -eq 1 ] && [ -x "$game_dir/sbox-dev" ]; then
-      exec "$game_dir/sbox-dev" "$@"
+    if [ "$wants_editor" -eq 1 ]; then
+      if [ "$have_linux_editor_natives" -eq 1 ] && [ -x "$game_dir/sbox-dev" ]; then
+        exec "$game_dir/sbox-dev" "$@"
+      fi
+
+      echo "The public Linux sbox-public build is missing editor native libraries." >&2
+      echo "Expected at least: $game_dir/bin/linuxsteamrt64/libtoolframework2.so" >&2
+      echo "This module currently supports runtime launch only for public Linux source builds." >&2
+      exit 1
     fi
 
     for candidate in \
-      "$game_dir/sbox-launcher" \
       "$game_dir/Sandbox" \
       "$game_dir/sbox" \
       "$game_dir/sbox-standalone" \
-      "$game_dir/sbox-dev" \
       "$game_dir/Sandbox.exe" \
       "$game_dir/sbox.exe"
     do
@@ -484,7 +494,7 @@ EOF
     name = "sbox-editor";
     desktopName = "s&box";
     genericName = "Game Engine Editor";
-    comment = "Launch s&box through the NixOS source-build wrapper";
+    comment = "Launch s&box runtime through the NixOS source-build wrapper";
     exec = "sbox-run %f";
     terminal = false;
     categories = [
@@ -556,7 +566,7 @@ in
     enableDesktopEntry = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Install a desktop entry that calls sbox-run.";
+      description = "Install a desktop entry that calls sbox-run for the public Linux runtime path.";
     };
 
     enableNixLd = lib.mkOption {
