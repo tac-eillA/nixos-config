@@ -351,13 +351,32 @@ EOF
   sbox-run = mkSboxScript "sbox-run" ''
     ${needEngine}
 
-    cd "$SBOX_ROOT"
+    game_dir="$SBOX_ROOT/game"
+
+    if [ ! -d "$game_dir" ]; then
+      echo "Expected game directory was not found: $game_dir" >&2
+      exit 1
+    fi
+
+    export STEAM_COMPAT_CLIENT_INSTALL_PATH="''${STEAM_COMPAT_CLIENT_INSTALL_PATH:-$HOME/.local/share/Steam}"
+    export STEAM_RUNTIME="''${STEAM_RUNTIME:-0}"
+
+    if [ -d "$game_dir/bin/linuxsteamrt64" ]; then
+      export LD_LIBRARY_PATH="$game_dir/bin/linuxsteamrt64:''${LD_LIBRARY_PATH:-}"
+      export PATH="$game_dir/bin/linuxsteamrt64:''${PATH:-}"
+    fi
+
+    if [ ! -f "$game_dir/steam_appid.txt" ]; then
+      printf '%s\n' '590830' > "$game_dir/steam_appid.txt"
+    fi
+
+    cd "$game_dir"
 
     for candidate in \
-      "$SBOX_ROOT/game/Sandbox" \
-      "$SBOX_ROOT/game/sbox" \
-      "$SBOX_ROOT/game/Sandbox.exe" \
-      "$SBOX_ROOT/game/sbox.exe"
+      "$game_dir/Sandbox" \
+      "$game_dir/sbox" \
+      "$game_dir/Sandbox.exe" \
+      "$game_dir/sbox.exe"
     do
       if [ -x "$candidate" ]; then
         case "$candidate" in
