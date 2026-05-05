@@ -25,6 +25,5 @@
     distrobox
     kontainer
     moonlight-qt
-    tailscale
   ];
 }

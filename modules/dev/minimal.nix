@@ -13,6 +13,8 @@
     neovim
     openssl
     libargon2
+    mosh
+    tmux
     tailscale
   ];
 }
