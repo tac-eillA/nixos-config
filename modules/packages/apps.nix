@@ -14,7 +14,7 @@
     calibre
     mpv
     cider-2
-    wireshark
+    #wireshark
     google-chrome
     hyfetch
     gparted
