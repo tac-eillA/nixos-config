@@ -22,5 +22,9 @@
     flatpak
     libreoffice-fresh
     vlc
+    distrobox
+    kontainer
+    moonlight-qt
+    tailscale
   ];
 }
