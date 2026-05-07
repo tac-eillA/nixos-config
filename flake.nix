@@ -46,8 +46,20 @@
         headscale = mkHost "headscale";
         authentik = mkHost "authentik";
         proxy = mkHost "proxy";
+        rundeck = mkHost "rundeck";
         vaultwarden = mkHost "vaultwarden";
       };
+
+      packages.${system}.rundeck-generate-resources =
+        (mkPkgs system).writeShellApplication {
+          name = "rundeck-generate-resources";
+          runtimeInputs = with (mkPkgs system); [
+            jq
+            nix
+            gnugrep
+          ];
+          text = builtins.readFile ./scripts/rundeck-generate-resources.sh;
+        };
 
       devShells.${system}.unreal =
         let pkgs = mkPkgs system;

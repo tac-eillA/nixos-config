@@ -14,13 +14,15 @@
     calibre
     mpv
     cider-2
-    wireshark
+    #wireshark
     google-chrome
     hyfetch
     gparted
     ffmpeg
     flatpak
     libreoffice-fresh
-    vlc
+    streamrip
+    kontainer
+    moonlight-qt
   ];
 }

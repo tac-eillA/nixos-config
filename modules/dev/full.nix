@@ -57,5 +57,6 @@
     zed-editor-fhs
     opencode
     opencode-desktop
+    codex
   ];
 }

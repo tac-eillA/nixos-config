@@ -5,6 +5,7 @@ let
   headscaleHost = "10.254.1.214";
   authHost = "10.254.1.210";
   vaultwardenHost = "10.254.1.216";
+  rundeckHost = "10.254.1.217";
   dns1Host = "10.254.1.211";
   dns2Host = "10.254.1.212";
 in
@@ -27,6 +28,9 @@ in
           };
           "vault.allie.sh" = {
             service = "http://${vaultwardenHost}:8222";
+          };
+          "rundeck.allie.sh" = {
+            service = "http://${rundeckHost}:4440";
           };
           "dns1-dash.allie.sh" = {
             service = "http://${dns1Host}:5380";
@@ -53,6 +57,7 @@ in
       80
       443
       3000
+      4440
       5380
       8222
       9000
