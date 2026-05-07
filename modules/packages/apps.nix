@@ -21,8 +21,7 @@
     ffmpeg
     flatpak
     libreoffice-fresh
-    vlc
-    distrobox
+    streamrip
     kontainer
     moonlight-qt
   ];
