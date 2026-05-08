@@ -1,12 +1,9 @@
 { config, ... }:
 
 {
-  sops = {
-    age = {
-      keyFile = "/var/lib/sops-nix/age-key.txt";
-      generateKey = false;
-    };
+  imports = [ ./runtime-age.nix ];
 
+  sops = {
     secrets."rundeck/managed-password-hash" = {
       sopsFile = ../../secrets/common.yaml;
       neededForUsers = true;

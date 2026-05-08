@@ -8,6 +8,9 @@ keys:
   - &host_proxy age1usrgz3uuu6mqh3kfzc59g0su6xn4r49s0hptu8nknxegp0j8h46shjkzl7
   - &host_rundeck age12fv3cqqqpusypfta5gfja8u9k0200pvej8uesymaspfsnj7e8gqqqtdqry
   - &host_vaultwarden age1vuyq6gcj7j3uzngad4qhghvv7u3ex5gfwvzxplm25ce28gkvjeuqm5p7eh
+  - &host_athena age16qq7puuphyk0dzdw7w0yas7se8yv7l35m06yg2gwfwzsr96a3elq5xcu6y
+  - &host_artemis age15h3t2n4v7gw47kmurl36mku2eluvua9tpemew76dgx5jj485l3csgrjld2
+  - &host_demeter age1tup7frxvvt79mufcec3j97ky5s6eed02xk9re6hkkjzlytuh34fq7rpqjv
 
 creation_rules:
   - path_regex: secrets/common\.yaml$
@@ -63,3 +66,11 @@ creation_rules:
     key_groups:
       - age:
           - *allison_admin
+
+  - path_regex: secrets/github\.yaml$
+    key_groups:
+      - age:
+          - *allison_admin
+          - *host_athena
+          - *host_artemis
+          - *host_demeter

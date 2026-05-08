@@ -43,7 +43,7 @@
         artemis = mkHost "artemis";
         demeter = mkHost "demeter";
         hera = mkHost "hera";
-        hestia = mkHost "pythia";
+        pythia = mkHost "pythia";
         apollo = mkHost "apollo";
         dns1 = mkHost "dns1";
         dns2 = mkHost "dns2";
