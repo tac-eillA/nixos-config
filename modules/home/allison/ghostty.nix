@@ -30,6 +30,7 @@
     window-padding-x = 10
     window-padding-y = 8
     window-padding-balance = true
+    window-decoration = none
     background-opacity = 1
   '';
 }
