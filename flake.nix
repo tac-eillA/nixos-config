@@ -6,6 +6,10 @@
     nix-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nix-flatpak.url = "github:gmodena/nix-flatpak";
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -33,6 +37,13 @@
           nur.modules.nixos.default
           flatpakModule
           inputs.sops-nix.nixosModules.sops
+          inputs.home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "before-home-manager";
+            home-manager.users.allison = import ./modules/home/allison;
+          }
           ./hosts/${hostname}/configuration.nix
         ];
       };
