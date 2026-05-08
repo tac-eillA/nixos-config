@@ -1,13 +1,18 @@
-{ ... }:
+{ config, ... }:
 
 let
   authDomain = "auth.allie.sh";
   authentikApplication = "vaultwarden";
   domain = "vault.allie.sh";
   port = 8222;
-  secretsFile = "/var/lib/secrets/vaultwarden.env";
+  secretsFile = config.sops.secrets."vaultwarden/env".path;
 in
 {
+  sops.secrets."vaultwarden/env" = {
+    sopsFile = ../../secrets/vaultwarden.yaml;
+    mode = "0400";
+  };
+
   services.vaultwarden = {
     enable = true;
     dbBackend = "sqlite";

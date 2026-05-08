@@ -1,13 +1,20 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 let
   domain = "headscale.allie.sh";
   authDomain = "auth.allie.sh";
   authApplication = "headscale";
   httpPort = 8080;
-  oidcClientSecretFile = "/var/lib/secrets/headscale-authentik-client-secret";
+  oidcClientSecretFile = config.sops.secrets."headscale/authentik-client-secret".path;
 in
 {
+  sops.secrets."headscale/authentik-client-secret" = {
+    sopsFile = ../../secrets/headscale.yaml;
+    owner = "headscale";
+    group = "headscale";
+    mode = "0400";
+  };
+
   services.headscale = {
     enable = true;
     address = "127.0.0.1";

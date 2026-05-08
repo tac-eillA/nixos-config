@@ -7,12 +7,19 @@ let
   httpPort = 3000;
   oidcSourceName = "Authentik";
   oidcClientId = "forgejo";
-  oidcClientSecretFile = "/var/lib/secrets/forgejo-authentik-client-secret";
+  oidcClientSecretFile = config.sops.secrets."forgejo/authentik-client-secret".path;
   oidcDiscoveryUrl = "https://${authDomain}/application/o/forgejo/.well-known/openid-configuration";
   forgejoExe = lib.getExe cfg.package;
   psqlExe = "${config.services.postgresql.package}/bin/psql";
 in
 {
+  sops.secrets."forgejo/authentik-client-secret" = {
+    sopsFile = ../../secrets/forgejo.yaml;
+    owner = cfg.user;
+    group = cfg.group;
+    mode = "0400";
+  };
+
   services.forgejo = {
     enable = true;
     package = pkgs.forgejo;

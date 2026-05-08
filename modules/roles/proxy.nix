@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 let
   forgejoHost = "10.254.1.213";
@@ -10,11 +10,18 @@ let
   dns2Host = "10.254.1.212";
 in
 {
+  sops.secrets."cloudflare/tunnel-credentials" = {
+    sopsFile = ../../secrets/proxy.yaml;
+    owner = "cloudflared";
+    group = "cloudflared";
+    mode = "0400";
+  };
+
   services.cloudflared = {
     enable = true;
     tunnels = {
       "8eaa3da2-b2ae-4cbf-86f0-73bda6de85bd" = {
-        credentialsFile = "/home/allison/.cloudflared/8eaa3da2-b2ae-4cbf-86f0-73bda6de85bd.json";
+        credentialsFile = config.sops.secrets."cloudflare/tunnel-credentials".path;
         warp-routing.enabled = true;
         ingress = {
           "git.allie.sh" = {

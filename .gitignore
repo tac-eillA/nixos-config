@@ -16,3 +16,6 @@ claude.md
 llm-context.md
 prompt.md
 prompts/
+
+# Local deployment and operations runbooks
+docs/

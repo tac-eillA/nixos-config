@@ -3,9 +3,16 @@
 let
   domain = "paperless.allie.sh";
   port = 28981;
-  passwordFile = "/var/lib/secrets/paperless-admin-password";
+  passwordFile = config.sops.secrets."paperless/admin-password".path;
 in
 {
+  sops.secrets."paperless/admin-password" = {
+    sopsFile = ../../secrets/paperless.yaml;
+    owner = "paperless";
+    group = "paperless";
+    mode = "0400";
+  };
+
   services.paperless = {
     enable = true;
     address = "0.0.0.0";

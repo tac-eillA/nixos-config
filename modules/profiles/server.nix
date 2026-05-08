@@ -4,6 +4,7 @@
   imports = [
     ./base.nix
     ../dev/minimal.nix
+    ../secrets/common.nix
   ];
 
   networking = {

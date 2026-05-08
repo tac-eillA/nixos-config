@@ -6,6 +6,10 @@
     nix-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixos-hardware.url = "github:nixos/nixos-hardware";
     nix-flatpak.url = "github:gmodena/nix-flatpak";
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     nur = {
       url = "github:nix-community/NUR";
@@ -28,6 +32,7 @@
         modules = [
           nur.modules.nixos.default
           flatpakModule
+          inputs.sops-nix.nixosModules.sops
           ./hosts/${hostname}/configuration.nix
         ];
       };

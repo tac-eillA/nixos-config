@@ -23,6 +23,29 @@ let
   generateResources = lib.getExe generateResourcesPkg;
 in
 {
+  sops.secrets = {
+    "rundeck/postgres-password" = {
+      sopsFile = ../../secrets/rundeck.yaml;
+      owner = "rundeck";
+      group = "rundeck";
+      mode = "0400";
+    };
+
+    "rundeck/authentik-client-secret" = {
+      sopsFile = ../../secrets/rundeck.yaml;
+      owner = "rundeck";
+      group = "rundeck";
+      mode = "0400";
+    };
+
+    "rundeck/ssh-ed25519" = {
+      sopsFile = ../../secrets/rundeck.yaml;
+      owner = "rundeck";
+      group = "rundeck";
+      mode = "0400";
+    };
+  };
+
   services.postgresql = {
     enable = true;
     ensureDatabases = [ "rundeck" ];
@@ -43,7 +66,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       User = "postgres";
-      LoadCredential = [ "postgres-password:/var/lib/secrets/rundeck/postgres-password" ];
+      LoadCredential = [ "postgres-password:${config.sops.secrets."rundeck/postgres-password".path}" ];
     };
 
     script = ''
@@ -177,9 +200,9 @@ in
       RuntimeDirectory = "rundeck";
       RuntimeDirectoryMode = "0750";
       LoadCredential = [
-        "postgres_password:/var/lib/secrets/rundeck/postgres-password"
-        "oidc_client_secret:/var/lib/secrets/rundeck/authentik-client-secret"
-        "ssh_private_key:/var/lib/secrets/rundeck/ssh_ed25519"
+        "postgres_password:${config.sops.secrets."rundeck/postgres-password".path}"
+        "oidc_client_secret:${config.sops.secrets."rundeck/authentik-client-secret".path}"
+        "ssh_private_key:${config.sops.secrets."rundeck/ssh-ed25519".path}"
       ];
       PermissionsStartOnly = true;
       ExecStart = lib.concatStringsSep " " [

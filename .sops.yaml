@@ -1,0 +1,65 @@
+keys:
+  - &allison_admin age13cl4dacu3vdw9cttjdys0qrq52q5apz8q9zaa5ax90aruvpqyadqfnphsy
+  - &host_authentik age1ghsdwq7j4yfmculja75enwdx93slr2pq8zc9t70fs2vuqa7a432qc68sxc
+  - &host_dns1 age1rde89atn0pm8azcp23ygu8f00fvjzs4ytzz0ms8fqzvvnrgqruxsacz2kh
+  - &host_dns2 age1l89gecm86f8werj69lrmq7lshe7dg9nluyvvvhx32a27vugcay9s5cj3cv
+  - &host_forgejo age1pqvf65525hydme443g5tf4c9ass04pajp6ryjj3xpdal0dsqlepqy4rh95
+  - &host_headscale age17j775elsx750jyexmsh76zthg42s5nqyrhnhkqdnhzzjqy89sqxs9u368p
+  - &host_proxy age1usrgz3uuu6mqh3kfzc59g0su6xn4r49s0hptu8nknxegp0j8h46shjkzl7
+  - &host_rundeck age12fv3cqqqpusypfta5gfja8u9k0200pvej8uesymaspfsnj7e8gqqqtdqry
+  - &host_vaultwarden age1vuyq6gcj7j3uzngad4qhghvv7u3ex5gfwvzxplm25ce28gkvjeuqm5p7eh
+
+creation_rules:
+  - path_regex: secrets/common\.yaml$
+    key_groups:
+      - age:
+          - *allison_admin
+          - *host_authentik
+          - *host_dns1
+          - *host_dns2
+          - *host_forgejo
+          - *host_headscale
+          - *host_proxy
+          - *host_rundeck
+          - *host_vaultwarden
+
+  - path_regex: secrets/authentik\.yaml$
+    key_groups:
+      - age:
+          - *allison_admin
+          - *host_authentik
+
+  - path_regex: secrets/forgejo\.yaml$
+    key_groups:
+      - age:
+          - *allison_admin
+          - *host_forgejo
+
+  - path_regex: secrets/headscale\.yaml$
+    key_groups:
+      - age:
+          - *allison_admin
+          - *host_headscale
+
+  - path_regex: secrets/vaultwarden\.yaml$
+    key_groups:
+      - age:
+          - *allison_admin
+          - *host_vaultwarden
+
+  - path_regex: secrets/proxy\.yaml$
+    key_groups:
+      - age:
+          - *allison_admin
+          - *host_proxy
+
+  - path_regex: secrets/rundeck\.yaml$
+    key_groups:
+      - age:
+          - *allison_admin
+          - *host_rundeck
+
+  - path_regex: secrets/paperless\.yaml$
+    key_groups:
+      - age:
+          - *allison_admin

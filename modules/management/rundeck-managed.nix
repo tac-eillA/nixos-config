@@ -18,8 +18,8 @@ in
     };
 
     passwordHashFile = lib.mkOption {
-      type = lib.types.path;
-      default = "/var/lib/secrets/rundeck-managed-password-hash";
+      type = lib.types.nullOr lib.types.path;
+      default = null;
       description = "Runtime path containing the hashed password for prompted sudo.";
     };
   };

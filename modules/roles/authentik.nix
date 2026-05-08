@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 let
   domain = "auth.allie.sh";
@@ -9,9 +9,14 @@ let
     "podman-authentik-server.service"
     "podman-authentik-worker.service"
   ];
-  authentikEnv = "/var/lib/secrets/authentik.env";
+  authentikEnv = config.sops.secrets."authentik/env".path;
 in
 {
+  sops.secrets."authentik/env" = {
+    sopsFile = ../../secrets/authentik.yaml;
+    mode = "0400";
+  };
+
   virtualisation.oci-containers.backend = "podman";
 
   virtualisation.podman = {
