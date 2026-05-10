@@ -4,7 +4,7 @@ let
   wallpaper = ../../../img/wallpaper/oilPainting.jpg;
   wallpaperPath = toString wallpaper;
   kwriteconfig = "${pkgs.kdePackages.kconfig}/bin/kwriteconfig6";
-  qdbus = "${pkgs.qt6.qttools}/bin/qdbus";
+  busctl = "${pkgs.systemd}/bin/busctl";
   applyPlasmaWallpaper = pkgs.writeShellScript "apply-plasma-wallpaper" ''
     config_home="''${XDG_CONFIG_HOME:-$HOME/.config}"
     lockscreen_config="$config_home/kscreenlockerrc"
@@ -97,8 +97,8 @@ let
       "Meta+Shift+L,Meta+Shift+L,Move Window Right"
 
     if [ -n "''${DBUS_SESSION_BUS_ADDRESS:-}" ]; then
-      ${qdbus} org.kde.KWin /KWin reconfigure >/dev/null 2>&1 || true
-      ${qdbus} org.kde.kglobalaccel /kglobalaccel org.kde.KGlobalAccel.reloadConfig >/dev/null 2>&1 || true
+      ${busctl} --user call org.kde.KWin /KWin org.kde.KWin reconfigure >/dev/null 2>&1 || true
+      ${busctl} --user call org.kde.kglobalaccel /kglobalaccel org.kde.KGlobalAccel reloadConfig >/dev/null 2>&1 || true
     fi
   '';
 in
