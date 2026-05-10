@@ -1,6 +1,8 @@
 .gitignore
 
 # Codex / OpenAI
+.agents/
+.agent
 .codex/
 .codex
 AGENTS.md
