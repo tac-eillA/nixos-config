@@ -73,7 +73,7 @@ let
     write_shortcut --group kwin --key "Window Quick Tile Top" \
       ",,Quick Tile Window to the Top"
     write_shortcut --group kwin --key "Window Close" \
-      "Meta+Q\tAlt+F4,Alt+F4,Close Window"
+      "Meta+Q,Meta+Q,Close Window"
 
     write_shortcut --group ActivityManager --key "manage activities" \
       ",,Show Activity Switcher"
