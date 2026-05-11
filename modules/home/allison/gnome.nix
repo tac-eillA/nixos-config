@@ -1,8 +1,15 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
   wallpaper = ../../../img/wallpaper/oilPainting.jpg;
   wallpaperUri = "file://${wallpaper}";
+  numbers = lib.range 1 10;
+  emptyKeybindings = prefixes:
+    lib.genAttrs
+      (lib.concatMap
+        (prefix: map (number: "${prefix}-${toString number}") numbers)
+        prefixes)
+      (_: [ ]);
   extensions = with pkgs.gnomeExtensions; [
     appindicator
     caffeine
@@ -60,24 +67,44 @@ in
       };
 
       "org/gnome/shell/extensions/dash-to-dock" = {
+        hot-keys = false;
+        hotkeys-overlay = false;
+        hotkeys-show-dock = false;
+        shortcut = [ ];
+        shortcut-text = "";
         show-trash = true;
         show-mounts = false;
         show-show-apps-button = true;
         show-apps-at-top = false;
-      };
+      } // emptyKeybindings [
+        "app-hotkey"
+        "app-shift-hotkey"
+        "app-ctrl-hotkey"
+      ];
+
+      "org/gnome/shell/extensions/space-bar/shortcuts" = {
+        enable-activate-workspace-shortcuts = false;
+        enable-move-to-workspace-shortcuts = false;
+        move-workspace-left = [ ];
+        move-workspace-right = [ ];
+        activate-previous-key = [ ];
+        activate-empty-key = [ ];
+        open-menu = [ ];
+      } // emptyKeybindings [ "activate" ];
 
       "org/gnome/mutter" = {
         dynamic-workspaces = false;
       };
 
       "org/gnome/desktop/wm/preferences" = {
-        num-workspaces = 4;
+        num-workspaces = 5;
       };
 
       "org/gnome/desktop/wm/keybindings" = {
         close = [ "<Super>q" ];
         maximize = [ "<Super>Up" ];
         minimize = [ "<Super>Down" ];
+        unmaximize = [ ];
 
         switch-to-workspace-1 = [ "<Super>1" ];
         switch-to-workspace-2 = [ "<Super>2" ];
@@ -97,13 +124,8 @@ in
         toggle-tiled-right = [ "<Super><Shift>l" ];
       };
 
-      "org/gnome/shell/keybindings" = {
-        switch-to-application-1 = [ ];
-        switch-to-application-2 = [ ];
-        switch-to-application-3 = [ ];
-        switch-to-application-4 = [ ];
-        switch-to-application-5 = [ ];
-      };
+      "org/gnome/shell/keybindings" =
+        emptyKeybindings [ "switch-to-application" ];
 
       "org/gnome/settings-daemon/plugins/media-keys" = {
         custom-keybindings = [
