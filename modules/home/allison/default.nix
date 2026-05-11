@@ -4,6 +4,8 @@
   imports = [
     ./git.nix
     ./ghostty.nix
+    ./neovim.nix
+    ./tmux.nix
     ./zsh.nix
   ];
 
