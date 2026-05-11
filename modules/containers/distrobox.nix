@@ -5,6 +5,7 @@ let
 
   unrealDevAliases = pkgs.writeText "unreal-dev-aliases.sh" ''
     alias cproj='cd /workspace/projects'
+    alias ue-start='cd /workspace/projects/UE-5.7.4/Engine/Binaries/Linux && ./UnrealEditor'
   '';
 
   distroboxIniText = ''
