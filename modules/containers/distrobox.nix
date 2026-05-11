@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
   username = "allison";
@@ -28,6 +28,14 @@ let
   '';
 
   distroboxIniFile = pkgs.writeText "distrobox.ini" distroboxIniText;
+
+  distroboxAssemblePath = lib.makeBinPath [
+    pkgs.distrobox
+    pkgs.podman
+    pkgs.coreutils
+    pkgs.gnugrep
+    pkgs.gnused
+  ];
 in
 {
   virtualisation = {
@@ -54,15 +62,7 @@ in
   systemd.user.services.distrobox-assemble = {
     description = "Create declared Distrobox containers";
     wantedBy = [ "default.target" ];
-
-    path = [
-      pkgs.distrobox
-      pkgs.podman
-      pkgs.shadow
-      pkgs.coreutils
-      pkgs.gnugrep
-      pkgs.gnused
-    ];
+    environment.PATH = lib.mkForce "/run/wrappers/bin:${distroboxAssemblePath}";
 
     serviceConfig = {
       Type = "oneshot";
