@@ -3,7 +3,8 @@
 let
   cfg = config.allison.desktop;
   wallpaper = ../../img/wallpaper/oilPainting.jpg;
-  wallpaperPath = toString wallpaper;
+  wallpaperPath = "${wallpaper}";
+  wallpaperUri = "file://${wallpaperPath}";
 
   sddmTheme = pkgs.runCommand "allison-sddm-theme" { } ''
     theme_dir="$out/share/sddm/themes/allison-breeze"
@@ -34,7 +35,7 @@ in
     assertions = [
       {
         assertion = cfg.sessions.gnome.enable || cfg.sessions.plasma.enable;
-        message = "At least one desktop session must be enabled for SDDM.";
+        message = "At least one desktop session must be enabled.";
       }
       {
         assertion = cfg.defaultSession != "gnome" || cfg.sessions.gnome.enable;
@@ -51,8 +52,10 @@ in
     services.displayManager = {
       defaultSession = cfg.defaultSession;
 
+      gdm.enable = cfg.sessions.gnome.enable;
+
       sddm = {
-        enable = true;
+        enable = cfg.sessions.plasma.enable && !cfg.sessions.gnome.enable;
         theme = "allison-breeze";
         wayland.enable = true;
         extraPackages = with pkgs.kdePackages; [
@@ -64,14 +67,33 @@ in
       };
     };
 
-    environment.systemPackages = [ sddmTheme ];
+    environment.systemPackages = lib.optionals cfg.sessions.plasma.enable [ sddmTheme ];
 
     xdg.portal.enable = true;
     xdg.portal.xdgOpenUsePortal = true;
 
     services.power-profiles-daemon.enable = true;
 
-    programs.dconf.enable = lib.mkIf cfg.sessions.gnome.enable true;
+    programs.dconf = lib.mkIf cfg.sessions.gnome.enable {
+      enable = true;
+
+      profiles.gdm.databases = lib.mkBefore [
+        {
+          settings = {
+            "org/gnome/desktop/background" = {
+              picture-uri = wallpaperUri;
+              picture-uri-dark = wallpaperUri;
+              picture-options = "zoom";
+            };
+
+            "org/gnome/desktop/screensaver" = {
+              picture-uri = wallpaperUri;
+              picture-options = "zoom";
+            };
+          };
+        }
+      ];
+    };
 
     home-manager.users.allison.imports =
       lib.optionals cfg.sessions.gnome.enable [ ../home/allison/gnome.nix ]

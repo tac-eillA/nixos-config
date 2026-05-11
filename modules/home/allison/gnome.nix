@@ -1,10 +1,24 @@
-{ ... }:
+{ pkgs, ... }:
 
 let
   wallpaper = ../../../img/wallpaper/oilPainting.jpg;
-  wallpaperUri = "file://${toString wallpaper}";
+  wallpaperUri = "file://${wallpaper}";
+  extensions = with pkgs.gnomeExtensions; [
+    appindicator
+    caffeine
+    gsconnect
+    tiling-assistant
+  ];
 in
 {
+  home.packages = with pkgs; [
+    adwaita-icon-theme
+    adwaita-icon-theme-legacy
+    bibata-cursors
+    gnome-extension-manager
+    gnome-tweaks
+  ] ++ extensions;
+
   dconf = {
     enable = true;
 
@@ -26,6 +40,11 @@ in
         enable-hot-corners = false;
         gtk-theme = "Adwaita";
         icon-theme = "Adwaita";
+        cursor-theme = "Bibata-Modern-Classic";
+      };
+
+      "org/gnome/shell" = {
+        enabled-extensions = map (extension: extension.extensionUuid) extensions;
       };
 
       "org/gnome/mutter" = {
