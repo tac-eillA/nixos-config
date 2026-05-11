@@ -85,6 +85,25 @@ in
         switch-to-application-4 = [ ];
         switch-to-application-5 = [ ];
       };
+
+      "org/gnome/settings-daemon/plugins/media-keys" = {
+        custom-keybindings = [
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/"
+        ];
+      };
+
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
+        name = "Launch Ghostty";
+        command = "ghostty";
+        binding = "<Super>Return";
+      };
+
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1" = {
+        name = "Launch Firefox";
+        command = "firefox";
+        binding = "<Super>b";
+      };
     };
   };
 }
