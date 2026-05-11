@@ -48,6 +48,27 @@ in
     podman-tui
   ];
 
+  systemd.user.services.distrobox-assemble = {
+    description = "Create declared Distrobox containers";
+    wantedBy = [ "default.target" ];
+
+    path = [
+      pkgs.distrobox
+      pkgs.podman
+      pkgs.shadow
+      pkgs.coreutils
+      pkgs.gnugrep
+      pkgs.gnused
+    ];
+
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.distrobox}/bin/distrobox-assemble create --file ${distroboxIni}";
+      ExecStop = "${pkgs.distrobox}/bin/distrobox-assemble rm --file ${distroboxIni}";
+    };
+  };
+
   services.flatpak.packages = [
     "io.github.dvlv.boxbuddyrs"
   ];
