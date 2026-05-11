@@ -50,6 +50,19 @@ in
 
       "org/gnome/shell" = {
         enabled-extensions = map (extension: extension.extensionUuid) extensions;
+        favorite-apps = [
+          "firefox.desktop"
+          "com.mitchellh.ghostty.desktop"
+          "dev.zed.Zed.desktop"
+          "org.gnome.Nautilus.desktop"
+        ];
+      };
+
+      "org/gnome/shell/extensions/dash-to-dock" = {
+        show-trash = true;
+        show-mounts = false;
+        show-show-apps-button = true;
+        show-apps-at-top = false;
       };
 
       "org/gnome/mutter" = {
