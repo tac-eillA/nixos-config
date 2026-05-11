@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 let
-  username = 'allison';
+  username = "allison";
 
   unrealDevAliases = pkgs.writeText "unreal-dev-aliases.sh" ''
     alias cproj='cd /workspace/projects'
