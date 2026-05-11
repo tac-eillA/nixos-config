@@ -7,7 +7,7 @@ let
     alias cproj='cd /workspace/projects'
   '';
 
-  distroboxIni = ''
+  distroboxIniText = ''
     [unreal-dev]
     pull=true
     image=rockylinux:8
@@ -25,6 +25,8 @@ let
     init_hooks="grep -qxF 'source /opt/distrobox-aliases/aliases.sh' ~/.bashrc || echo 'source /opt/distrobox-aliases/aliases.sh' >> ~/.bashrc"
     init_hooks="grep -qxF 'source /opt/distrobox-aliases/aliases.sh' ~/.zshrc || echo 'source /opt/distrobox-aliases/aliases.sh' >> ~/.zshrc"
   '';
+
+  distroboxIniFile = pkgs.writeText "distrobox.ini" distroboxIniText;
 in
 {
   virtualisation = {
@@ -64,8 +66,8 @@ in
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${pkgs.distrobox}/bin/distrobox-assemble create --file ${distroboxIni}";
-      ExecStop = "${pkgs.distrobox}/bin/distrobox-assemble rm --file ${distroboxIni}";
+      ExecStart = "${pkgs.distrobox}/bin/distrobox-assemble create --file ${distroboxIniFile}";
+      ExecStop = "${pkgs.distrobox}/bin/distrobox-assemble rm --file ${distroboxIniFile}";
     };
   };
 
@@ -73,5 +75,5 @@ in
     "io.github.dvlv.boxbuddyrs"
   ];
 
-  environment.etc."distrobox/distrobox.ini".text = distroboxIni;
+  environment.etc."distrobox/distrobox.ini".text = distroboxIniText;
 }
