@@ -4,7 +4,6 @@
   imports = [
     ./git.nix
     ./ghostty.nix
-    ./plasma.nix
     ./zsh.nix
   ];
 
