@@ -16,7 +16,7 @@ let
     root=false
     replace=false
     start_now=false
-    additional_packages="alsa-lib pango libxkbcommon libgbm libXrandr libXdamage libXcomposite-devel at-spi2-atk libxml2-devel nss.x86_64"
+    additional_packages="alsa-lib pango libxkbcommon libgbm libXrandr libXdamage libXcomposite-devel at-spi2-atk libxml2-devel nss.x86_64 vulkan-tools"
 
     home=/home/${username}/.local/share/distrobox/homes/unreal-dev
 
