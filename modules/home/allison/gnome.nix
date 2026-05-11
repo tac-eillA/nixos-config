@@ -8,21 +8,22 @@ let
     caffeine
     clipboard-history
     dash-to-dock
-    gsconnect
     just-perfection
     space-bar
-    tiling-assistant
     vitals
   ];
 in
 {
-  home.packages = with pkgs; [
-    adwaita-icon-theme
-    adwaita-icon-theme-legacy
-    bibata-cursors
-    gnome-extension-manager
-    gnome-tweaks
-  ] ++ extensions;
+  home.packages =
+    with pkgs;
+    [
+      adwaita-icon-theme
+      adwaita-icon-theme-legacy
+      bibata-cursors
+      gnome-extension-manager
+      gnome-tweaks
+    ]
+    ++ extensions;
 
   dconf = {
     enable = true;
