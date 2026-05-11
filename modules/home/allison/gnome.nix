@@ -17,10 +17,16 @@ let
     dash-to-dock
     just-perfection
     space-bar
+    vicinae
     vitals
   ];
 in
 {
+  programs.vicinae = {
+    enable = true;
+    systemd.enable = true;
+  };
+
   home.packages =
     with pkgs;
     [
@@ -104,6 +110,8 @@ in
         close = [ "<Super>q" ];
         maximize = [ "<Super>Up" ];
         minimize = [ "<Super>Down" ];
+        switch-input-source = [ ];
+        switch-input-source-backward = [ ];
         unmaximize = [ ];
 
         switch-to-workspace-1 = [ "<Super>1" ];
@@ -131,6 +139,7 @@ in
         custom-keybindings = [
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
           "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/"
+          "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/"
         ];
       };
 
@@ -144,6 +153,12 @@ in
         name = "Launch Firefox";
         command = "firefox";
         binding = "<Super>b";
+      };
+
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2" = {
+        name = "Toggle Vicinae";
+        command = "vicinae toggle";
+        binding = "<Super>space";
       };
     };
   };
