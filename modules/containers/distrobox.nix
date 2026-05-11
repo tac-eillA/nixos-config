@@ -14,7 +14,7 @@ let
     image=rockylinux:8
     init=false
     root=false
-    replace=true
+    replace=false
     start_now=false
     additional_packages="alsa-lib pango libxkbcommon libgbm libXrandr libXdamage libXcomposite-devel at-spi2-atk libxml2-devel nss.x86_64"
 
