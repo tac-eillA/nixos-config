@@ -6,8 +6,13 @@ let
   extensions = with pkgs.gnomeExtensions; [
     appindicator
     caffeine
+    clipboard-history
+    dash-to-dock
     gsconnect
+    just-perfection
+    space-bar
     tiling-assistant
+    vitals
   ];
 in
 {
