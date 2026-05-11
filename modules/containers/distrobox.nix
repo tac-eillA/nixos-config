@@ -9,13 +9,13 @@ let
 
   distroboxIni = ''
     [unreal-dev]
-    additional_packages="alsa-lib pango libxkbcommon libgbm libXrandr libXdamage libXcomposite-devel at-spi2-atk libxml2-devel nss.x86_64"
+    pull=true
     image=rockylinux:8
     init=false
-    pull=true
     root=false
-    replace=false
+    replace=true
     start_now=false
+    additional_packages="alsa-lib pango libxkbcommon libgbm libXrandr libXdamage libXcomposite-devel at-spi2-atk libxml2-devel nss.x86_64"
 
     home=/home/${username}/.local/share/distrobox/homes/unreal-dev
 
@@ -45,6 +45,7 @@ in
     podman
     podman-compose
     passt
+    podman-tui
   ];
 
   services.flatpak.packages = [
