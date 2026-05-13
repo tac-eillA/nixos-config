@@ -41,8 +41,78 @@ EOF
 
     alias cproj='cd /workspace/projects'
 
+    _ue_pid_file() {
+      printf '%s\n' "''${UNREAL_EDITOR_PID_FILE:-/tmp/unreal-editor.pid}"
+    }
+
+    _ue_pid_alive() {
+      [ -n "''${1:-}" ] && kill -0 "$1" 2>/dev/null
+    }
+
+    _ue_related_pids() {
+      ps -u "$(id -u)" -o pid=,args= 2>/dev/null | awk -v root="/workspace/projects/UE-5.7.4/Engine" '
+        index($0, root) && $0 ~ /(UnrealEditor|ShaderCompileWorker|CrashReportClient)/ {
+          print $1
+        }
+      '
+    }
+
+    _ue_wait_for_exit() {
+      local pid="$1"
+      local count=0
+
+      while _ue_pid_alive "$pid" && [ "$count" -lt 20 ]; do
+        sleep 0.25
+        count=$((count + 1))
+      done
+    }
+
+    ue-stop() {
+      local pid_file="$(_ue_pid_file)"
+      local pid=""
+
+      if [ -f "$pid_file" ]; then
+        pid="$(cat "$pid_file" 2>/dev/null || true)"
+      fi
+
+      if _ue_pid_alive "$pid"; then
+        kill -TERM "-$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
+        _ue_wait_for_exit "$pid"
+
+        if _ue_pid_alive "$pid"; then
+          kill -KILL "-$pid" 2>/dev/null || kill -KILL "$pid" 2>/dev/null || true
+        fi
+      fi
+
+      local related_pid
+      for related_pid in $(_ue_related_pids); do
+        if [ "$related_pid" != "$pid" ]; then
+          kill -TERM "$related_pid" 2>/dev/null || true
+        fi
+      done
+
+      sleep 1
+
+      for related_pid in $(_ue_related_pids); do
+        if [ "$related_pid" != "$pid" ]; then
+          kill -KILL "$related_pid" 2>/dev/null || true
+        fi
+      done
+
+      rm -f "$pid_file"
+    }
+
     ue-start() {
       local pulse_runtime="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+      local pid_file="$(_ue_pid_file)"
+      local editor_pid=""
+      local status=0
+
+      _ue_cleanup_on_signal() {
+        if [ -n "$editor_pid" ] && _ue_pid_alive "$editor_pid"; then
+          kill -TERM "-$editor_pid" 2>/dev/null || kill -TERM "$editor_pid" 2>/dev/null || true
+        fi
+      }
 
       export __NV_PRIME_RENDER_OFFLOAD=1
       export __GLX_VENDOR_LIBRARY_NAME=nvidia
@@ -53,7 +123,23 @@ EOF
       export PULSE_SERVER="unix:''${pulse_runtime}/pulse/native"
 
       cd /workspace/projects/UE-5.7.4/Engine/Binaries/Linux || return
-      ./UnrealEditor "$@"
+
+      if command -v setsid >/dev/null 2>&1; then
+        setsid ./UnrealEditor "$@" &
+      else
+        ./UnrealEditor "$@" &
+      fi
+
+      editor_pid="$!"
+      printf '%s\n' "$editor_pid" > "$pid_file"
+
+      trap _ue_cleanup_on_signal HUP INT TERM EXIT
+      wait "$editor_pid"
+      status="$?"
+      trap - HUP INT TERM EXIT
+
+      rm -f "$pid_file"
+      return "$status"
     }
   '';
 
@@ -66,7 +152,7 @@ EOF
     replace=false
     start_now=false
     nvidia=true
-    additional_packages="alsa-lib alsa-plugins-pulseaudio pipewire-libs pulseaudio-libs pango libxkbcommon libgbm libXrandr libXdamage libXcomposite-devel at-spi2-atk libxml2-devel nss.x86_64 vulkan-tools xdg-utils"
+    additional_packages="alsa-lib alsa-plugins-pulseaudio pipewire-libs pulseaudio-libs pango libxkbcommon libgbm libXrandr libXdamage libXcomposite-devel at-spi2-atk libxml2-devel nss.x86_64 vulkan-tools xdg-utils procps-ng util-linux gawk"
 
     home=/home/${username}/.local/share/distrobox/homes/unreal-dev
 
