@@ -49,6 +49,7 @@
       rebuild-boot = "sudo nixos-rebuild boot --flake ~/nixos-config#$(hostname)";
       update = "nix flake update --flake ~/nixos-config";
       garbage = "sudo nix-collect-garbage -d";
+      ue-dev = "distrobox enter unreal-dev -- bash -lc 'source /opt/distrobox-aliases/aliases.sh && ue-start'";
       c = "clear";
     };
     initContent = ''

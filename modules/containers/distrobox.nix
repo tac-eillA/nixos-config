@@ -5,18 +5,33 @@ let
 
   unrealDevAliases = pkgs.writeText "unreal-dev-aliases.sh" ''
     alias cproj='cd /workspace/projects'
-    alias ue-start='cd /workspace/projects/UE-5.7.4/Engine/Binaries/Linux && ./UnrealEditor'
+
+    ue-start() {
+      local pulse_runtime="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
+      export __NV_PRIME_RENDER_OFFLOAD=1
+      export __GLX_VENDOR_LIBRARY_NAME=nvidia
+      export __VK_LAYER_NV_optimus=NVIDIA_only
+      export VK_ICD_FILENAMES=/run/host/run/opengl-driver/share/vulkan/icd.d/nvidia_icd.json
+      export LD_LIBRARY_PATH="/run/host/run/opengl-driver/lib:''${LD_LIBRARY_PATH:-}"
+      export SDL_AUDIODRIVER=pulseaudio
+      export PULSE_SERVER="unix:''${pulse_runtime}/pulse/native"
+
+      cd /workspace/projects/UE-5.7.4/Engine/Binaries/Linux || return
+      ./UnrealEditor "$@"
+    }
   '';
 
   distroboxIniText = ''
     [unreal-dev]
     pull=true
-    image=rockylinux:8
+    image=quay.io/fedora/fedora-toolbox:43
     init=false
     root=false
     replace=false
     start_now=false
-    additional_packages="alsa-lib pango libxkbcommon libgbm libXrandr libXdamage libXcomposite-devel at-spi2-atk libxml2-devel nss.x86_64 vulkan-tools"
+    nvidia=true
+    additional_packages="alsa-lib alsa-plugins-pulseaudio pipewire-libs pulseaudio-libs pango libxkbcommon libgbm libXrandr libXdamage libXcomposite-devel at-spi2-atk libxml2-devel nss.x86_64 vulkan-tools"
 
     home=/home/${username}/.local/share/distrobox/homes/unreal-dev
 
@@ -61,14 +76,21 @@ in
 
   systemd.user.services.distrobox-assemble = {
     description = "Create declared Distrobox containers";
-    wantedBy = [ "default.target" ];
     environment.PATH = lib.mkForce "/run/wrappers/bin:${distroboxAssemblePath}";
 
     serviceConfig = {
       Type = "oneshot";
-      RemainAfterExit = true;
       ExecStart = "${pkgs.distrobox}/bin/distrobox-assemble create --file ${distroboxIniFile}";
-      ExecStop = "${pkgs.distrobox}/bin/distrobox-assemble rm --file ${distroboxIniFile}";
+    };
+  };
+
+  systemd.user.timers.distrobox-assemble = {
+    description = "Create declared Distrobox containers after login";
+    wantedBy = [ "timers.target" ];
+
+    timerConfig = {
+      OnStartupSec = "30s";
+      Unit = "distrobox-assemble.service";
     };
   };
 
