@@ -3,7 +3,42 @@
 let
   username = "allison";
 
+  hostBrowserWrappers = pkgs.runCommand "distrobox-host-browser-wrappers" { } ''
+    mkdir -p "$out/bin"
+
+    for name in xdg-open sensible-browser x-www-browser; do
+      cat > "$out/bin/$name" <<'EOF'
+#!/bin/sh
+exec distrobox-host-exec xdg-open "$@"
+EOF
+      chmod +x "$out/bin/$name"
+    done
+
+    for name in firefox firefox-esr; do
+      cat > "$out/bin/$name" <<'EOF'
+#!/bin/sh
+exec distrobox-host-exec firefox "$@"
+EOF
+      chmod +x "$out/bin/$name"
+    done
+
+    for name in helium google-chrome google-chrome-stable; do
+      cat > "$out/bin/$name" <<'EOF'
+#!/bin/sh
+exec distrobox-host-exec xdg-open "$@"
+EOF
+      chmod +x "$out/bin/$name"
+    done
+  '';
+
   unrealDevAliases = pkgs.writeText "unreal-dev-aliases.sh" ''
+    case ":''${PATH}:" in
+      *":/opt/distrobox-browser/bin:"*) ;;
+      *) export PATH="/opt/distrobox-browser/bin:''${PATH}" ;;
+    esac
+
+    export BROWSER="''${BROWSER:-firefox}"
+
     alias cproj='cd /workspace/projects'
 
     ue-start() {
@@ -31,12 +66,13 @@ let
     replace=false
     start_now=false
     nvidia=true
-    additional_packages="alsa-lib alsa-plugins-pulseaudio pipewire-libs pulseaudio-libs pango libxkbcommon libgbm libXrandr libXdamage libXcomposite-devel at-spi2-atk libxml2-devel nss.x86_64 vulkan-tools"
+    additional_packages="alsa-lib alsa-plugins-pulseaudio pipewire-libs pulseaudio-libs pango libxkbcommon libgbm libXrandr libXdamage libXcomposite-devel at-spi2-atk libxml2-devel nss.x86_64 vulkan-tools xdg-utils"
 
     home=/home/${username}/.local/share/distrobox/homes/unreal-dev
 
     volume="/home/${username}/Projects:/workspace/projects"
     volume="${unrealDevAliases}:/opt/distrobox-aliases/aliases.sh:ro"
+    volume="${hostBrowserWrappers}:/opt/distrobox-browser:ro"
 
     init_hooks="grep -qxF 'source /opt/distrobox-aliases/aliases.sh' ~/.bashrc || echo 'source /opt/distrobox-aliases/aliases.sh' >> ~/.bashrc"
     init_hooks="grep -qxF 'source /opt/distrobox-aliases/aliases.sh' ~/.zshrc || echo 'source /opt/distrobox-aliases/aliases.sh' >> ~/.zshrc"
