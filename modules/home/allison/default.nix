@@ -12,7 +12,7 @@
   home = {
     username = "allison";
     homeDirectory = "/home/allison";
-    stateVersion = "26.05";
+    stateVersion = "26.11";
     sessionVariables = {
       EDITOR = "nvim";
       VISUAL = "nvim";
