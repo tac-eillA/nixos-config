@@ -17,7 +17,6 @@
     tmux
     tailscale
     bitwarden-cli
-    bitwarden-desktop
   ];
 
   xdg.terminal-exec = {
