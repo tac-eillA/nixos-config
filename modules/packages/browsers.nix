@@ -10,7 +10,7 @@
     };
   };
 
-  environment.systemPackages = with pkgs; [
-    nur.repos.lonerOrz.helium
-  ];
+  # environment.systemPackages = with pkgs; [
+  #   nur.repos.lonerOrz.helium
+  # ];
 }
