@@ -58,7 +58,8 @@
     jetbrains.rust-rover
     zed-editor-fhs
     opencode
-    opencode-desktop
     codex
+    python3
+    detect-secrets
   ];
 }
