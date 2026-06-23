@@ -16,5 +16,11 @@
     mosh
     tmux
     tailscale
+    bitwarden-cli
   ];
+
+  xdg.terminal-exec = {
+    enable = true;
+    settings.default = [ "com.mitchellh.ghostty.desktop" ];
+  };
 }

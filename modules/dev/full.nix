@@ -38,6 +38,8 @@
     file
     vim
     kitty
+    nixd
+    nil
 
     pciutils
     usbutils
