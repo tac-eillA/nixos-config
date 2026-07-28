@@ -1,4 +1,4 @@
-//@ pragma ShellId allison
+//@ pragma ShellId scylla
 //@ pragma IconTheme Adwaita
 
 pragma ComponentBehavior: Bound
@@ -66,7 +66,7 @@ ShellRoot {
   property string wallpaper: "file://" +
     (Quickshell.env("XDG_STATE_HOME")
       || (Quickshell.env("HOME") + "/.local/state")) +
-    "/allison-theme/wallpaper"
+    "/scylla-theme/wallpaper"
 
   function applyGeneratedTheme(data) {
     try {
@@ -86,7 +86,7 @@ ShellRoot {
   Process {
     id: generatedTheme
     command: ["sh", "-lc",
-      "state=\"${XDG_STATE_HOME:-$HOME/.local/state}/allison-theme\"; " +
+      "state=\"${XDG_STATE_HOME:-$HOME/.local/state}/scylla-theme\"; " +
       "[ -r \"$state/theme.json\" ] && cat \"$state/theme.json\" || true"]
     running: true
     stdout: StdioCollector {
@@ -316,7 +316,7 @@ ShellRoot {
     command: [
       "systemd-inhibit",
       "--what=idle",
-      "--who=Allison Quickshell",
+      "--who=Scylla Quickshell",
       "--why=Keep display awake",
       "sleep",
       "infinity"

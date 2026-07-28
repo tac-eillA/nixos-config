@@ -2,4 +2,4 @@
 
 [templates.quickshell]
 input_path = "@THEME_TEMPLATE@"
-output_path = "~/.local/state/allison-theme/theme.json"
+output_path = "~/.local/state/scylla-theme/theme.json"

@@ -17,7 +17,7 @@ ColumnLayout {
     }
 
     function mutate(arguments) {
-        todoAction.command = ["allison-todo"].concat(arguments);
+        todoAction.command = ["scylla-todo"].concat(arguments);
         todoAction.running = true;
     }
 
@@ -27,7 +27,7 @@ ColumnLayout {
 
     Process {
         id: todoQuery
-        command: ["allison-todo", "list"]
+        command: ["scylla-todo", "list"]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {

@@ -14,15 +14,15 @@
   boot.kernelParams = [ "pm_async=off" ];
 
   # The Framework 13 has an AMD Strix integrated GPU.
-  allison.desktop.video.gpu = "amd";
+  scylla.desktop.video.gpu = "amd";
 
   # Keep the pre-login UI on the laptop panel. Hyprland applies the user's
   # complete docked layout after SDDM launches the UWSM-managed session.
-  allison.desktop.login.internalDisplayOnly = true;
+  scylla.desktop.login.internalDisplayOnly = true;
 
   # programs.unrealEngine = {
   #     enable = true;
-  #     user = "allison";
+  #     user = "scylla";
 
   #     # Use "nvidia" or "amd"
   #     # Use "generic" if unsure.
@@ -38,7 +38,7 @@
 
   # programs.unrealEnginePrebuilt = {
   #     enable = true;
-  #     user = "allison";
+  #     user = "scylla";
 
   #     # This is where ue-bin-install will place the extracted engine by default.
   #     engineRoot = "$HOME/Applications/UnrealEngine";

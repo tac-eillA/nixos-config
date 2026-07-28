@@ -201,7 +201,7 @@ Scope {
                                     onClicked: {
                                         wallpaperRoot.shell.wallpaperPickerVisible = false;
                                         wallpaperApply.selectedPath = path;
-                                        wallpaperApply.command = ["allison-theme", path];
+                                        wallpaperApply.command = ["scylla-theme", path];
                                         wallpaperApply.running = true;
                                     }
                                 }

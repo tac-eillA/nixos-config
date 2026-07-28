@@ -1,5 +1,5 @@
 -- Hyprland 0.56 native Lua configuration.
--- Managed by Home Manager through modules/home/allison/hyprland.nix.
+-- Managed by Home Manager through modules/home/scylla/hyprland.nix.
 
 local mainMod = "SUPER"
 local terminal = "ghostty"
@@ -107,9 +107,9 @@ hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd(browser2))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("vicinae toggle"))
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("wdisplays"))
-hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("qs -c allison ipc call shell toggleWallpaperPicker"))
-hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("qs -c allison ipc call shell toggleNotifications"))
-hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exec_cmd("qs -c allison ipc call shell togglePower"))
+hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("qs -c scylla ipc call shell toggleWallpaperPicker"))
+hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("qs -c scylla ipc call shell toggleNotifications"))
+hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exec_cmd("qs -c scylla ipc call shell togglePower"))
 
 hl.bind(mainMod .. " + Q", hl.dsp.window.close())
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = "fullscreen" }))
@@ -130,24 +130,24 @@ hl.bind("Print", hl.dsp.exec_cmd("grimblast copy area"))
 hl.bind("SHIFT + Print", hl.dsp.exec_cmd("grimblast save area"))
 hl.bind(mainMod .. " + Escape", hl.dsp.exec_cmd("loginctl lock-session"))
 
-hl.bind("XF86AudioMute", hl.dsp.exec_cmd("qs -c allison ipc call shell toggleMute"), { locked = true })
+hl.bind("XF86AudioMute", hl.dsp.exec_cmd("qs -c scylla ipc call shell toggleMute"), { locked = true })
 hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"), { locked = true })
-hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("qs -c allison ipc call shell media playPause"), { locked = true })
-hl.bind("XF86AudioNext", hl.dsp.exec_cmd("qs -c allison ipc call shell media next"), { locked = true })
-hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("qs -c allison ipc call shell media previous"), { locked = true })
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("qs -c allison ipc call shell volumeStep 5"), {
+hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("qs -c scylla ipc call shell media playPause"), { locked = true })
+hl.bind("XF86AudioNext", hl.dsp.exec_cmd("qs -c scylla ipc call shell media next"), { locked = true })
+hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("qs -c scylla ipc call shell media previous"), { locked = true })
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("qs -c scylla ipc call shell volumeStep 5"), {
   locked = true,
   repeating = true,
 })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("qs -c allison ipc call shell volumeStep -5"), {
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("qs -c scylla ipc call shell volumeStep -5"), {
   locked = true,
   repeating = true,
 })
-hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("qs -c allison ipc call shell brightnessStep 5"), {
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("qs -c scylla ipc call shell brightnessStep 5"), {
   locked = true,
   repeating = true,
 })
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("qs -c allison ipc call shell brightnessStep -5"), {
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("qs -c scylla ipc call shell brightnessStep -5"), {
   locked = true,
   repeating = true,
 })

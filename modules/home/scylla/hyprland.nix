@@ -4,14 +4,14 @@ let
   wallpaper = ../../../img/wallpaper/oilPainting.jpg;
   repositoryWallpapers = ../../../img/wallpaper;
   themeTemplate = ./hyprland/theme.json.tpl;
-  themeConfig = pkgs.writeText "allison-matugen.toml" (
+  themeConfig = pkgs.writeText "scylla-matugen.toml" (
     builtins.replaceStrings
       [ "@THEME_TEMPLATE@" ]
       [ "${themeTemplate}" ]
       (builtins.readFile ./hyprland/matugen.toml)
   );
   themeSwitcher = pkgs.writeShellApplication {
-    name = "allison-theme";
+    name = "scylla-theme";
     runtimeInputs = with pkgs; [
       coreutils
       glib
@@ -22,7 +22,7 @@ let
     ];
     text = ''
       usage() {
-        echo "usage: allison-theme WALLPAPER" >&2
+        echo "usage: scylla-theme WALLPAPER" >&2
       }
 
       case "''${1:-}" in
@@ -32,7 +32,7 @@ let
           ;;
       esac
 
-      state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/allison-theme"
+      state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/scylla-theme"
       mkdir -p "$state_dir"
 
       if [ "$#" -ne 1 ]; then
@@ -72,13 +72,13 @@ let
     '';
   };
   todoManager = pkgs.writeShellApplication {
-    name = "allison-todo";
+    name = "scylla-todo";
     runtimeInputs = with pkgs; [
       coreutils
       jq
     ];
     text = ''
-      state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/allison-shell"
+      state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/scylla-shell"
       todo_file="$state_dir/todos.json"
       mkdir -p "$state_dir"
       if [ ! -e "$todo_file" ]; then
@@ -92,7 +92,7 @@ let
           ;;
         add)
           [ "$#" -eq 2 ] && [ -n "$2" ] || {
-            echo "usage: allison-todo add TEXT" >&2
+            echo "usage: scylla-todo add TEXT" >&2
             exit 2
           }
           task_id="$(date +%s%N)"
@@ -119,7 +119,7 @@ let
           mv "$tmp_file" "$todo_file"
           ;;
         *)
-          echo "usage: allison-todo {list|add|toggle|remove}" >&2
+          echo "usage: scylla-todo {list|add|toggle|remove}" >&2
           exit 2
           ;;
       esac
@@ -172,7 +172,7 @@ let
       exit "$status"
     '';
   };
-  wallpaperPanelConfig = pkgs.writeText "allison-wallpaper-panel.qml" (
+  wallpaperPanelConfig = pkgs.writeText "scylla-wallpaper-panel.qml" (
     builtins.replaceStrings
       [ "@REPOSITORY_WALLPAPERS@" ]
       [ "${repositoryWallpapers}" ]
@@ -262,35 +262,35 @@ in
     export XMODIFIERS=
   '';
 
-  xdg.configFile."quickshell/allison/shell.qml".source =
+  xdg.configFile."quickshell/scylla/shell.qml".source =
     ./hyprland/quickshell/shell.qml;
-  xdg.configFile."quickshell/allison/CalendarPanel.qml".source =
+  xdg.configFile."quickshell/scylla/CalendarPanel.qml".source =
     ./hyprland/quickshell/CalendarPanel.qml;
-  xdg.configFile."quickshell/allison/FingerprintPanel.qml".source =
+  xdg.configFile."quickshell/scylla/FingerprintPanel.qml".source =
     ./hyprland/quickshell/FingerprintPanel.qml;
-  xdg.configFile."quickshell/allison/HelpPanel.qml".source =
+  xdg.configFile."quickshell/scylla/HelpPanel.qml".source =
     ./hyprland/quickshell/HelpPanel.qml;
-  xdg.configFile."quickshell/allison/TodoList.qml".source =
+  xdg.configFile."quickshell/scylla/TodoList.qml".source =
     ./hyprland/quickshell/TodoList.qml;
-  xdg.configFile."quickshell/allison/WallpaperPanel.qml".source =
+  xdg.configFile."quickshell/scylla/WallpaperPanel.qml".source =
     wallpaperPanelConfig;
   xdg.configFile."matugen/config.toml".source = themeConfig;
   xdg.configFile."matugen/theme.json.tpl".source = themeTemplate;
 
   # Runtime theme state is deliberately mutable. Seed it once; wallpaper
-  # choices made by allison-theme survive Home Manager rebuilds.
+  # choices made by scylla-theme survive Home Manager rebuilds.
   home.activation.seedDesktopTheme =
     lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/allison-theme"
+      state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/scylla-theme"
       if [ ! -e "$state_dir/wallpaper" ]; then
         $DRY_RUN_CMD ${pkgs.coreutils}/bin/mkdir -p "$state_dir"
         $DRY_RUN_CMD ${pkgs.coreutils}/bin/ln -s "${wallpaper}" "$state_dir/wallpaper"
       fi
     '';
 
-  systemd.user.services.quickshell-allison = {
+  systemd.user.services.quickshell-scylla = {
     Unit = {
-      Description = "Allison Quickshell desktop shell";
+      Description = "Scylla Quickshell desktop shell";
       After = [ "graphical-session.target" ];
       PartOf = [ "graphical-session.target" ];
       X-Restart-Triggers = [
@@ -303,7 +303,7 @@ in
       ];
     };
     Service = {
-      ExecStart = "${pkgs.quickshell}/bin/qs -c allison";
+      ExecStart = "${pkgs.quickshell}/bin/qs -c scylla";
       Restart = "on-failure";
       RestartSec = 2;
     };

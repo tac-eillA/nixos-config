@@ -38,7 +38,13 @@ case "${host_type,,}" in
       || die "Default host template is missing: ${default_dir}/configuration.nix"
 
     require_command nixos-generate-config
+    require_command nano
     require_command sudo
+
+    printf '\nPrimary user defaults are kept in modules/core/user.nix.\n'
+    printf 'Nano will open so you can review the username, display name, home directory, and Git identity.\n'
+    read -r -p 'Press Enter to open the user configuration. '
+    nano "${repo_dir}/modules/core/user.nix"
 
     mkdir -- "$destination"
     cp -- "${default_dir}/configuration.nix" "${destination}/configuration.nix"

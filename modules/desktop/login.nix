@@ -1,16 +1,16 @@
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.allison.desktop;
-  sddmTheme = pkgs.runCommand "allison-sddm-theme" { } ''
-    mkdir -p "$out/share/sddm/themes/allison"
-    cp ${./sddm-theme/Main.qml} "$out/share/sddm/themes/allison/Main.qml"
-    cp ${./sddm-theme/metadata.desktop} "$out/share/sddm/themes/allison/metadata.desktop"
-    touch "$out/share/sddm/themes/allison/theme.conf"
+  cfg = config.scylla.desktop;
+  sddmTheme = pkgs.runCommand "scylla-sddm-theme" { } ''
+    mkdir -p "$out/share/sddm/themes/scylla"
+    cp ${./sddm-theme/Main.qml} "$out/share/sddm/themes/scylla/Main.qml"
+    cp ${./sddm-theme/metadata.desktop} "$out/share/sddm/themes/scylla/metadata.desktop"
+    touch "$out/share/sddm/themes/scylla/theme.conf"
   '';
 in
 {
-  options.allison.desktop = {
+  options.scylla.desktop = {
     defaultSession = lib.mkOption {
       type = lib.types.enum [ "hyprland-uwsm" ];
       default = "hyprland-uwsm";
@@ -28,7 +28,7 @@ in
     assertions = [
       {
         assertion = cfg.defaultSession != "hyprland-uwsm" || cfg.sessions.hyprland.enable;
-        message = ''allison.desktop.defaultSession = "hyprland-uwsm" requires allison.desktop.sessions.hyprland.enable = true.'';
+        message = ''scylla.desktop.defaultSession = "hyprland-uwsm" requires scylla.desktop.sessions.hyprland.enable = true.'';
       }
     ];
 
@@ -40,7 +40,7 @@ in
       defaultSession = cfg.defaultSession;
       sddm = {
         enable = true;
-        theme = "${sddmTheme}/share/sddm/themes/allison";
+        theme = "${sddmTheme}/share/sddm/themes/scylla";
         wayland.enable = false;
         settings = {
           Users = {
@@ -89,7 +89,7 @@ in
 
     services.power-profiles-daemon.enable = true;
 
-    home-manager.users.allison.imports =
-      lib.optionals cfg.sessions.hyprland.enable [ ../home/allison/hyprland.nix ];
+    home-manager.users.${config.scylla.user.name}.imports =
+      lib.optionals cfg.sessions.hyprland.enable [ ../home/scylla/hyprland.nix ];
   };
 }

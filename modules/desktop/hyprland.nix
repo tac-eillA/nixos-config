@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 {
-  config = lib.mkIf config.allison.desktop.sessions.hyprland.enable {
+  config = lib.mkIf config.scylla.desktop.sessions.hyprland.enable {
     programs.hyprland = {
       enable = true;
       withUWSM = true;

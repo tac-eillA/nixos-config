@@ -1,10 +1,10 @@
 { config, lib, pkgs, pkgsStable, ... }:
 
 let
-  cfg = config.allison.desktop.video;
+  cfg = config.scylla.desktop.video;
 in
 {
-  options.allison.desktop.video.gpu = lib.mkOption {
+  options.scylla.desktop.video.gpu = lib.mkOption {
     type = lib.types.enum [ "generic" "amd" "nvidia" ];
     default = "generic";
     description = "GPU driver configuration for this host.";

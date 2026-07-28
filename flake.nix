@@ -1,5 +1,5 @@
 {
-  description = "words are hard sometimes... i just want my systems to work how i tell them";
+  description = "Scylla — reusable NixOS configurations for a fleet of mythic hosts";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -50,7 +50,6 @@
               home-manager.useUserPackages = true;
               home-manager.backupFileExtension = "before-home-manager";
               home-manager.extraSpecialArgs = { inherit pkgsStable; };
-              home-manager.users.allison = import ./modules/home/allison;
             }
             ./hosts/${hostname}/configuration.nix
           ];
