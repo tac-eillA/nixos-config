@@ -1,7 +1,11 @@
-{ lib, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
-  username = "allison";
+  username = config.scylla.user.name;
+  homeDirectory =
+    if config.scylla.user.homeDirectory == null
+    then "/home/${username}"
+    else config.scylla.user.homeDirectory;
 
   hostBrowserWrappers = pkgs.runCommand "distrobox-host-browser-wrappers" { } ''
     mkdir -p "$out/bin"
@@ -154,9 +158,9 @@ EOF
     nvidia=true
     additional_packages="alsa-lib alsa-plugins-pulseaudio pipewire-libs pulseaudio-libs pango libxkbcommon libgbm libXrandr libXdamage libXcomposite-devel at-spi2-atk libxml2-devel nss.x86_64 vulkan-tools xdg-utils procps-ng util-linux gawk"
 
-    home=/home/${username}/.local/share/distrobox/homes/unreal-dev
+    home=${homeDirectory}/.local/share/distrobox/homes/unreal-dev
 
-    volume="/home/${username}/Projects:/workspace/projects"
+    volume="${homeDirectory}/Projects:/workspace/projects"
     volume="${unrealDevAliases}:/opt/distrobox-aliases/aliases.sh:ro"
     volume="${hostBrowserWrappers}:/opt/distrobox-browser:ro"
 

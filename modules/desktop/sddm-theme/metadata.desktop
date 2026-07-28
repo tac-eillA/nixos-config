@@ -1,0 +1,12 @@
+[SddmGreeterTheme]
+Name=Scylla
+Description=A quiet terminal-inspired SDDM theme
+Author=Scylla
+License=MIT
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+QtVersion=6
+Theme-Id=scylla
+Theme-API=2.0

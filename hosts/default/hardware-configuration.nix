@@ -1,7 +1,8 @@
 { lib, ... }:
 
 {
-  # Replace these placeholder filesystems with the output of nixos-generate-config.
+  # This lets the template evaluate, but it must be replaced by the installer
+  # with the output of nixos-generate-config before deploying a real machine.
   fileSystems."/" = {
     device = lib.mkDefault "/dev/disk/by-label/replace-me-root";
     fsType = lib.mkDefault "ext4";

@@ -7,9 +7,11 @@
     #../../modules/dev/unreal.nix
   ];
 
+  scylla.desktop.video.gpu = "nvidia";
+
   # programs.unrealEngine = {
   #     enable = true;
-  #     user = "allison";
+  #     user = "scylla";
 
   #     # Use "nvidia" or "amd"
   #     # Use "generic" if unsure.

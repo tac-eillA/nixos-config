@@ -1,7 +1,8 @@
-{ pkgs, ... }:
+{ pkgs, pkgsStable, ... }:
 
-{
-  environment.systemPackages = with pkgs; [
+let
+  # Packages use nixos-unstable unless explicitly moved to pkgsStable.
+  unstablePackages = with pkgs; [
     blender
     kicad
     krita
@@ -25,4 +26,12 @@
     kontainer
     moonlight-qt
   ];
+
+  stablePackages = with pkgsStable; [
+    # LACT 0.9.1 currently fails to build on unstable.
+    lact
+  ];
+in
+{
+  environment.systemPackages = unstablePackages ++ stablePackages;
 }

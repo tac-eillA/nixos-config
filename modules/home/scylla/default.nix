@@ -1,4 +1,4 @@
-{ ... }:
+{ osConfig, ... }:
 
 {
   imports = [
@@ -10,8 +10,11 @@
   ];
 
   home = {
-    username = "allison";
-    homeDirectory = "/home/allison";
+    username = osConfig.scylla.user.name;
+    homeDirectory =
+      if osConfig.scylla.user.homeDirectory == null
+      then "/home/${osConfig.scylla.user.name}"
+      else osConfig.scylla.user.homeDirectory;
     stateVersion = "26.11";
     sessionVariables = {
       EDITOR = "nvim";

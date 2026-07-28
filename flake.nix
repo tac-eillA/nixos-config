@@ -1,5 +1,5 @@
 {
-  description = "words are hard sometimes... i just want my systems to work how i tell them";
+  description = "Scylla — reusable NixOS configurations for my hosts";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -15,14 +15,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nur = {
-      url = "github:nix-community/NUR";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
-    inputs@{ nixpkgs, nur, ... }:
+    inputs@{ nixpkgs, ... }:
     let
       system = "x86_64-linux";
       lib = nixpkgs.lib;
@@ -36,10 +32,16 @@
 
       mkHost =
         hostname:
+        let
+          pkgsStable = import inputs.nix-stable {
+            inherit system;
+            config.allowUnfree = true;
+          };
+        in
         lib.nixosSystem {
           inherit system;
+          specialArgs = { inherit inputs pkgsStable; };
           modules = [
-            nur.modules.nixos.default
             flatpakModule
             inputs.sops-nix.nixosModules.sops
             inputs.home-manager.nixosModules.home-manager
@@ -47,29 +49,21 @@
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
               home-manager.backupFileExtension = "before-home-manager";
-              home-manager.users.allison = import ./modules/home/allison;
+              home-manager.extraSpecialArgs = { inherit pkgsStable; };
             }
             ./hosts/${hostname}/configuration.nix
           ];
         };
+
+      hostDirectories = builtins.readDir ./hosts;
+      hostNames = lib.filter (
+        hostname:
+        hostDirectories.${hostname} == "directory"
+        && builtins.pathExists (./hosts + "/${hostname}/configuration.nix")
+      ) (builtins.attrNames hostDirectories);
     in
     {
-      nixosConfigurations = {
-        athena = mkHost "athena";
-        artemis = mkHost "artemis";
-        demeter = mkHost "demeter";
-        hera = mkHost "hera";
-        pythia = mkHost "pythia";
-        apollo = mkHost "apollo";
-        dns1 = mkHost "dns1";
-        dns2 = mkHost "dns2";
-        forgejo = mkHost "forgejo";
-        headscale = mkHost "headscale";
-        authentik = mkHost "authentik";
-        proxy = mkHost "proxy";
-        rundeck = mkHost "rundeck";
-        vaultwarden = mkHost "vaultwarden";
-      };
+      nixosConfigurations = lib.genAttrs hostNames mkHost;
 
       packages.${system}.rundeck-generate-resources = (mkPkgs system).writeShellApplication {
         name = "rundeck-generate-resources";
@@ -80,12 +74,6 @@
         ];
         text = builtins.readFile ./scripts/rundeck-generate-resources.sh;
       };
-
-      devShells.${system}.unreal =
-        let
-          pkgs = mkPkgs system;
-        in
-        import ./shells/unreal.nix { inherit pkgs; };
 
       formatter.${system} = (mkPkgs system).nixpkgs-fmt;
     };

@@ -25,6 +25,6 @@
 
   environment.systemPackages = with pkgs; [
     system-config-printer
-    simple-scan
+    xsane
   ];
 }
