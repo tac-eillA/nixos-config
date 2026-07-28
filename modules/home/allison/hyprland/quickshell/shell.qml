@@ -83,7 +83,6 @@ ShellRoot {
     property alias text: statusLabel.text
     property alias icon: statusIcon.text
     property color textColor: root.foreground
-    property string tooltip: ""
     property int horizontalPadding: 6
     signal clicked(var mouse)
     signal wheeled(var wheel)
@@ -128,10 +127,6 @@ ShellRoot {
       onClicked: mouse => parent.clicked(mouse)
       onWheel: wheel => parent.wheeled(wheel)
     }
-
-    ToolTip.visible: statusMouse.containsMouse && tooltip.length > 0
-    ToolTip.text: tooltip
-    ToolTip.delay: 500
 
     Behavior on color {
       ColorAnimation { duration: root.transitionDuration; easing.type: Easing.OutCubic }
@@ -523,9 +518,6 @@ ShellRoot {
             icon: root.networkName === "offline" ? "󰤭" : ""
             text: root.networkName === "offline" ? "" : root.networkName
             textColor: root.networkName === "offline" ? root.muted : root.foreground
-            tooltip: root.wifiEnabled
-              ? (root.networkName === "offline" ? "Wi-Fi enabled · disconnected" : "Connected to " + root.networkName)
-              : "Wi-Fi disabled"
             onClicked: mouse => {
               if (mouse.button === Qt.RightButton)
                 root.run("nmcli radio wifi " + (root.wifiEnabled ? "off" : "on"));
@@ -542,10 +534,6 @@ ShellRoot {
             textColor: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled
               ? root.foreground
               : root.muted
-            tooltip: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled
-              ? (root.bluetoothConnectedCount > 0
-                ? root.bluetoothConnectedCount + " connected device(s)" : "Bluetooth enabled")
-              : "Bluetooth disabled"
             onClicked: mouse => {
               if (mouse.button === Qt.RightButton && Bluetooth.defaultAdapter)
                 Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled;
@@ -558,7 +546,6 @@ ShellRoot {
             icon: root.mutedAudio ? "󰖁" : ""
             text: root.volume + "%"
             textColor: root.mutedAudio ? root.muted : root.foreground
-            tooltip: root.mutedAudio ? "Muted · click for audio controls" : "Volume · click for audio controls"
             onClicked: mouse => {
               if (mouse.button === Qt.MiddleButton)
                 root.toggleAudioMute();
@@ -573,16 +560,12 @@ ShellRoot {
             icon: "󰁹"
             text: root.batteryPercent + "%"
             textColor: root.batteryPercent < 16 ? root.urgent : root.foreground
-            tooltip: "Battery " + root.batteryPercent + "% · click for power details"
             onClicked: mouse => root.toggleQuickSettings("battery")
           }
 
           StatusItem {
             icon: root.idleInhibited ? "󰅶" : "󰾪"
             textColor: root.idleInhibited ? root.accent : root.muted
-            tooltip: root.idleInhibited
-              ? "Display sleep inhibited · click to allow sleep"
-              : "Keep display awake"
             onClicked: mouse => {
               idleInhibitor.running = !idleInhibitor.running;
               root.showOsd(
@@ -598,7 +581,6 @@ ShellRoot {
             icon: root.doNotDisturb ? "󰂛" : "󰂚"
             text: root.doNotDisturb ? "" : notificationHistory.count
             textColor: root.doNotDisturb ? root.muted : root.foreground
-            tooltip: root.doNotDisturb ? "Do not disturb" : "Notifications"
             onClicked: mouse => {
               if (mouse.button === Qt.RightButton)
                 root.doNotDisturb = !root.doNotDisturb;
@@ -609,7 +591,6 @@ ShellRoot {
 
           StatusItem {
             icon: ""
-            tooltip: "Session and power"
             onClicked: mouse => {
               root.powerVisible = !root.powerVisible;
               root.launcherVisible = false;

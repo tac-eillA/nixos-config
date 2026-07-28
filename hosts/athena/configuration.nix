@@ -13,6 +13,9 @@
   # avoids intermittent input/USB/GPU resume hangs on this platform.
   boot.kernelParams = [ "pm_async=off" ];
 
+  # The Framework 13 has an AMD Strix integrated GPU.
+  allison.desktop.video.gpu = "amd";
+
   # Keep the pre-login UI on the laptop panel. Hyprland applies the user's
   # complete docked layout after SDDM launches the UWSM-managed session.
   allison.desktop.login.internalDisplayOnly = true;

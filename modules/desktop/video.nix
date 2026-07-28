@@ -1,25 +1,41 @@
-{ config, pkgs, pkgsStable, ... }:
+{ config, lib, pkgs, pkgsStable, ... }:
 
+let
+  cfg = config.allison.desktop.video;
+in
 {
-  services.lact = {
-    enable = true;
-    package = pkgsStable.lact;
+  options.allison.desktop.video.gpu = lib.mkOption {
+    type = lib.types.enum [ "generic" "amd" "nvidia" ];
+    default = "generic";
+    description = "GPU driver configuration for this host.";
   };
 
-  hardware.graphics = {
-    enable = true;
-    enable32Bit = true;
-    extraPackages = with pkgs; [ nvidia-vaapi-driver egl-wayland ];
-  };
+  config = {
+    services.lact = {
+      enable = true;
+      package = pkgsStable.lact;
+    };
 
-  services.xserver.videoDrivers = [ "nvidia" ];
+    hardware.graphics = {
+      enable = true;
+      enable32Bit = true;
+      extraPackages = lib.optionals (cfg.gpu == "nvidia") (with pkgs; [
+        nvidia-vaapi-driver
+        egl-wayland
+      ]);
+    };
 
-  hardware.nvidia = {
-    modesetting.enable = true;
-    powerManagement.enable = true;
-    powerManagement.finegrained = false;
-    open = true;
-    nvidiaSettings = true;
-    package = config.boot.kernelPackages.nvidiaPackages.latest;
+    services.xserver.videoDrivers =
+      lib.optional (cfg.gpu == "nvidia") "nvidia"
+      ++ lib.optional (cfg.gpu == "amd") "amdgpu";
+
+    hardware.nvidia = lib.mkIf (cfg.gpu == "nvidia") {
+      modesetting.enable = true;
+      powerManagement.enable = true;
+      powerManagement.finegrained = false;
+      open = true;
+      nvidiaSettings = true;
+      package = config.boot.kernelPackages.nvidiaPackages.latest;
+    };
   };
 }

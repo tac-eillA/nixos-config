@@ -7,6 +7,8 @@
     #../../modules/dev/unreal.nix
   ];
 
+  allison.desktop.video.gpu = "nvidia";
+
   # programs.unrealEngine = {
   #     enable = true;
   #     user = "allison";
