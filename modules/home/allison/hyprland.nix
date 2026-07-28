@@ -63,6 +63,7 @@ in
     grimblast
     hypridle
     hyprlock
+    hyprpolkitagent
     libnotify
     blueman
     networkmanager
@@ -84,11 +85,23 @@ in
     enable = true;
     theme = {
       name = "Adwaita";
-      package = pkgs.gnome-themes-extra;
+      package = pkgs.gtk3;
     };
     iconTheme = {
-      name = "Adwaita";
-      package = pkgs.adwaita-icon-theme;
+      name = "Papirus-Dark";
+      package = pkgs.papirus-icon-theme;
+    };
+  };
+
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "inode/directory" = [ "thunar.desktop" ];
+      "image/bmp" = [ "imv.desktop" ];
+      "image/gif" = [ "imv.desktop" ];
+      "image/jpeg" = [ "imv.desktop" ];
+      "image/png" = [ "imv.desktop" ];
+      "image/webp" = [ "imv.desktop" ];
     };
   };
 
@@ -110,8 +123,7 @@ in
   };
 
   # UWSM owns the Hyprland session environment. Use the toolkits' built-in
-  # input contexts here so GNOME's IBus configuration is not inherited and
-  # does not start ibus-daemon under Hyprland.
+  # input contexts so no separate input-method daemon is started.
   xdg.configFile."uwsm/env".text = ''
     export XCURSOR_SIZE=24
     export HYPRCURSOR_SIZE=24
@@ -131,6 +143,20 @@ in
     };
     Service = {
       ExecStart = "${pkgs.quickshell}/bin/qs -c allison";
+      Restart = "on-failure";
+      RestartSec = 2;
+    };
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
+
+  systemd.user.services.hyprpolkitagent = {
+    Unit = {
+      Description = "Hyprland polkit authentication agent";
+      After = [ "graphical-session.target" ];
+      PartOf = [ "graphical-session.target" ];
+    };
+    Service = {
+      ExecStart = lib.getExe pkgs.hyprpolkitagent;
       Restart = "on-failure";
       RestartSec = 2;
     };

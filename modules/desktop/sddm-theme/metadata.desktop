@@ -1,0 +1,11 @@
+[SddmGreeterTheme]
+Name=Allison
+Description=A quiet terminal-inspired SDDM theme
+Author=Allison
+License=MIT
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=allison
+Theme-API=2.0

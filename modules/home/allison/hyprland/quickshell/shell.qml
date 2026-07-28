@@ -51,6 +51,7 @@ ShellRoot {
   property bool wifiEnabled: false
   property string activePowerProfile: ""
   property bool clockAlternate: false
+  property bool idleInhibited: idleInhibitor.running
   property bool osdVisible: false
   property string osdIcon: ""
   property string osdLabel: ""
@@ -214,6 +215,18 @@ ShellRoot {
     const icon = action === "next" ? "󰒭" : action === "previous" ? "󰒮"
       : (player.isPlaying ? "" : "");
     showOsd(icon, player.trackTitle || player.identity || "Media", 0, false);
+  }
+
+  Process {
+    id: idleInhibitor
+    command: [
+      "systemd-inhibit",
+      "--what=idle",
+      "--who=Allison Quickshell",
+      "--why=Keep display awake",
+      "sleep",
+      "infinity"
+    ]
   }
 
   IpcHandler {
@@ -562,6 +575,23 @@ ShellRoot {
             textColor: root.batteryPercent < 16 ? root.urgent : root.foreground
             tooltip: "Battery " + root.batteryPercent + "% · click for power details"
             onClicked: mouse => root.toggleQuickSettings("battery")
+          }
+
+          StatusItem {
+            icon: root.idleInhibited ? "󰅶" : "󰾪"
+            textColor: root.idleInhibited ? root.accent : root.muted
+            tooltip: root.idleInhibited
+              ? "Display sleep inhibited · click to allow sleep"
+              : "Keep display awake"
+            onClicked: mouse => {
+              idleInhibitor.running = !idleInhibitor.running;
+              root.showOsd(
+                idleInhibitor.running ? "󰅶" : "󰾪",
+                idleInhibitor.running ? "Display stays awake" : "Display sleep enabled",
+                0,
+                false
+              );
+            }
           }
 
           StatusItem {

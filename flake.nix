@@ -40,7 +40,7 @@
         in
         lib.nixosSystem {
           inherit system;
-          specialArgs = { inherit pkgsStable; };
+          specialArgs = { inherit inputs pkgsStable; };
           modules = [
             flatpakModule
             inputs.sops-nix.nixosModules.sops

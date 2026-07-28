@@ -4,7 +4,7 @@
 local mainMod = "SUPER"
 local terminal = "ghostty"
 local browser = "firefox"
-local fileManager = "nautilus"
+local fileManager = "thunar"
 
 hl.config({
   general = {

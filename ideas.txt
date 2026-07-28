@@ -1,0 +1,84 @@
+Quickshell environment ideas
+============================
+
+Current foundation
+------------------
+
+The shell already provides a bar, application/command launcher, notifications,
+network and Bluetooth controls, audio, power profiles, media controls, OSDs,
+and session/power actions.
+
+Recommended next builds
+-----------------------
+
+1. Workspace and window overview
+
+   Add a full-screen overview with live window thumbnails, keyboard navigation,
+   and drag-and-drop between normal and special workspaces. This is likely the
+   largest day-to-day usability improvement still missing.
+
+2. Unified login and lock experience
+
+   Build a native Quickshell lock screen and, once mature, a matching greetd
+   greeter. Login, lock, and desktop surfaces could then share one theme and
+   interaction language. Keep tuigreet as a dependable fallback.
+
+3. Declarative theme engine
+
+   Create named palettes plus optional wallpaper-derived colors. Propagate the
+   selected palette to Quickshell, Hyprland, GTK, Qt, Ghostty, and supported
+   applications without modifying hand-maintained configuration.
+
+4. Launcher extensions
+
+   Fold clipboard history, emoji selection, calculations, recent files, and
+   searchable settings/actions into the existing launcher. Keep one command
+   surface instead of introducing several separate utilities.
+
+5. Native display controls
+
+   Surface monitor arrangement, scale, rotation, refresh rate, VRR, mirroring,
+   and profile selection in quick settings. Use the existing persistent
+   wdisplays/monitors.lua integration as the backend.
+
+6. Diagnostics drawer
+
+   Show failed system and user services, recent suspend/resume results, battery
+   health, thermal state, available NixOS generations, and pending reboot
+   status. This would be especially valuable while stabilizing new hardware.
+
+7. Extension and IPC boundary
+
+   Split the current single QML file into reusable components, services, and
+   feature modules. Give each major surface a small, documented IPC interface
+   so keybindings and future plug-ins do not depend on internal object layout.
+
+8. Hardware-adaptive profiles
+
+   Let the shell respond to laptop/desktop state: docked monitor profiles,
+   battery-aware refresh rate and animation policy, tablet/touch layouts, and
+   presentation mode. Keep hardware policy declarative in Nix where possible.
+
+Design principles worth borrowing from Omarchy Quattro
+------------------------------------------------------
+
+- Use one integrated shell for related UI instead of coordinating many small
+  daemons.
+- Preserve a restrained default interface; reveal complexity in drawers and
+  searchable commands.
+- Keep updates, migrations, themes, and extension points explicit.
+- Prefer native Quickshell integrations over shell-script polling.
+- Treat multi-monitor and mixed-DPI behavior as core requirements.
+- Measure idle CPU, GPU, and memory use as features are added.
+
+Suggested implementation order
+------------------------------
+
+1. Refactor into modules and establish IPC/config boundaries.
+2. Workspace overview.
+3. Theme engine.
+4. Launcher extensions.
+5. Display controls.
+6. Diagnostics drawer.
+7. Native lock screen and matching greeter.
+8. Hardware-adaptive profiles.
