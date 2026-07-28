@@ -55,6 +55,12 @@ in
       };
     };
 
+    # Keep the login keyring available without pulling the GNOME desktop back
+    # in. PAM unlocks it with the SDDM password, and NetworkManager can then
+    # retrieve user-scoped Wi-Fi secrets after the session starts.
+    services.gnome.gnome-keyring.enable = true;
+    security.pam.services.sddm.enableGnomeKeyring = true;
+
     services.xserver.displayManager.setupCommands =
       lib.optionalString cfg.login.internalDisplayOnly ''
         # Xorg uses names such as eDP, eDP-1, LVDS-1, or DSI-1 for built-in
