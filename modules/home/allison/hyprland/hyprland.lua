@@ -4,6 +4,7 @@
 local mainMod = "SUPER"
 local terminal = "ghostty"
 local browser = "firefox"
+local browser2 = "helium"
 local fileManager = "thunar"
 
 hl.config({
@@ -102,6 +103,7 @@ hl.gesture({
 
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
+hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd(browser2))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("vicinae toggle"))
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("wdisplays"))
