@@ -106,7 +106,7 @@ end)
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
-hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("qs -c allison ipc call shell toggleLauncher"))
+hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("vicinae toggle"))
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("qs -c allison ipc call shell toggleNotifications"))
 hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exec_cmd("qs -c allison ipc call shell togglePower"))
 
