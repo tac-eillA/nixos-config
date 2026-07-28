@@ -43,7 +43,7 @@
 
     pciutils
     usbutils
-    lact
+    # lact
     btop
 
     vulkan-tools
