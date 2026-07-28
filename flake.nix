@@ -1,5 +1,5 @@
 {
-  description = "Scylla — reusable NixOS configurations for a fleet of mythic hosts";
+  description = "Scylla — reusable NixOS configurations for my hosts";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -74,12 +74,6 @@
         ];
         text = builtins.readFile ./scripts/rundeck-generate-resources.sh;
       };
-
-      devShells.${system}.unreal =
-        let
-          pkgs = mkPkgs system;
-        in
-        import ./shells/unreal.nix { inherit pkgs; };
 
       formatter.${system} = (mkPkgs system).nixpkgs-fmt;
     };
