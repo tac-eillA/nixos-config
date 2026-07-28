@@ -23,11 +23,11 @@ ShellRoot {
 
   // Quattro-inspired semantic palette and interaction tokens. The palette
   // remains compatible with the existing Macchiato desktop theme.
-  property color background: "#f21e2030"
-  property color surface: "#fa24273a"
-  property color elevated: "#fa2b2e42"
-  property color foreground: "#cad3f5"
-  property color muted: "#a5adcb"
+  property color background: "#000000"
+  property color surface: "#000000"
+  property color elevated: "#0a0a0a"
+  property color foreground: "#ffffff"
+  property color muted: "#a6a6a6"
   property color accent: "#8aadf4"
   property color urgent: "#ed8796"
   property color normalFill: "#0ac6d0f5"
@@ -36,11 +36,15 @@ ShellRoot {
   property color outline: "#66494d64"
   property int cornerRadius: 10
   property int edgeGap: 5
-  property int barHeight: 36
+  property int barHeight: 39
   property int transitionDuration: 420
 
   property bool launcherVisible: false
   property bool powerVisible: false
+  property bool wallpaperPickerVisible: false
+  property bool calendarVisible: false
+  property bool fingerprintVisible: false
+  property bool helpVisible: false
   property bool quickSettingsVisible: false
   property string quickSettingsSection: "network"
   property bool notificationsVisible: false
@@ -49,6 +53,8 @@ ShellRoot {
   property string networkName: "offline"
   property string networkState: "disconnected"
   property bool wifiEnabled: false
+  property string pendingWifiSsid: ""
+  property string pendingWifiSecurity: ""
   property string activePowerProfile: ""
   property bool clockAlternate: false
   property bool idleInhibited: idleInhibitor.running
@@ -57,12 +63,47 @@ ShellRoot {
   property string osdLabel: ""
   property int osdValue: 0
   property bool osdHasProgress: true
+  property string wallpaper: "file://" +
+    (Quickshell.env("XDG_STATE_HOME")
+      || (Quickshell.env("HOME") + "/.local/state")) +
+    "/allison-theme/wallpaper"
+
+  function applyGeneratedTheme(data) {
+    try {
+      const theme = JSON.parse(data);
+      accent = theme.accent || accent;
+      urgent = theme.urgent || urgent;
+      outline = theme.outline || outline;
+    } catch (error) {
+      console.warn("Unable to load generated desktop theme:", error);
+    }
+  }
+
+  function reloadGeneratedTheme() {
+    if (!generatedTheme.running) generatedTheme.running = true;
+  }
+
+  Process {
+    id: generatedTheme
+    command: ["sh", "-lc",
+      "state=\"${XDG_STATE_HOME:-$HOME/.local/state}/allison-theme\"; " +
+      "[ -r \"$state/theme.json\" ] && cat \"$state/theme.json\" || true"]
+    running: true
+    stdout: StdioCollector {
+      onStreamFinished: if (text.trim().length) root.applyGeneratedTheme(text)
+    }
+  }
 
   readonly property var audioSink: Pipewire.defaultAudioSink
+  readonly property var audioSource: Pipewire.defaultAudioSource
   readonly property int volume: audioSink && audioSink.audio
     ? Math.round(audioSink.audio.volume * 100) : 0
   readonly property bool mutedAudio: audioSink && audioSink.audio
     ? audioSink.audio.muted : false
+  readonly property int microphoneVolume: audioSource && audioSource.audio
+    ? Math.round(audioSource.audio.volume * 100) : 0
+  readonly property bool mutedMicrophone: audioSource && audioSource.audio
+    ? audioSource.audio.muted : false
   readonly property int batteryPercent: UPower.displayDevice.ready
     ? Math.round(UPower.displayDevice.percentage * 100) : 0
   readonly property int bluetoothConnectedCount: Bluetooth.devices.values
@@ -84,6 +125,7 @@ ShellRoot {
     property alias icon: statusIcon.text
     property color textColor: root.foreground
     property int horizontalPadding: 6
+    property int iconSize: 15
     signal clicked(var mouse)
     signal wheeled(var wheel)
 
@@ -108,6 +150,7 @@ ShellRoot {
       Text {
         id: statusIcon
         color: parent.parent.textColor
+        font.pixelSize: parent.parent.iconSize
         verticalAlignment: Text.AlignVCenter
       }
 
@@ -157,19 +200,37 @@ ShellRoot {
   function closeSurfaces() {
     launcherVisible = false;
     powerVisible = false;
+    wallpaperPickerVisible = false;
+    calendarVisible = false;
+    fingerprintVisible = false;
+    helpVisible = false;
     quickSettingsVisible = false;
     notificationsVisible = false;
+    if (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.discovering)
+      Bluetooth.defaultAdapter.discovering = false;
   }
 
   function toggleQuickSettings(section) {
     const changingSection = quickSettingsSection !== section;
     quickSettingsSection = section;
     quickSettingsVisible = changingSection || !quickSettingsVisible;
+    if ((!quickSettingsVisible || section !== "bluetooth")
+        && Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.discovering)
+      Bluetooth.defaultAdapter.discovering = false;
     if (quickSettingsVisible && section === "battery" && !powerProfileQuery.running)
       powerProfileQuery.running = true;
+    if (quickSettingsVisible && section === "network" && !networkScan.running)
+      networkScan.running = true;
+    if (quickSettingsVisible && section === "bluetooth"
+        && Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled)
+      Bluetooth.defaultAdapter.discovering = true;
     launcherVisible = false;
     powerVisible = false;
     notificationsVisible = false;
+    wallpaperPickerVisible = false;
+    calendarVisible = false;
+    fingerprintVisible = false;
+    helpVisible = false;
   }
 
   function showOsd(icon, label, value, hasProgress) {
@@ -195,6 +256,44 @@ ShellRoot {
     showOsd(audioSink.audio.muted ? "󰖁" : "",
       audioSink.audio.muted ? "Muted" : volume + "%",
       volume, !audioSink.audio.muted);
+  }
+
+  function toggleMicrophoneMute() {
+    if (!audioSource || !audioSource.audio) return;
+    audioSource.audio.muted = !audioSource.audio.muted;
+    showOsd(audioSource.audio.muted ? "󰍭" : "",
+      audioSource.audio.muted ? "Microphone muted" : "Microphone enabled",
+      microphoneVolume, !audioSource.audio.muted);
+  }
+
+  function splitNmcli(line) {
+    const fields = [];
+    let field = "";
+    let escaped = false;
+    for (let i = 0; i < line.length; ++i) {
+      const character = line[i];
+      if (escaped) {
+        field += character;
+        escaped = false;
+      } else if (character === "\\") {
+        escaped = true;
+      } else if (character === ":") {
+        fields.push(field);
+        field = "";
+      } else {
+        field += character;
+      }
+    }
+    fields.push(field);
+    return fields;
+  }
+
+  function connectWifi(ssid, security, password) {
+    const command = ["nmcli", "device", "wifi", "connect", ssid];
+    if (password.length) command.push("password", password);
+    networkAction.actionLabel = ssid;
+    networkAction.command = command;
+    networkAction.running = true;
   }
 
   function mediaAction(action) {
@@ -235,6 +334,10 @@ ShellRoot {
       root.powerVisible = !root.powerVisible;
       root.launcherVisible = false;
       root.quickSettingsVisible = false;
+      root.wallpaperPickerVisible = false;
+    }
+    function toggleWallpaperPicker(): void {
+      wallpaperPanel.toggle();
     }
     function toggleNotifications(): void {
       root.notificationsVisible = !root.notificationsVisible;
@@ -261,6 +364,7 @@ ShellRoot {
   }
 
   ListModel { id: notificationHistory }
+  ListModel { id: wifiNetworks }
 
   NotificationServer {
     id: notificationServer
@@ -288,7 +392,44 @@ ShellRoot {
   }
 
   PwObjectTracker {
-    objects: root.audioSink ? [root.audioSink] : []
+    objects: Pipewire.nodes.values.filter(node => node && node.audio)
+  }
+
+  Process {
+    id: networkScan
+    command: ["sh", "-lc",
+      "LC_ALL=C nmcli -t --escape yes -f IN-USE,SSID,SIGNAL,SECURITY device wifi list --rescan yes"]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        wifiNetworks.clear();
+        const seen = {};
+        const lines = text.trim().length ? text.trim().split("\n") : [];
+        for (let i = 0; i < lines.length; ++i) {
+          const fields = root.splitNmcli(lines[i]);
+          if (fields.length < 4 || !fields[1] || seen[fields[1]]) continue;
+          seen[fields[1]] = true;
+          wifiNetworks.append({
+            active: fields[0] === "*",
+            ssid: fields[1],
+            signal: Number(fields[2]),
+            security: fields.slice(3).join(":")
+          });
+        }
+      }
+    }
+  }
+
+  Process {
+    id: networkAction
+    property string actionLabel: ""
+    onExited: (exitCode, exitStatus) => {
+      if (exitCode === 0)
+        root.showOsd("", "Connected to " + actionLabel, 0, false);
+      else
+        root.showOsd("󰤭", "Could not connect to " + actionLabel, 0, false);
+      if (!networkQuery.running) networkQuery.running = true;
+      if (!networkScan.running) networkScan.running = true;
+    }
   }
 
   Process {
@@ -439,6 +580,7 @@ ShellRoot {
         }
 
         Rectangle {
+          id: clockButton
           anchors.centerIn: parent
           implicitWidth: clockText.implicitWidth + 20
           height: 28
@@ -459,11 +601,40 @@ ShellRoot {
             id: clockMouse
             anchors.fill: parent
             hoverEnabled: true
-            onClicked: root.clockAlternate = !root.clockAlternate
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: mouse => {
+              if (mouse.button === Qt.RightButton)
+                root.clockAlternate = !root.clockAlternate;
+              else {
+                root.calendarVisible = !root.calendarVisible;
+                root.launcherVisible = false;
+                root.powerVisible = false;
+                root.quickSettingsVisible = false;
+                root.notificationsVisible = false;
+                root.fingerprintVisible = false;
+                root.helpVisible = false;
+              }
+            }
           }
 
           Behavior on color {
             ColorAnimation { duration: root.transitionDuration; easing.type: Easing.OutCubic }
+          }
+        }
+
+        StatusItem {
+          anchors.right: clockButton.left
+          anchors.rightMargin: 4
+          anchors.verticalCenter: parent.verticalCenter
+          icon: "󰈷"
+          text: ""
+          iconSize: 19
+          textColor: root.fingerprintVisible ? root.accent : root.foreground
+          onClicked: {
+            if (root.fingerprintVisible)
+              fingerprintPanel.close();
+            else
+              fingerprintPanel.open();
           }
         }
 
@@ -590,6 +761,16 @@ ShellRoot {
           }
 
           StatusItem {
+            icon: "?"
+            textColor: root.helpVisible ? root.accent : root.foreground
+            onClicked: {
+              const opening = !root.helpVisible;
+              root.closeSurfaces();
+              root.helpVisible = opening;
+            }
+          }
+
+          StatusItem {
             icon: ""
             onClicked: mouse => {
               root.powerVisible = !root.powerVisible;
@@ -611,7 +792,12 @@ ShellRoot {
       anchors { top: true; right: true }
       margins { top: root.barHeight + root.edgeGap; right: root.edgeGap }
       implicitWidth: 390
-      implicitHeight: quickSettingsFrame.implicitHeight
+      implicitHeight: Math.min(
+        root.quickSettingsSection === "network" ? 570
+          : root.quickSettingsSection === "bluetooth" ? 520
+          : root.quickSettingsSection === "audio"
+            ? quickSettingsLayout.implicitHeight + 28 : 190,
+        screen.height - root.barHeight - root.edgeGap * 3)
       visible: root.quickSettingsVisible
       color: "transparent"
       WlrLayershell.layer: WlrLayer.Overlay
@@ -623,43 +809,57 @@ ShellRoot {
         height: parent.height
         implicitHeight: quickSettingsLayout.implicitHeight + 28
         radius: root.cornerRadius
-        color: root.surface
+        color: "#000000"
         border.color: root.outline
+        clip: true
 
-        ColumnLayout {
-          id: quickSettingsLayout
+        Flickable {
+          id: quickSettingsScroller
           anchors.fill: parent
           anchors.margins: 14
-          spacing: 10
+          contentWidth: width
+          contentHeight: quickSettingsLayout.implicitHeight
+          boundsBehavior: Flickable.StopAtBounds
+          clip: true
+          ScrollBar.vertical: ScrollBar {}
 
-          RowLayout {
-            Layout.fillWidth: true
+          ColumnLayout {
+            id: quickSettingsLayout
+            width: quickSettingsScroller.width
+            spacing: 10
 
-            Text {
+            RowLayout {
               Layout.fillWidth: true
-              text: root.quickSettingsSection === "network" ? "Wi-Fi"
-                : root.quickSettingsSection === "bluetooth" ? "Bluetooth"
-                : root.quickSettingsSection === "audio" ? "Audio"
-                : "Power"
-              color: root.foreground
-              font.bold: true
-              font.pixelSize: 15
-            }
 
-            Text {
-              text: "×"
-              color: quickSettingsClose.containsMouse ? root.foreground : root.muted
-              font.pixelSize: 20
+              Text {
+                Layout.fillWidth: true
+                text: root.quickSettingsSection === "network" ? "Wi-Fi"
+                  : root.quickSettingsSection === "bluetooth" ? "Bluetooth"
+                  : root.quickSettingsSection === "audio" ? "Audio"
+                  : "Power"
+                color: root.foreground
+                font.bold: true
+                font.pixelSize: 15
+              }
 
-              MouseArea {
-                id: quickSettingsClose
-                anchors.fill: parent
-                anchors.margins: -6
-                hoverEnabled: true
-                onClicked: root.quickSettingsVisible = false
+              Text {
+                text: "×"
+                color: quickSettingsClose.containsMouse ? root.foreground : root.muted
+                font.pixelSize: 20
+
+                MouseArea {
+                  id: quickSettingsClose
+                  anchors.fill: parent
+                  anchors.margins: -6
+                  hoverEnabled: true
+                  onClicked: {
+                    root.quickSettingsVisible = false;
+                    if (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.discovering)
+                      Bluetooth.defaultAdapter.discovering = false;
+                  }
+                }
               }
             }
-          }
 
           Rectangle {
             Layout.fillWidth: true
@@ -698,6 +898,136 @@ ShellRoot {
               Switch {
                 checked: root.wifiEnabled
                 onToggled: root.run("nmcli radio wifi " + (checked ? "on" : "off"))
+              }
+            }
+          }
+
+          ColumnLayout {
+            Layout.fillWidth: true
+            visible: root.quickSettingsSection === "network" && root.wifiEnabled
+            spacing: 6
+
+            RowLayout {
+              Layout.fillWidth: true
+              Text {
+                Layout.fillWidth: true
+                text: "Available networks"
+                color: root.muted
+                font.pixelSize: 12
+              }
+              Text {
+                text: networkScan.running ? "Scanning…" : "󰑐"
+                color: scanMouse.containsMouse ? root.accent : root.muted
+                MouseArea {
+                  id: scanMouse
+                  anchors.fill: parent
+                  anchors.margins: -6
+                  hoverEnabled: true
+                  enabled: !networkScan.running
+                  onClicked: networkScan.running = true
+                }
+              }
+            }
+
+            Repeater {
+              model: ScriptModel {
+                values: wifiNetworks.count > 0
+                  ? Array.from({ length: Math.min(7, wifiNetworks.count) },
+                    (_, index) => wifiNetworks.get(index))
+                  : []
+              }
+
+              Rectangle {
+                required property var modelData
+                Layout.fillWidth: true
+                implicitHeight: 48
+                radius: root.cornerRadius - 3
+                color: modelData.active ? root.selectedFill
+                  : wifiMouse.containsMouse ? root.hoverFill : root.normalFill
+                border.width: modelData.active ? 1 : 0
+                border.color: root.accent
+
+                RowLayout {
+                  anchors.fill: parent
+                  anchors.margins: 9
+                  spacing: 9
+                  Text {
+                    text: modelData.signal > 70 ? "󰤨"
+                      : modelData.signal > 45 ? "󰤥"
+                      : modelData.signal > 20 ? "󰤢" : "󰤟"
+                    color: modelData.active ? root.accent : root.foreground
+                    font.pixelSize: 18
+                  }
+                  Column {
+                    Layout.fillWidth: true
+                    Text {
+                      width: parent.width
+                      text: modelData.ssid
+                      color: root.foreground
+                      font.bold: modelData.active
+                      elide: Text.ElideRight
+                    }
+                    Text {
+                      text: modelData.active ? "Connected"
+                        : (modelData.security.length ? modelData.security : "Open network")
+                      color: root.muted
+                      font.pixelSize: 11
+                    }
+                  }
+                  Text {
+                    text: modelData.security.length ? "" : ""
+                    color: root.muted
+                  }
+                }
+
+                MouseArea {
+                  id: wifiMouse
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  enabled: !modelData.active && !networkAction.running
+                  onClicked: {
+                    if (modelData.security.length) {
+                      root.pendingWifiSsid = modelData.ssid;
+                      root.pendingWifiSecurity = modelData.security;
+                      wifiPassword.text = "";
+                      wifiPassword.forceActiveFocus();
+                    } else {
+                      root.connectWifi(modelData.ssid, "", "");
+                    }
+                  }
+                }
+              }
+            }
+
+            RowLayout {
+              Layout.fillWidth: true
+              visible: root.pendingWifiSsid.length > 0
+              spacing: 7
+
+              TextField {
+                id: wifiPassword
+                Layout.fillWidth: true
+                placeholderText: "Password for " + root.pendingWifiSsid
+                echoMode: TextInput.Password
+                color: root.foreground
+                onAccepted: wifiConnectButton.clicked()
+                background: Rectangle {
+                  radius: root.cornerRadius - 3
+                  color: root.normalFill
+                  border.color: wifiPassword.activeFocus ? root.accent : root.outline
+                }
+              }
+
+              Button {
+                id: wifiConnectButton
+                text: "Connect"
+                enabled: wifiPassword.text.length > 0 && !networkAction.running
+                onClicked: {
+                  root.connectWifi(root.pendingWifiSsid,
+                    root.pendingWifiSecurity, wifiPassword.text);
+                  root.pendingWifiSsid = "";
+                  wifiPassword.text = "";
+                }
               }
             }
           }
@@ -747,15 +1077,97 @@ ShellRoot {
                 }
               }
 
-              Repeater {
-                model: Bluetooth.devices
+              RowLayout {
+                Layout.fillWidth: true
+                visible: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled
                 Text {
-                  required property var modelData
-                  Layout.leftMargin: 31
-                  visible: modelData.connected
-                  text: "• " + (modelData.name || modelData.deviceName || "Connected device")
+                  Layout.fillWidth: true
+                  text: "Devices"
                   color: root.muted
-                  elide: Text.ElideRight
+                  font.pixelSize: 12
+                }
+                Text {
+                  text: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.discovering
+                    ? "Scanning…" : "󰑐"
+                  color: root.muted
+                  MouseArea {
+                    anchors.fill: parent
+                    anchors.margins: -6
+                    enabled: Bluetooth.defaultAdapter
+                      && !Bluetooth.defaultAdapter.discovering
+                    onClicked: Bluetooth.defaultAdapter.discovering = true
+                  }
+                }
+              }
+
+              Repeater {
+                model: ScriptModel {
+                  values: Bluetooth.devices.values
+                    .filter(device => device && (device.name || device.deviceName))
+                    .sort((a, b) => {
+                      if (a.connected !== b.connected) return a.connected ? -1 : 1;
+                      if (a.paired !== b.paired) return a.paired ? -1 : 1;
+                      return (a.name || a.deviceName).localeCompare(b.name || b.deviceName);
+                    })
+                    .slice(0, 7)
+                }
+
+                Rectangle {
+                  required property var modelData
+                  Layout.fillWidth: true
+                  implicitHeight: 48
+                  radius: root.cornerRadius - 3
+                  color: modelData.connected ? root.selectedFill
+                    : bluetoothMouse.containsMouse ? root.hoverFill : root.normalFill
+                  border.width: modelData.connected ? 1 : 0
+                  border.color: root.accent
+
+                  RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 9
+                    spacing: 9
+                    Text {
+                      Layout.preferredWidth: 22
+                      horizontalAlignment: Text.AlignHCenter
+                      text: ""
+                      color: modelData.connected ? root.accent : root.muted
+                      font.pixelSize: 18
+                    }
+                    Column {
+                      Layout.fillWidth: true
+                      Text {
+                        width: parent.width
+                        text: modelData.name || modelData.deviceName
+                        color: root.foreground
+                        font.bold: modelData.connected
+                        elide: Text.ElideRight
+                      }
+                      Text {
+                        text: modelData.pairing ? "Pairing…"
+                          : modelData.state === BluetoothDeviceState.Connecting ? "Connecting…"
+                          : modelData.connected ? "Connected"
+                          : modelData.paired ? "Paired" : "Available"
+                        color: root.muted
+                        font.pixelSize: 11
+                      }
+                    }
+                    Text {
+                      text: modelData.batteryAvailable
+                        ? Math.round(modelData.battery * 100) + "%" : ""
+                      color: root.muted
+                    }
+                  }
+
+                  MouseArea {
+                    id: bluetoothMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: {
+                      if (modelData.connected) modelData.disconnect();
+                      else if (modelData.paired) modelData.connect();
+                      else modelData.pair();
+                    }
+                  }
                 }
               }
             }
@@ -801,6 +1213,258 @@ ShellRoot {
                   onMoved: {
                     if (root.audioSink && root.audioSink.audio)
                       root.audioSink.audio.volume = value / 100;
+                  }
+                }
+              }
+            }
+          }
+
+          ColumnLayout {
+            Layout.fillWidth: true
+            visible: root.quickSettingsSection === "audio"
+            spacing: 6
+
+            Text {
+              text: "Output device"
+              color: root.muted
+              font.pixelSize: 12
+            }
+
+            Repeater {
+              model: ScriptModel {
+                values: Pipewire.nodes.values
+                  .filter(node => node && node.ready && node.audio
+                    && node.isSink && !node.isStream)
+                  .sort((a, b) => a.description.localeCompare(b.description))
+              }
+
+              Rectangle {
+                required property var modelData
+                Layout.fillWidth: true
+                implicitHeight: 42
+                radius: root.cornerRadius - 3
+                color: modelData === root.audioSink ? root.selectedFill
+                  : outputMouse.containsMouse ? root.hoverFill : root.normalFill
+                border.width: modelData === root.audioSink ? 1 : 0
+                border.color: root.accent
+
+                RowLayout {
+                  anchors.fill: parent
+                  anchors.margins: 9
+                  Text {
+                    text: "󰓃"
+                    color: modelData === root.audioSink ? root.accent : root.muted
+                  }
+                  Text {
+                    Layout.fillWidth: true
+                    text: modelData.description || modelData.nickname || modelData.name
+                    color: root.foreground
+                    elide: Text.ElideRight
+                  }
+                  Text {
+                    text: modelData === root.audioSink ? "Default" : ""
+                    color: root.muted
+                    font.pixelSize: 11
+                  }
+                }
+
+                MouseArea {
+                  id: outputMouse
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onClicked: Pipewire.preferredDefaultAudioSink = modelData
+                }
+              }
+            }
+
+            RowLayout {
+              Layout.fillWidth: true
+              spacing: 10
+              visible: root.audioSource !== null
+
+              Text {
+                text: root.mutedMicrophone ? "󰍭" : ""
+                color: root.mutedMicrophone ? root.muted : root.accent
+                font.pixelSize: 18
+                MouseArea {
+                  anchors.fill: parent
+                  anchors.margins: -6
+                  onClicked: root.toggleMicrophoneMute()
+                }
+              }
+              ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 1
+                RowLayout {
+                  Layout.fillWidth: true
+                  Text {
+                    Layout.fillWidth: true
+                    text: "Microphone"
+                    color: root.foreground
+                    font.bold: true
+                  }
+                  Text { text: root.microphoneVolume + "%"; color: root.muted }
+                }
+                Slider {
+                  Layout.fillWidth: true
+                  from: 0
+                  to: 100
+                  value: root.microphoneVolume
+                  onMoved: if (root.audioSource && root.audioSource.audio)
+                    root.audioSource.audio.volume = value / 100
+                }
+              }
+            }
+
+            Text {
+              text: "Input device"
+              color: root.muted
+              font.pixelSize: 12
+              visible: Pipewire.nodes.values.some(node => node && node.ready
+                && node.audio && !node.isSink && !node.isStream)
+            }
+
+            Repeater {
+              model: ScriptModel {
+                values: Pipewire.nodes.values
+                  .filter(node => node && node.ready && node.audio
+                    && !node.isSink && !node.isStream)
+                  .sort((a, b) => a.description.localeCompare(b.description))
+              }
+
+              Rectangle {
+                required property var modelData
+                Layout.fillWidth: true
+                implicitHeight: 42
+                radius: root.cornerRadius - 3
+                color: modelData === root.audioSource ? root.selectedFill
+                  : inputMouse.containsMouse ? root.hoverFill : root.normalFill
+                border.width: modelData === root.audioSource ? 1 : 0
+                border.color: root.accent
+
+                RowLayout {
+                  anchors.fill: parent
+                  anchors.margins: 9
+                  Text {
+                    text: ""
+                    color: modelData === root.audioSource ? root.accent : root.muted
+                  }
+                  Text {
+                    Layout.fillWidth: true
+                    text: modelData.description || modelData.nickname || modelData.name
+                    color: root.foreground
+                    elide: Text.ElideRight
+                  }
+                }
+
+                MouseArea {
+                  id: inputMouse
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onClicked: Pipewire.preferredDefaultAudioSource = modelData
+                }
+              }
+            }
+
+            Text {
+              text: "Media"
+              color: root.muted
+              font.pixelSize: 12
+              visible: root.mediaPlayers.length > 0
+            }
+
+            Repeater {
+              model: ScriptModel {
+                values: root.mediaPlayers
+                  .filter(player => player
+                    && (player.trackTitle || player.identity))
+                  .slice(0, 3)
+              }
+
+              Rectangle {
+                required property var modelData
+                Layout.fillWidth: true
+                implicitHeight: mediaCard.implicitHeight + 18
+                radius: root.cornerRadius - 3
+                color: root.normalFill
+                border.width: modelData.isPlaying ? 1 : 0
+                border.color: root.accent
+
+                RowLayout {
+                  id: mediaCard
+                  anchors {
+                    left: parent.left
+                    right: parent.right
+                    top: parent.top
+                  }
+                  anchors.margins: 9
+                  spacing: 10
+
+                  Rectangle {
+                    Layout.preferredWidth: 48
+                    Layout.preferredHeight: 48
+                    radius: 6
+                    color: root.selectedFill
+                    clip: true
+
+                    Image {
+                      id: mediaArtwork
+                      anchors.fill: parent
+                      source: modelData.trackArtUrl
+                      fillMode: Image.PreserveAspectCrop
+                      asynchronous: true
+                      visible: status === Image.Ready
+                    }
+                    Text {
+                      anchors.centerIn: parent
+                      text: "󰎆"
+                      color: root.accent
+                      font.pixelSize: 20
+                      visible: mediaArtwork.status !== Image.Ready
+                    }
+                  }
+
+                  ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
+                    Text {
+                      Layout.fillWidth: true
+                      text: modelData.trackTitle || modelData.identity
+                      color: root.foreground
+                      font.bold: true
+                      elide: Text.ElideRight
+                    }
+                    Text {
+                      Layout.fillWidth: true
+                      text: modelData.trackArtist || modelData.identity
+                      color: root.muted
+                      elide: Text.ElideRight
+                      font.pixelSize: 11
+                    }
+                  }
+
+                  StatusItem {
+                    icon: "󰒮"
+                    text: ""
+                    enabled: modelData.canGoPrevious
+                    onClicked: if (modelData.canGoPrevious) modelData.previous()
+                  }
+                  StatusItem {
+                    icon: modelData.isPlaying ? "" : ""
+                    text: ""
+                    enabled: modelData.canTogglePlaying
+                      || modelData.canPlay || modelData.canPause
+                    onClicked: {
+                      if (modelData.isPlaying && modelData.canPause) modelData.pause();
+                      else if (!modelData.isPlaying && modelData.canPlay) modelData.play();
+                      else if (modelData.canTogglePlaying) modelData.togglePlaying();
+                    }
+                  }
+                  StatusItem {
+                    icon: "󰒭"
+                    text: ""
+                    enabled: modelData.canGoNext
+                    onClicked: if (modelData.canGoNext) modelData.next()
                   }
                 }
               }
@@ -891,9 +1555,28 @@ ShellRoot {
               }
             }
           }
+          }
         }
       }
     }
+  }
+
+  CalendarPanel {
+    shell: root
+  }
+
+  FingerprintPanel {
+    id: fingerprintPanel
+    shell: root
+  }
+
+  HelpPanel {
+    shell: root
+  }
+
+  WallpaperPanel {
+    id: wallpaperPanel
+    shell: root
   }
 
   Variants {
@@ -1365,11 +2048,11 @@ ShellRoot {
       anchors { top: true; bottom: true; left: true; right: true }
       aboveWindows: false
       exclusiveZone: -1
-      color: "#1e2030"
+      color: "#000000"
 
       Image {
         anchors.fill: parent
-        source: "file://@WALLPAPER@"
+        source: root.wallpaper
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
       }

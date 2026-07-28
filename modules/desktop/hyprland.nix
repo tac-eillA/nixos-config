@@ -33,7 +33,7 @@
       ];
     };
 
-    security.pam.services.hyprlock = { };
+    security.pam.services.hyprlock.fprintAuth = true;
 
     environment.systemPackages = with pkgs; [
       imv

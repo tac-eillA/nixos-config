@@ -107,6 +107,7 @@ hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd(browser2))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("vicinae toggle"))
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("wdisplays"))
+hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("qs -c allison ipc call shell toggleWallpaperPicker"))
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("qs -c allison ipc call shell toggleNotifications"))
 hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exec_cmd("qs -c allison ipc call shell togglePower"))
 

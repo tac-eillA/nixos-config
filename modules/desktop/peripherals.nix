@@ -2,6 +2,7 @@
 
 {
   security.polkit.enable = true;
+  services.fprintd.enable = true;
 
   hardware.logitech.wireless.enable = false;
   hardware.logitech.wireless.enableGraphical = false;

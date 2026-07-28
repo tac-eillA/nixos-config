@@ -55,24 +55,16 @@
             ./hosts/${hostname}/configuration.nix
           ];
         };
+
+      hostDirectories = builtins.readDir ./hosts;
+      hostNames = lib.filter (
+        hostname:
+        hostDirectories.${hostname} == "directory"
+        && builtins.pathExists (./hosts + "/${hostname}/configuration.nix")
+      ) (builtins.attrNames hostDirectories);
     in
     {
-      nixosConfigurations = {
-        athena = mkHost "athena";
-        artemis = mkHost "artemis";
-        demeter = mkHost "demeter";
-        hera = mkHost "hera";
-        pythia = mkHost "pythia";
-        apollo = mkHost "apollo";
-        dns1 = mkHost "dns1";
-        dns2 = mkHost "dns2";
-        forgejo = mkHost "forgejo";
-        headscale = mkHost "headscale";
-        authentik = mkHost "authentik";
-        proxy = mkHost "proxy";
-        rundeck = mkHost "rundeck";
-        vaultwarden = mkHost "vaultwarden";
-      };
+      nixosConfigurations = lib.genAttrs hostNames mkHost;
 
       packages.${system}.rundeck-generate-resources = (mkPkgs system).writeShellApplication {
         name = "rundeck-generate-resources";
