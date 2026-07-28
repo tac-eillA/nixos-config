@@ -13,7 +13,7 @@ in
         "gnome"
         "hyprland-uwsm"
       ];
-      default = "hyprland-uwsm";
+      default = "gnome";
       description = "Desktop session GDM should select by default.";
     };
 

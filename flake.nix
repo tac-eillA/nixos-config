@@ -15,14 +15,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nur = {
-      url = "github:nix-community/NUR";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
-    inputs@{ nixpkgs, nur, ... }:
+    inputs@{ nixpkgs, ... }:
     let
       system = "x86_64-linux";
       lib = nixpkgs.lib;
@@ -46,7 +42,6 @@
           inherit system;
           specialArgs = { inherit pkgsStable; };
           modules = [
-            nur.modules.nixos.default
             flatpakModule
             inputs.sops-nix.nixosModules.sops
             inputs.home-manager.nixosModules.home-manager

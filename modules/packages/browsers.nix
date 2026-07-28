@@ -1,5 +1,8 @@
 { pkgs, ... }:
 
+let
+  helium = pkgs.callPackage ./helium.nix { };
+in
 {
   programs.firefox = {
     enable = true;
@@ -10,7 +13,5 @@
     };
   };
 
-  environment.systemPackages = with pkgs; [
-    nur.repos.lonerOrz.helium
-  ];
+  environment.systemPackages = [ helium ];
 }
