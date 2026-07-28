@@ -9,13 +9,19 @@ in
 {
   options.allison.desktop = {
     defaultSession = lib.mkOption {
-      type = lib.types.enum [ "gnome" ];
-      default = "gnome";
+      type = lib.types.enum [
+        "gnome"
+        "hyprland-uwsm"
+      ];
+      default = "hyprland-uwsm";
       description = "Desktop session GDM should select by default.";
     };
 
     sessions = {
       gnome.enable = lib.mkEnableOption "GNOME desktop session" // {
+        default = true;
+      };
+      hyprland.enable = lib.mkEnableOption "Hyprland desktop session" // {
         default = true;
       };
     };
@@ -30,6 +36,10 @@ in
       {
         assertion = cfg.defaultSession != "gnome" || cfg.sessions.gnome.enable;
         message = ''allison.desktop.defaultSession = "gnome" requires allison.desktop.sessions.gnome.enable = true.'';
+      }
+      {
+        assertion = cfg.defaultSession != "hyprland-uwsm" || cfg.sessions.hyprland.enable;
+        message = ''allison.desktop.defaultSession = "hyprland-uwsm" requires allison.desktop.sessions.hyprland.enable = true.'';
       }
     ];
 
@@ -68,6 +78,7 @@ in
     };
 
     home-manager.users.allison.imports =
-      lib.optionals cfg.sessions.gnome.enable [ ../home/allison/gnome.nix ];
+      lib.optionals cfg.sessions.gnome.enable [ ../home/allison/gnome.nix ]
+      ++ lib.optionals cfg.sessions.hyprland.enable [ ../home/allison/hyprland.nix ];
   };
 }
