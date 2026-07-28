@@ -1,11 +1,60 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
   wallpaper = ../../../img/wallpaper/oilPainting.jpg;
-  quickshellConfig = builtins.replaceStrings
-    [ "@WALLPAPER@" ]
-    [ "${wallpaper}" ]
-    (builtins.readFile ./hyprland/quickshell/shell.qml);
+  defaultMonitorConfig = pkgs.writeText "hyprland-default-monitors.lua" ''
+    -- This file is copied to ~/.config/hypr/monitors.lua only when it does
+    -- not already exist. Display changes saved by wdisplays remain mutable.
+    hl.monitor({
+      output = "",
+      mode = "preferred",
+      position = "auto",
+      scale = 1,
+    })
+  '';
+  persistentWdisplays = pkgs.writeShellApplication {
+    name = "wdisplays";
+    runtimeInputs = with pkgs; [
+      coreutils
+      hyprland
+      jq
+      wdisplays
+    ];
+    text = ''
+      status=0
+      ${pkgs.wdisplays}/bin/wdisplays || status=$?
+
+      # Hyprland may disconnect wdisplays after accepting its output-management
+      # request, which makes GTK exit non-zero even though the layout changed.
+      # Treat the compositor's resulting state as authoritative instead.
+      config_home="''${XDG_CONFIG_HOME:-$HOME/.config}"
+      monitor_config="$config_home/hypr/monitors.lua"
+      monitor_tmp="$monitor_config.tmp"
+
+      mkdir -p "$config_home/hypr"
+      if ${pkgs.hyprland}/bin/hyprctl monitors all -j | ${pkgs.jq}/bin/jq -r '
+        .[] |
+        if .disabled then
+          "hl.monitor({ output = \(.name | @json), disabled = true })"
+        else
+          "hl.monitor({ output = \(.name | @json), mode = \(("\(.width)x\(.height)@\(.refreshRate)") | @json), position = \(("\(.x)x\(.y)") | @json), scale = \(.scale), transform = \(.transform) })"
+        end
+      ' > "$monitor_tmp" && [ -s "$monitor_tmp" ]; then
+        mv "$monitor_tmp" "$monitor_config"
+        ${pkgs.hyprland}/bin/hyprctl reload
+      else
+        rm -f "$monitor_tmp"
+      fi
+
+      exit "$status"
+    '';
+  };
+  quickshellConfig = pkgs.writeText "allison-quickshell.qml" (
+    builtins.replaceStrings
+      [ "@WALLPAPER@" ]
+      [ "${wallpaper}" ]
+      (builtins.readFile ./hyprland/quickshell/shell.qml)
+  );
 in
 {
   home.packages = with pkgs; [
@@ -15,8 +64,12 @@ in
     hypridle
     hyprlock
     libnotify
+    blueman
     networkmanager
+    networkmanagerapplet
+    pavucontrol
     quickshell
+    persistentWdisplays
   ];
 
   home.pointerCursor = {
@@ -56,13 +109,49 @@ in
     extraConfig = builtins.readFile ./hyprland/hyprland.lua;
   };
 
-  # UWSM owns the session environment, including cursor variables.
+  # UWSM owns the Hyprland session environment. Use the toolkits' built-in
+  # input contexts here so GNOME's IBus configuration is not inherited and
+  # does not start ibus-daemon under Hyprland.
   xdg.configFile."uwsm/env".text = ''
     export XCURSOR_SIZE=24
     export HYPRCURSOR_SIZE=24
+    export GTK_IM_MODULE=gtk-im-context-simple
+    export QT_IM_MODULE=
+    export XMODIFIERS=
   '';
 
-  xdg.configFile."quickshell/allison/shell.qml".text = quickshellConfig;
+  xdg.configFile."quickshell/allison/shell.qml".source = quickshellConfig;
+
+  systemd.user.services.quickshell-allison = {
+    Unit = {
+      Description = "Allison Quickshell desktop shell";
+      After = [ "graphical-session.target" ];
+      PartOf = [ "graphical-session.target" ];
+      X-Restart-Triggers = [ quickshellConfig ];
+    };
+    Service = {
+      ExecStart = "${pkgs.quickshell}/bin/qs -c allison";
+      Restart = "on-failure";
+      RestartSec = 2;
+    };
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
+
+  # Monitor layouts are intentionally mutable. Home Manager seeds this file
+  # once, then the wdisplays wrapper updates it after a successful GUI session.
+  home.activation.seedHyprlandMonitorConfig =
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      config_home="''${XDG_CONFIG_HOME:-$HOME/.config}"
+      monitor_config="$config_home/hypr/monitors.lua"
+
+      if [ ! -e "$monitor_config" ]; then
+        $DRY_RUN_CMD ${pkgs.coreutils}/bin/install -Dm644 \
+          ${defaultMonitorConfig} "$monitor_config"
+        if [ -n "''${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+          $DRY_RUN_CMD ${pkgs.hyprland}/bin/hyprctl reload >/dev/null 2>&1 || true
+        fi
+      fi
+    '';
 
   services.hypridle = {
     enable = true;

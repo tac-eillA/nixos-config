@@ -58,12 +58,13 @@ hl.config({
   },
 })
 
-hl.monitor({
-  output = "",
-  mode = "preferred",
-  position = "auto",
-  scale = 1,
-})
+-- Home Manager seeds this mutable file once. The wdisplays wrapper rewrites it
+-- after display changes so monitor layouts survive logins and Nix rebuilds.
+local configHome = os.getenv("XDG_CONFIG_HOME")
+if not configHome or configHome == "" then
+  configHome = os.getenv("HOME") .. "/.config"
+end
+dofile(configHome .. "/hypr/monitors.lua")
 
 hl.curve("easeOut", {
   type = "bezier",
@@ -99,14 +100,11 @@ hl.gesture({
   action = "workspace",
 })
 
-hl.on("hyprland.start", function()
-  hl.exec_cmd("qs -c allison")
-end)
-
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("vicinae toggle"))
+hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("wdisplays"))
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("qs -c allison ipc call shell toggleNotifications"))
 hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exec_cmd("qs -c allison ipc call shell togglePower"))
 

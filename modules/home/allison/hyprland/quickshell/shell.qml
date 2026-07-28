@@ -41,12 +41,15 @@ ShellRoot {
 
   property bool launcherVisible: false
   property bool powerVisible: false
+  property bool quickSettingsVisible: false
+  property string quickSettingsSection: "network"
   property bool notificationsVisible: false
   property bool doNotDisturb: false
   property bool notificationPopupVisible: false
   property string networkName: "offline"
   property string networkState: "disconnected"
   property bool wifiEnabled: false
+  property string activePowerProfile: ""
   property bool clockAlternate: false
   property bool osdVisible: false
   property string osdIcon: ""
@@ -59,6 +62,10 @@ ShellRoot {
     ? Math.round(audioSink.audio.volume * 100) : 0
   readonly property bool mutedAudio: audioSink && audioSink.audio
     ? audioSink.audio.muted : false
+  readonly property int batteryPercent: UPower.displayDevice.ready
+    ? Math.round(UPower.displayDevice.percentage * 100) : 0
+  readonly property int bluetoothConnectedCount: Bluetooth.devices.values
+    .filter(device => device && device.connected).length
   readonly property var mediaPlayers: Mpris.players ? Mpris.players.values : []
   readonly property var activePlayer: {
     for (let i = 0; i < mediaPlayers.length; ++i)
@@ -70,6 +77,65 @@ ShellRoot {
   }
   readonly property string mediaLabel: activePlayer
     ? (activePlayer.trackTitle || activePlayer.identity || "") : ""
+
+  component StatusItem: Rectangle {
+    property alias text: statusLabel.text
+    property alias icon: statusIcon.text
+    property color textColor: root.foreground
+    property string tooltip: ""
+    property int horizontalPadding: 6
+    signal clicked(var mouse)
+    signal wheeled(var wheel)
+
+    implicitWidth: statusContent.implicitWidth + horizontalPadding * 2
+    implicitHeight: 28
+    Layout.minimumWidth: implicitWidth
+    Layout.preferredWidth: implicitWidth
+    Layout.maximumWidth: implicitWidth
+    Layout.minimumHeight: implicitHeight
+    Layout.preferredHeight: implicitHeight
+    Layout.maximumHeight: implicitHeight
+    Layout.alignment: Qt.AlignVCenter
+    radius: root.cornerRadius - 3
+    color: statusMouse.pressed ? root.selectedFill
+      : statusMouse.containsMouse ? root.hoverFill : "transparent"
+
+    Row {
+      id: statusContent
+      anchors.centerIn: parent
+      spacing: statusLabel.visible ? 4 : 0
+
+      Text {
+        id: statusIcon
+        color: parent.parent.textColor
+        verticalAlignment: Text.AlignVCenter
+      }
+
+      Text {
+        id: statusLabel
+        visible: text.length > 0
+        color: parent.parent.textColor
+        verticalAlignment: Text.AlignVCenter
+      }
+    }
+
+    MouseArea {
+      id: statusMouse
+      anchors.fill: parent
+      hoverEnabled: true
+      acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+      onClicked: mouse => parent.clicked(mouse)
+      onWheel: wheel => parent.wheeled(wheel)
+    }
+
+    ToolTip.visible: statusMouse.containsMouse && tooltip.length > 0
+    ToolTip.text: tooltip
+    ToolTip.delay: 500
+
+    Behavior on color {
+      ColorAnimation { duration: root.transitionDuration; easing.type: Easing.OutCubic }
+    }
+  }
 
   property var paletteCommands: [
     { name: "Lock session", icon: "", command: "loginctl lock-session", keywords: "secure screen" },
@@ -93,6 +159,18 @@ ShellRoot {
   }
 
   function closeSurfaces() {
+    launcherVisible = false;
+    powerVisible = false;
+    quickSettingsVisible = false;
+    notificationsVisible = false;
+  }
+
+  function toggleQuickSettings(section) {
+    const changingSection = quickSettingsSection !== section;
+    quickSettingsSection = section;
+    quickSettingsVisible = changingSection || !quickSettingsVisible;
+    if (quickSettingsVisible && section === "battery" && !powerProfileQuery.running)
+      powerProfileQuery.running = true;
     launcherVisible = false;
     powerVisible = false;
     notificationsVisible = false;
@@ -143,10 +221,12 @@ ShellRoot {
     function toggleLauncher(): void {
       root.launcherVisible = !root.launcherVisible;
       root.powerVisible = false;
+      root.quickSettingsVisible = false;
     }
     function togglePower(): void {
       root.powerVisible = !root.powerVisible;
       root.launcherVisible = false;
+      root.quickSettingsVisible = false;
     }
     function toggleNotifications(): void {
       root.notificationsVisible = !root.notificationsVisible;
@@ -206,7 +286,7 @@ ShellRoot {
   Process {
     id: networkQuery
     command: ["sh", "-lc",
-      "nmcli -t -f WIFI general; nmcli -t -f TYPE,STATE,CONNECTION device status"]
+      "LC_ALL=C nmcli -t -f WIFI general; LC_ALL=C nmcli --escape yes -t -f TYPE,STATE,CONNECTION device status"]
     stdout: StdioCollector {
       onStreamFinished: {
         const lines = text.trim().split("\n");
@@ -243,6 +323,14 @@ ShellRoot {
     }
   }
 
+  Process {
+    id: powerProfileQuery
+    command: ["powerprofilesctl", "get"]
+    stdout: StdioCollector {
+      onStreamFinished: root.activePowerProfile = text.trim()
+    }
+  }
+
   Timer {
     interval: 30000
     running: true
@@ -274,42 +362,14 @@ ShellRoot {
       exclusiveZone: root.barHeight
       color: root.background
 
-      RowLayout {
+      Item {
         anchors.fill: parent
-        anchors.leftMargin: 6
-        anchors.rightMargin: 8
-        spacing: 6
-
-        Rectangle {
-          width: 30
-          height: 28
-          radius: root.cornerRadius - 3
-          color: menuMouse.pressed ? root.selectedFill
-            : menuMouse.containsMouse ? root.hoverFill : "transparent"
-
-          Text {
-            anchors.centerIn: parent
-            text: "󰣇"
-            color: root.foreground
-            font.pixelSize: 16
-          }
-
-          MouseArea {
-            id: menuMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            onClicked: {
-              root.launcherVisible = !root.launcherVisible;
-              root.powerVisible = false;
-            }
-          }
-
-          Behavior on color {
-            ColorAnimation { duration: root.transitionDuration; easing.type: Easing.OutCubic }
-          }
-        }
 
         Row {
+          id: leftBar
+          anchors.left: parent.left
+          anchors.leftMargin: 6
+          anchors.verticalCenter: parent.verticalCenter
           spacing: 2
 
           Repeater {
@@ -355,54 +415,13 @@ ShellRoot {
               }
             }
           }
-        }
 
-        Text {
-          Layout.maximumWidth: 360
-          Layout.fillWidth: true
-          text: Hyprland.activeToplevel ? Hyprland.activeToplevel.title : ""
-          color: root.muted
-          elide: Text.ElideRight
-        }
-
-        Rectangle {
-          visible: root.activePlayer !== null
-          Layout.maximumWidth: 360
-          implicitWidth: Math.min(mediaText.implicitWidth + 24, 360)
-          height: 28
-          radius: root.cornerRadius - 3
-          color: mediaMouse.containsMouse ? root.hoverFill : root.normalFill
-
-          RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 10
-            anchors.rightMargin: 10
-            spacing: 7
-
-            Text {
-              text: root.activePlayer && root.activePlayer.isPlaying ? "" : ""
-              color: root.accent
-            }
-            Text {
-              id: mediaText
-              Layout.fillWidth: true
-              text: root.mediaLabel
-              color: root.foreground
-              elide: Text.ElideRight
-            }
-          }
-
-          MouseArea {
-            id: mediaMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.LeftButton | Qt.MiddleButton
-            onClicked: mouse => root.mediaAction(mouse.button === Qt.MiddleButton
-              ? "next" : "playPause")
-          }
-
-          Behavior on color {
-            ColorAnimation { duration: root.transitionDuration; easing.type: Easing.OutCubic }
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            width: Math.min(implicitWidth, 360)
+            text: Hyprland.activeToplevel ? Hyprland.activeToplevel.title : ""
+            color: root.muted
+            elide: Text.ElideRight
           }
         }
 
@@ -412,6 +431,7 @@ ShellRoot {
         }
 
         Rectangle {
+          anchors.centerIn: parent
           implicitWidth: clockText.implicitWidth + 20
           height: 28
           radius: root.cornerRadius - 3
@@ -440,79 +460,115 @@ ShellRoot {
         }
 
         Row {
-          spacing: 7
+          id: rightBar
+          anchors.right: parent.right
+          anchors.rightMargin: 6
+          anchors.verticalCenter: parent.verticalCenter
+          spacing: 2
 
-          Repeater {
-            model: SystemTray.items
+          Rectangle {
+            visible: root.activePlayer !== null
+            width: visible ? Math.min(mediaText.implicitWidth + 38, 280) : 0
+            height: 28
+            radius: root.cornerRadius - 3
+            color: mediaMouse.containsMouse ? root.hoverFill : root.normalFill
 
-            IconImage {
-              required property var modelData
-              implicitSize: 18
-              source: modelData.icon
+            RowLayout {
+              anchors.fill: parent
+              anchors.leftMargin: 6
+              anchors.rightMargin: 6
+              spacing: 6
 
-              MouseArea {
-                anchors.fill: parent
-                onClicked: modelData.activate()
+              Text {
+                text: root.activePlayer && root.activePlayer.isPlaying ? "" : ""
+                color: root.accent
+              }
+              Text {
+                id: mediaText
+                Layout.fillWidth: true
+                text: root.mediaLabel
+                color: root.foreground
+                elide: Text.ElideRight
               }
             }
+
+            MouseArea {
+              id: mediaMouse
+              anchors.fill: parent
+              hoverEnabled: true
+              acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+              onClicked: mouse => root.mediaAction(mouse.button === Qt.MiddleButton
+                ? "next" : "playPause")
+            }
+
+            Behavior on color {
+              ColorAnimation { duration: root.transitionDuration; easing.type: Easing.OutCubic }
+            }
           }
-        }
 
-        Text {
-          text: root.networkName === "offline" ? "󰤭" : "  " + root.networkName
-          color: root.networkName === "offline" ? root.muted : root.foreground
-
-          MouseArea {
-            anchors.fill: parent
-            onClicked: root.run("nmcli radio wifi " + (root.wifiEnabled ? "off" : "on"))
+          StatusItem {
+            icon: root.networkName === "offline" ? "󰤭" : ""
+            text: root.networkName === "offline" ? "" : root.networkName
+            textColor: root.networkName === "offline" ? root.muted : root.foreground
+            tooltip: root.wifiEnabled
+              ? (root.networkName === "offline" ? "Wi-Fi enabled · disconnected" : "Connected to " + root.networkName)
+              : "Wi-Fi disabled"
+            onClicked: mouse => {
+              if (mouse.button === Qt.RightButton)
+                root.run("nmcli radio wifi " + (root.wifiEnabled ? "off" : "on"));
+              else
+                root.toggleQuickSettings("network");
+            }
           }
-        }
 
-        Text {
-          visible: Bluetooth.defaultAdapter !== null
-          text: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled
-            ? " " + Bluetooth.devices.values.length
-            : "󰂲"
-          color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled
-            ? root.foreground
-            : root.muted
-
-          MouseArea {
-            anchors.fill: parent
-            onClicked: Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
+          StatusItem {
+            visible: Bluetooth.defaultAdapter !== null
+            icon: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? "" : "󰂲"
+            text: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled
+              && root.bluetoothConnectedCount > 0 ? root.bluetoothConnectedCount : ""
+            textColor: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled
+              ? root.foreground
+              : root.muted
+            tooltip: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled
+              ? (root.bluetoothConnectedCount > 0
+                ? root.bluetoothConnectedCount + " connected device(s)" : "Bluetooth enabled")
+              : "Bluetooth disabled"
+            onClicked: mouse => {
+              if (mouse.button === Qt.RightButton && Bluetooth.defaultAdapter)
+                Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled;
+              else
+                root.toggleQuickSettings("bluetooth");
+            }
           }
-        }
 
-        Text {
-          text: (root.mutedAudio ? "󰖁 " : " ") + root.volume + "%"
-          color: root.foreground
-
-          MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+          StatusItem {
+            icon: root.mutedAudio ? "󰖁" : ""
+            text: root.volume + "%"
+            textColor: root.mutedAudio ? root.muted : root.foreground
+            tooltip: root.mutedAudio ? "Muted · click for audio controls" : "Volume · click for audio controls"
             onClicked: mouse => {
               if (mouse.button === Qt.MiddleButton)
                 root.toggleAudioMute();
               else
-                root.adjustVolume(root.volume >= 50 ? -15 : 15);
+                root.toggleQuickSettings("audio");
             }
-            onWheel: wheel => root.adjustVolume(wheel.angleDelta.y > 0 ? 3 : -3)
+            onWheeled: wheel => root.adjustVolume(wheel.angleDelta.y > 0 ? 3 : -3)
           }
-        }
 
-        Text {
-          visible: UPower.displayDevice.ready && UPower.displayDevice.isPresent
-          text: "󰁹 " + Math.round(UPower.displayDevice.percentage) + "%"
-          color: UPower.displayDevice.percentage < 16 ? "#ed8796" : root.foreground
-        }
+          StatusItem {
+            visible: UPower.displayDevice.ready && UPower.displayDevice.isPresent
+            icon: "󰁹"
+            text: root.batteryPercent + "%"
+            textColor: root.batteryPercent < 16 ? root.urgent : root.foreground
+            tooltip: "Battery " + root.batteryPercent + "% · click for power details"
+            onClicked: mouse => root.toggleQuickSettings("battery")
+          }
 
-        Text {
-          text: root.doNotDisturb ? "󰂛" : "󰂚 " + notificationHistory.count
-          color: root.doNotDisturb ? root.muted : root.foreground
-
-          MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.LeftButton | Qt.RightButton
+          StatusItem {
+            icon: root.doNotDisturb ? "󰂛" : "󰂚"
+            text: root.doNotDisturb ? "" : notificationHistory.count
+            textColor: root.doNotDisturb ? root.muted : root.foreground
+            tooltip: root.doNotDisturb ? "Do not disturb" : "Notifications"
             onClicked: mouse => {
               if (mouse.button === Qt.RightButton)
                 root.doNotDisturb = !root.doNotDisturb;
@@ -520,17 +576,308 @@ ShellRoot {
                 root.notificationsVisible = !root.notificationsVisible;
             }
           }
-        }
 
-        Text {
-          text: ""
-          color: root.foreground
-
-          MouseArea {
-            anchors.fill: parent
-            onClicked: {
+          StatusItem {
+            icon: ""
+            tooltip: "Session and power"
+            onClicked: mouse => {
               root.powerVisible = !root.powerVisible;
               root.launcherVisible = false;
+              root.quickSettingsVisible = false;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  Variants {
+    model: Quickshell.screens
+
+    PanelWindow {
+      required property var modelData
+      screen: modelData
+      anchors { top: true; right: true }
+      margins { top: root.barHeight + root.edgeGap; right: root.edgeGap }
+      implicitWidth: 390
+      implicitHeight: quickSettingsFrame.implicitHeight
+      visible: root.quickSettingsVisible
+      color: "transparent"
+      WlrLayershell.layer: WlrLayer.Overlay
+      exclusionMode: ExclusionMode.Ignore
+
+      Rectangle {
+        id: quickSettingsFrame
+        width: parent.width
+        height: parent.height
+        implicitHeight: quickSettingsLayout.implicitHeight + 28
+        radius: root.cornerRadius
+        color: root.surface
+        border.color: root.outline
+
+        ColumnLayout {
+          id: quickSettingsLayout
+          anchors.fill: parent
+          anchors.margins: 14
+          spacing: 10
+
+          RowLayout {
+            Layout.fillWidth: true
+
+            Text {
+              Layout.fillWidth: true
+              text: root.quickSettingsSection === "network" ? "Wi-Fi"
+                : root.quickSettingsSection === "bluetooth" ? "Bluetooth"
+                : root.quickSettingsSection === "audio" ? "Audio"
+                : "Power"
+              color: root.foreground
+              font.bold: true
+              font.pixelSize: 15
+            }
+
+            Text {
+              text: "×"
+              color: quickSettingsClose.containsMouse ? root.foreground : root.muted
+              font.pixelSize: 20
+
+              MouseArea {
+                id: quickSettingsClose
+                anchors.fill: parent
+                anchors.margins: -6
+                hoverEnabled: true
+                onClicked: root.quickSettingsVisible = false
+              }
+            }
+          }
+
+          Rectangle {
+            Layout.fillWidth: true
+            visible: root.quickSettingsSection === "network"
+            implicitHeight: 58
+            radius: root.cornerRadius - 2
+            color: root.quickSettingsSection === "network"
+              ? root.selectedFill : root.normalFill
+            border.width: root.quickSettingsSection === "network" ? 1 : 0
+            border.color: root.accent
+
+            RowLayout {
+              anchors.fill: parent
+              anchors.margins: 11
+              spacing: 11
+              Text {
+                text: root.wifiEnabled ? "" : "󰤭"
+                color: root.wifiEnabled ? root.accent : root.muted
+                font.pixelSize: 20
+              }
+              Column {
+                Layout.fillWidth: true
+                spacing: 2
+                Text {
+                  text: "Wi-Fi"
+                  color: root.foreground
+                  font.bold: true
+                }
+                Text {
+                  text: root.wifiEnabled
+                    ? (root.networkName === "offline" ? "Not connected" : root.networkName)
+                    : "Disabled"
+                  color: root.muted
+                }
+              }
+              Switch {
+                checked: root.wifiEnabled
+                onToggled: root.run("nmcli radio wifi " + (checked ? "on" : "off"))
+              }
+            }
+          }
+
+          Rectangle {
+            Layout.fillWidth: true
+            visible: root.quickSettingsSection === "bluetooth"
+            implicitHeight: bluetoothContent.implicitHeight + 22
+            radius: root.cornerRadius - 2
+            color: root.quickSettingsSection === "bluetooth"
+              ? root.selectedFill : root.normalFill
+            border.width: root.quickSettingsSection === "bluetooth" ? 1 : 0
+            border.color: root.accent
+
+            ColumnLayout {
+              id: bluetoothContent
+              anchors { left: parent.left; right: parent.right; top: parent.top }
+              anchors.margins: 11
+              spacing: 7
+
+              RowLayout {
+                Layout.fillWidth: true
+                Text {
+                  text: ""
+                  color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled
+                    ? root.accent : root.muted
+                  font.pixelSize: 20
+                }
+                Column {
+                  Layout.fillWidth: true
+                  spacing: 2
+                  Text { text: "Bluetooth"; color: root.foreground; font.bold: true }
+                  Text {
+                    text: root.bluetoothConnectedCount > 0
+                      ? root.bluetoothConnectedCount + " connected"
+                      : (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled
+                        ? "No devices connected" : "Disabled")
+                    color: root.muted
+                  }
+                }
+                Switch {
+                  enabled: Bluetooth.defaultAdapter !== null
+                  checked: Bluetooth.defaultAdapter
+                    ? Bluetooth.defaultAdapter.enabled : false
+                  onToggled: if (Bluetooth.defaultAdapter)
+                    Bluetooth.defaultAdapter.enabled = checked
+                }
+              }
+
+              Repeater {
+                model: Bluetooth.devices
+                Text {
+                  required property var modelData
+                  Layout.leftMargin: 31
+                  visible: modelData.connected
+                  text: "• " + (modelData.name || modelData.deviceName || "Connected device")
+                  color: root.muted
+                  elide: Text.ElideRight
+                }
+              }
+            }
+          }
+
+          Rectangle {
+            Layout.fillWidth: true
+            visible: root.quickSettingsSection === "audio"
+            implicitHeight: 70
+            radius: root.cornerRadius - 2
+            color: root.quickSettingsSection === "audio"
+              ? root.selectedFill : root.normalFill
+            border.width: root.quickSettingsSection === "audio" ? 1 : 0
+            border.color: root.accent
+
+            RowLayout {
+              anchors.fill: parent
+              anchors.margins: 11
+              spacing: 10
+              Text {
+                text: root.mutedAudio ? "󰖁" : ""
+                color: root.mutedAudio ? root.muted : root.accent
+                font.pixelSize: 20
+                MouseArea {
+                  anchors.fill: parent
+                  anchors.margins: -7
+                  onClicked: root.toggleAudioMute()
+                }
+              }
+              ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 1
+                RowLayout {
+                  Layout.fillWidth: true
+                  Text { Layout.fillWidth: true; text: "Volume"; color: root.foreground; font.bold: true }
+                  Text { text: root.volume + "%"; color: root.muted }
+                }
+                Slider {
+                  Layout.fillWidth: true
+                  from: 0
+                  to: 100
+                  value: root.volume
+                  onMoved: {
+                    if (root.audioSink && root.audioSink.audio)
+                      root.audioSink.audio.volume = value / 100;
+                  }
+                }
+              }
+            }
+          }
+
+          Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: 58
+            visible: root.quickSettingsSection === "battery"
+              && UPower.displayDevice.ready && UPower.displayDevice.isPresent
+            radius: root.cornerRadius - 2
+            color: root.quickSettingsSection === "battery"
+              ? root.selectedFill : root.normalFill
+            border.width: root.quickSettingsSection === "battery" ? 1 : 0
+            border.color: root.accent
+
+            RowLayout {
+              anchors.fill: parent
+              anchors.margins: 11
+              spacing: 11
+              Text {
+                text: "󰁹"
+                color: root.batteryPercent < 16 ? root.urgent : root.accent
+                font.pixelSize: 20
+              }
+              Column {
+                Layout.fillWidth: true
+                spacing: 2
+                Text { text: "Battery"; color: root.foreground; font.bold: true }
+                Text {
+                  text: root.batteryPercent + "%"
+                    + (UPower.displayDevice.state === UPowerDeviceState.Charging
+                      ? " · charging" : "")
+                  color: root.muted
+                }
+              }
+            }
+          }
+
+          RowLayout {
+            Layout.fillWidth: true
+            visible: root.quickSettingsSection === "battery"
+              && UPower.displayDevice.ready && UPower.displayDevice.isPresent
+            spacing: 7
+
+            Repeater {
+              model: [
+                { name: "power-saver", label: "Saver", icon: "󰌪" },
+                { name: "balanced", label: "Balanced", icon: "󰾅" },
+                { name: "performance", label: "Performance", icon: "󰓅" }
+              ]
+
+              Rectangle {
+                required property var modelData
+                Layout.fillWidth: true
+                implicitHeight: 42
+                radius: root.cornerRadius - 3
+                color: root.activePowerProfile === modelData.name
+                  ? root.selectedFill
+                  : profileMouse.containsMouse ? root.hoverFill : root.normalFill
+                border.width: root.activePowerProfile === modelData.name ? 1 : 0
+                border.color: root.accent
+
+                Row {
+                  anchors.centerIn: parent
+                  spacing: 6
+                  Text {
+                    text: modelData.icon
+                    color: root.activePowerProfile === modelData.name
+                      ? root.accent : root.muted
+                  }
+                  Text {
+                    text: modelData.label
+                    color: root.foreground
+                  }
+                }
+
+                MouseArea {
+                  id: profileMouse
+                  anchors.fill: parent
+                  hoverEnabled: true
+                  onClicked: {
+                    root.activePowerProfile = parent.modelData.name;
+                    root.run("powerprofilesctl set " + parent.modelData.name);
+                  }
+                }
+              }
             }
           }
         }
@@ -556,6 +903,7 @@ ShellRoot {
       Rectangle {
         id: notificationFrame
         width: parent.width
+        height: parent.height
         implicitHeight: Math.min(notificationLayout.implicitHeight + 28, 620)
         radius: root.cornerRadius
         color: root.surface
