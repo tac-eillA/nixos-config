@@ -138,6 +138,19 @@ Run this command to build the configuration for the next boot:
 sudo nixos-rebuild boot --flake ~/nixos-config#$(hostname)
 ```
 
+After the initial configuration, open a new shell session. The following
+aliases are then available:
+
+| Alias | Action |
+| --- | --- |
+| `update` | Update the flake inputs in `flake.lock` |
+| `rebuild` | Build and activate the current host configuration |
+| `rebuild-boot` | Build the current host configuration for the next boot |
+| `garbage` | Delete old Nix store generations |
+
+The `update` alias does not rebuild the system. Run `rebuild` or
+`rebuild-boot` after `update` when you are ready to apply the updated inputs.
+
 ## Configure the primary user
 
 The file `modules/core/user.nix` contains the default user information. Other
