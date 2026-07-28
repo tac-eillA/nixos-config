@@ -1,6 +1,11 @@
-{ config, pkgs, ... }:
+{ config, pkgs, pkgsStable, ... }:
 
 {
+  services.lact = {
+    enable = true;
+    package = pkgsStable.lact;
+  };
+
   hardware.graphics = {
     enable = true;
     enable32Bit = true;

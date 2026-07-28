@@ -36,8 +36,15 @@
 
       mkHost =
         hostname:
+        let
+          pkgsStable = import inputs.nix-stable {
+            inherit system;
+            config.allowUnfree = true;
+          };
+        in
         lib.nixosSystem {
           inherit system;
+          specialArgs = { inherit pkgsStable; };
           modules = [
             nur.modules.nixos.default
             flatpakModule
@@ -47,6 +54,7 @@
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
               home-manager.backupFileExtension = "before-home-manager";
+              home-manager.extraSpecialArgs = { inherit pkgsStable; };
               home-manager.users.allison = import ./modules/home/allison;
             }
             ./hosts/${hostname}/configuration.nix

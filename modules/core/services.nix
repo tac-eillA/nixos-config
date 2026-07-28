@@ -5,7 +5,6 @@
 
   services = {
     fwupd.enable = true;
-    # lact.enable = true;
     tailscale.enable = true;
 
     pipewire = {
