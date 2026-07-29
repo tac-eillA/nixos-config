@@ -53,6 +53,11 @@ ShellRoot {
   property string networkName: "offline"
   property string networkState: "disconnected"
   property bool wifiEnabled: false
+  property string tailscaleState: "Unknown"
+  property string tailscaleHost: ""
+  property string tailscaleIp: ""
+  property string tailscaleTailnet: ""
+  property var tailscalePeers: []
   property string pendingWifiSsid: ""
   property string pendingWifiSecurity: ""
   property string activePowerProfile: ""
@@ -221,6 +226,8 @@ ShellRoot {
       powerProfileQuery.running = true;
     if (quickSettingsVisible && section === "network" && !networkScan.running)
       networkScan.running = true;
+    if (quickSettingsVisible && section === "tailscale" && !tailscaleQuery.running)
+      tailscaleQuery.running = true;
     if (quickSettingsVisible && section === "bluetooth"
         && Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled)
       Bluetooth.defaultAdapter.discovering = true;
@@ -462,6 +469,60 @@ ShellRoot {
   }
 
   Process {
+    id: tailscaleQuery
+    command: ["tailscale", "status", "--json"]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        try {
+          const status = JSON.parse(text);
+          root.tailscaleState = status.BackendState || "Unknown";
+          root.tailscaleHost = status.Self
+            ? (status.Self.HostName || status.Self.DNSName || "") : "";
+          root.tailscaleIp = status.TailscaleIPs && status.TailscaleIPs.length
+            ? status.TailscaleIPs[0] : "";
+          root.tailscaleTailnet = status.CurrentTailnet
+            ? (status.CurrentTailnet.Name || status.CurrentTailnet.MagicDNSSuffix || "") : "";
+
+          const peers = [];
+          const peerMap = status.Peer || {};
+          for (const key in peerMap) {
+            const peer = peerMap[key];
+            if (!peer || !peer.Online) continue;
+            peers.push({
+              name: peer.HostName || peer.DNSName || "Unknown device",
+              ip: peer.TailscaleIPs && peer.TailscaleIPs.length
+                ? peer.TailscaleIPs[0] : "",
+              active: peer.Active === true,
+              exitNode: peer.ExitNode === true
+            });
+          }
+          peers.sort((a, b) => {
+            if (a.active !== b.active) return a.active ? -1 : 1;
+            return a.name.localeCompare(b.name);
+          });
+          root.tailscalePeers = peers;
+        } catch (error) {
+          root.tailscaleState = "Unavailable";
+          root.tailscaleHost = "";
+          root.tailscaleIp = "";
+          root.tailscaleTailnet = "";
+          root.tailscalePeers = [];
+        }
+      }
+    }
+  }
+
+  Process {
+    id: tailscaleAction
+    onExited: (exitCode, exitStatus) => {
+      root.showOsd(exitCode === 0 ? "󰌷" : "󰌸",
+        exitCode === 0 ? "Tailscale updated" : "Tailscale action failed",
+        0, false);
+      if (!tailscaleQuery.running) tailscaleQuery.running = true;
+    }
+  }
+
+  Process {
     id: brightnessSet
     stdout: StdioCollector {
       onStreamFinished: {
@@ -485,7 +546,10 @@ ShellRoot {
     running: true
     repeat: true
     triggeredOnStart: true
-    onTriggered: if (!networkQuery.running) networkQuery.running = true
+    onTriggered: {
+      if (!networkQuery.running) networkQuery.running = true;
+      if (!tailscaleQuery.running) tailscaleQuery.running = true;
+    }
   }
 
   Timer {
@@ -698,6 +762,21 @@ ShellRoot {
           }
 
           StatusItem {
+            icon: root.tailscaleState === "Running" ? "󰌷" : "󰌸"
+            text: root.tailscaleState === "Running" ? root.tailscalePeers.length : ""
+            textColor: root.tailscaleState === "Running" ? root.accent : root.muted
+            onClicked: mouse => {
+              if (mouse.button === Qt.RightButton && !tailscaleAction.running) {
+                tailscaleAction.command = ["tailscale",
+                  root.tailscaleState === "Running" ? "down" : "up"];
+                tailscaleAction.running = true;
+              } else {
+                root.toggleQuickSettings("tailscale");
+              }
+            }
+          }
+
+          StatusItem {
             visible: Bluetooth.defaultAdapter !== null
             icon: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? "" : "󰂲"
             text: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled
@@ -794,6 +873,7 @@ ShellRoot {
       implicitWidth: 390
       implicitHeight: Math.min(
         root.quickSettingsSection === "network" ? 570
+          : root.quickSettingsSection === "tailscale" ? 500
           : root.quickSettingsSection === "bluetooth" ? 520
           : root.quickSettingsSection === "audio"
             ? quickSettingsLayout.implicitHeight + 28 : 190,
@@ -834,6 +914,7 @@ ShellRoot {
               Text {
                 Layout.fillWidth: true
                 text: root.quickSettingsSection === "network" ? "Wi-Fi"
+                  : root.quickSettingsSection === "tailscale" ? "Tailscale"
                   : root.quickSettingsSection === "bluetooth" ? "Bluetooth"
                   : root.quickSettingsSection === "audio" ? "Audio"
                   : "Power"
@@ -1029,6 +1110,136 @@ ShellRoot {
                   wifiPassword.text = "";
                 }
               }
+            }
+          }
+
+          ColumnLayout {
+            Layout.fillWidth: true
+            visible: root.quickSettingsSection === "tailscale"
+            spacing: 10
+
+            Rectangle {
+              Layout.fillWidth: true
+              implicitHeight: 72
+              radius: root.cornerRadius - 2
+              color: root.selectedFill
+              border.width: 1
+              border.color: root.tailscaleState === "Running" ? root.accent : root.outline
+
+              RowLayout {
+                anchors.fill: parent
+                anchors.margins: 11
+                spacing: 11
+                Text {
+                  text: root.tailscaleState === "Running" ? "󰌷" : "󰌸"
+                  color: root.tailscaleState === "Running" ? root.accent : root.muted
+                  font.pixelSize: 22
+                }
+                Column {
+                  Layout.fillWidth: true
+                  spacing: 2
+                  Text {
+                    text: root.tailscaleHost.length ? root.tailscaleHost : "Tailscale"
+                    color: root.foreground
+                    font.bold: true
+                  }
+                  Text {
+                    text: root.tailscaleState === "Running"
+                      ? (root.tailscaleIp.length ? root.tailscaleIp : "Connected")
+                      : root.tailscaleState
+                    color: root.muted
+                  }
+                }
+                Switch {
+                  checked: root.tailscaleState === "Running"
+                  enabled: !tailscaleAction.running
+                  onToggled: {
+                    if (checked === (root.tailscaleState === "Running")) return;
+                    tailscaleAction.command = ["tailscale", checked ? "up" : "down"];
+                    tailscaleAction.running = true;
+                  }
+                }
+              }
+            }
+
+            RowLayout {
+              Layout.fillWidth: true
+              visible: root.tailscaleState === "Running"
+              Text {
+                Layout.fillWidth: true
+                text: root.tailscaleTailnet.length
+                  ? root.tailscaleTailnet : "Private network"
+                color: root.muted
+                elide: Text.ElideRight
+              }
+              Text {
+                text: root.tailscalePeers.length + " peer"
+                  + (root.tailscalePeers.length === 1 ? "" : "s") + " online"
+                color: root.muted
+              }
+            }
+
+            Text {
+              visible: root.tailscaleState === "Running"
+              text: "Online devices"
+              color: root.muted
+              font.pixelSize: 12
+            }
+
+            Repeater {
+              model: ScriptModel {
+                values: root.tailscaleState === "Running"
+                  ? root.tailscalePeers.slice(0, 7) : []
+              }
+
+              Rectangle {
+                required property var modelData
+                Layout.fillWidth: true
+                implicitHeight: 48
+                radius: root.cornerRadius - 3
+                color: modelData.active ? root.selectedFill : root.normalFill
+
+                RowLayout {
+                  anchors.fill: parent
+                  anchors.margins: 9
+                  spacing: 9
+                  Text {
+                    text: modelData.exitNode ? "󰒋" : "󰇅"
+                    color: modelData.active ? root.accent : root.foreground
+                    font.pixelSize: 17
+                  }
+                  Column {
+                    Layout.fillWidth: true
+                    Text {
+                      width: parent.width
+                      text: modelData.name
+                      color: root.foreground
+                      font.bold: modelData.active
+                      elide: Text.ElideRight
+                    }
+                    Text {
+                      text: modelData.ip
+                      color: root.muted
+                      font.pixelSize: 11
+                    }
+                  }
+                  Text {
+                    text: modelData.exitNode ? "Exit node"
+                      : modelData.active ? "Active" : "Online"
+                    color: modelData.active ? root.accent : root.muted
+                    font.pixelSize: 11
+                  }
+                }
+              }
+            }
+
+            Text {
+              Layout.fillWidth: true
+              visible: root.tailscaleState === "Running"
+                && root.tailscalePeers.length === 0
+              text: "No other devices are currently online."
+              color: root.muted
+              horizontalAlignment: Text.AlignHCenter
             }
           }
 

@@ -59,7 +59,13 @@ in
     # in. PAM unlocks it with the SDDM password, and NetworkManager can then
     # retrieve user-scoped Wi-Fi secrets after the session starts.
     services.gnome.gnome-keyring.enable = true;
-    security.pam.services.sddm.enableGnomeKeyring = true;
+    security.pam.services.sddm = {
+      # SDDM cannot race password and fingerprint authentication cleanly.
+      # With fprintd enabled globally it waits for the fingerprint timeout
+      # before accepting an already-entered password.
+      fprintAuth = false;
+      enableGnomeKeyring = true;
+    };
 
     services.xserver.displayManager.setupCommands =
       lib.optionalString cfg.login.internalDisplayOnly ''
