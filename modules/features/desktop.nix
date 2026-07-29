@@ -2,7 +2,7 @@
 
 {
   imports = [
-    ./base.nix
+    ../profiles/base.nix
     ../desktop
     ../packages
   ];

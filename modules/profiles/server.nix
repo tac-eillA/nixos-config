@@ -3,8 +3,7 @@
 {
   imports = [
     ./base.nix
-    ../dev/minimal.nix
-    ../secrets/common.nix
+    ../features/development/minimal.nix
   ];
 
   networking = {

@@ -4,7 +4,7 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/profiles/server.nix
-    ../../modules/roles/headscale.nix
+    ../../modules/roles/headscale
   ];
 
   networking.hostName = "headscale";

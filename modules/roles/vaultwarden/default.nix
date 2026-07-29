@@ -8,8 +8,10 @@ let
   secretsFile = config.sops.secrets."vaultwarden/env".path;
 in
 {
+  imports = [ ../../secrets/runtime-age.nix ];
+
   sops.secrets."vaultwarden/env" = {
-    sopsFile = ../../secrets/vaultwarden.yaml;
+    sopsFile = ../../../secrets/vaultwarden.yaml;
     mode = "0400";
   };
 

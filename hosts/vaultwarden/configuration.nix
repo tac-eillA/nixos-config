@@ -4,7 +4,7 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/profiles/server.nix
-    ../../modules/roles/vaultwarden.nix
+    ../../modules/roles/vaultwarden
   ];
 
   networking.hostName = "vaultwarden";

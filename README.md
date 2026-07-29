@@ -33,7 +33,7 @@ desktop applications.
 - Hyprland with a Quickshell desktop shell
 - SOPS secret management for configured hosts
 - Service roles for Authentik, DNS, Forgejo, Headscale, Paperless-ngx, Proxy,
-  Rundeck, and Vaultwarden
+  and Vaultwarden
 - Automatic host discovery from the `hosts/` directory
 - An installation script for a new or existing host configuration
 
@@ -43,11 +43,12 @@ desktop applications.
 | --- | --- |
 | `flake.nix` | Flake inputs and NixOS host outputs |
 | `hosts/` | Host configuration and hardware files |
-| `modules/core/` | Base system, boot, network, service, shell, and user settings |
-| `modules/profiles/` | Base, desktop, workstation, and server profiles |
+| `modules/core/` | Shared boot, firewall, network, shell, system, and user settings |
+| `modules/profiles/` | Base, server, and workstation composition |
+| `modules/features/` | Cross-cutting desktop, development, gaming, and system features |
 | `modules/home/scylla/` | Home Manager and desktop user settings |
-| `modules/desktop/` | Login, Hyprland, graphics, printing, and peripheral settings |
-| `modules/roles/` | Server application roles |
+| `modules/desktop/` | Desktop implementation modules used by the desktop feature |
+| `modules/roles/` | Directory-based server workload roles |
 | `modules/secrets/` | SOPS declarations and Age key settings |
 | `scripts/` | Installation and administration scripts |
 

@@ -12,8 +12,10 @@ let
   authentikEnv = config.sops.secrets."authentik/env".path;
 in
 {
+  imports = [ ../../secrets/runtime-age.nix ];
+
   sops.secrets."authentik/env" = {
-    sopsFile = ../../secrets/authentik.yaml;
+    sopsFile = ../../../secrets/authentik.yaml;
     mode = "0400";
   };
 

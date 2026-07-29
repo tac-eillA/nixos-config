@@ -6,8 +6,10 @@ let
   passwordFile = config.sops.secrets."paperless/admin-password".path;
 in
 {
+  imports = [ ../../secrets/runtime-age.nix ];
+
   sops.secrets."paperless/admin-password" = {
-    sopsFile = ../../secrets/paperless.yaml;
+    sopsFile = ../../../secrets/paperless.yaml;
     owner = "paperless";
     group = "paperless";
     mode = "0400";

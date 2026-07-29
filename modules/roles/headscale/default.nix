@@ -8,8 +8,10 @@ let
   oidcClientSecretFile = config.sops.secrets."headscale/authentik-client-secret".path;
 in
 {
+  imports = [ ../../secrets/runtime-age.nix ];
+
   sops.secrets."headscale/authentik-client-secret" = {
-    sopsFile = ../../secrets/headscale.yaml;
+    sopsFile = ../../../secrets/headscale.yaml;
     owner = "headscale";
     group = "headscale";
     mode = "0400";

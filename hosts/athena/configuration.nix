@@ -5,7 +5,7 @@
     ./hardware-configuration.nix
     inputs.nixos-hardware.nixosModules.framework-amd-ai-300-series
     ../../modules/profiles/workstation.nix
-    #../../modules/dev/unreal.nix
+    #../../modules/features/development/unreal.nix
   ];
 
   # Ryzen AI 300 firmware does not describe every device dependency needed

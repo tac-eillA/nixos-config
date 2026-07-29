@@ -3,6 +3,8 @@
 {
   imports = [
     ../core
-    ../management/rundeck-managed.nix
+    ../features/audio.nix
+    ../features/firmware.nix
+    ../features/tailscale.nix
   ];
 }

@@ -2,10 +2,10 @@
 
 {
   imports = [
-    ./desktop.nix
-    ../dev/full.nix
+    ../features/desktop.nix
+    ../features/development/full.nix
     ../secrets/github.nix
-    ../containers/distrobox.nix
-    ../desktop/gaming.nix
+    ../features/distrobox.nix
+    ../features/gaming.nix
   ];
 }

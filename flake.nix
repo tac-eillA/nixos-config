@@ -65,16 +65,6 @@
     {
       nixosConfigurations = lib.genAttrs hostNames mkHost;
 
-      packages.${system}.rundeck-generate-resources = (mkPkgs system).writeShellApplication {
-        name = "rundeck-generate-resources";
-        runtimeInputs = with (mkPkgs system); [
-          jq
-          nix
-          gnugrep
-        ];
-        text = builtins.readFile ./scripts/rundeck-generate-resources.sh;
-      };
-
       formatter.${system} = (mkPkgs system).nixpkgs-fmt;
     };
 }

@@ -6,7 +6,7 @@
     ./hyprland.nix
     ./login.nix
     ./peripherals.nix
-    ./printing.nix
+    ../features/printing.nix
     ./video.nix
   ];
 }

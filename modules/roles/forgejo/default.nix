@@ -13,8 +13,10 @@ let
   psqlExe = "${config.services.postgresql.package}/bin/psql";
 in
 {
+  imports = [ ../../secrets/runtime-age.nix ];
+
   sops.secrets."forgejo/authentik-client-secret" = {
-    sopsFile = ../../secrets/forgejo.yaml;
+    sopsFile = ../../../secrets/forgejo.yaml;
     owner = cfg.user;
     group = cfg.group;
     mode = "0400";

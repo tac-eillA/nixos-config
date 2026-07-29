@@ -4,7 +4,7 @@
   imports = [
     ./hardware-configuration.nix
     ../../modules/profiles/workstation.nix
-    #../../modules/dev/unreal.nix
+    #../../modules/features/development/unreal.nix
   ];
 
   scylla.desktop.video.gpu = "nvidia";
