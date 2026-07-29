@@ -31,6 +31,7 @@
         "hyprland"
         "gtk"
       ];
+      config.hyprland."org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
     };
 
     security.pam.services.hyprlock.fprintAuth = true;

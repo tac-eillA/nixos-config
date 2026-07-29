@@ -60,11 +60,34 @@ in
     # retrieve user-scoped Wi-Fi secrets after the session starts.
     services.gnome.gnome-keyring.enable = true;
     security.pam.services.sddm = {
-      # SDDM cannot race password and fingerprint authentication cleanly.
-      # With fprintd enabled globally it waits for the fingerprint timeout
-      # before accepting an already-entered password.
+      # SDDM normally delegates authentication to the shared login stack. That
+      # stack enables pam_fprintd whenever fprintd is enabled, so merely setting
+      # fprintAuth to false does not keep fingerprints out of SDDM.
       fprintAuth = false;
       enableGnomeKeyring = true;
+
+      rules.auth = {
+        # Replace SDDM's inherited auth stack with password-only authentication.
+        # Fingerprints remain available to services that explicitly enable them,
+        # such as Hyprlock.
+        login.enable = lib.mkForce false;
+
+        unix = {
+          order = 11000;
+          control = "required";
+          modulePath = config.security.pam.pam_unixModulePath;
+          settings = {
+            likeauth = true;
+            try_first_pass = true;
+          };
+        };
+
+        gnome_keyring = {
+          order = 12000;
+          control = "optional";
+          modulePath = "${pkgs.gnome-keyring}/lib/security/pam_gnome_keyring.so";
+        };
+      };
     };
 
     services.xserver.displayManager.setupCommands =
