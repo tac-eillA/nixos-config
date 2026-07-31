@@ -42,10 +42,10 @@ case "${host_type,,}" in
     require_command nano
     require_command sudo
 
-    printf '\nPrimary user defaults are kept in modules/core/user.nix.\n'
+    printf '\nWorkstation user defaults are kept in modules/profiles/workstation-user.nix.\n'
     printf 'Nano will open so you can review the username, display name, home directory, and Git identity.\n'
     read -r -p 'Press Enter to open the user configuration. '
-    nano "${repo_dir}/modules/core/user.nix"
+    nano "${repo_dir}/modules/profiles/workstation-user.nix"
 
     mkdir -- "$destination"
     cp -- "${template_dir}/configuration.nix" "${destination}/configuration.nix"

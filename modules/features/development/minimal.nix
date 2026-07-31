@@ -9,7 +9,6 @@
     curl
     wget
     which
-    ghostty
     neovim
     openssl
     libargon2
@@ -18,9 +17,4 @@
     tailscale
     bitwarden-cli
   ];
-
-  xdg.terminal-exec = {
-    enable = true;
-    settings.default = [ "com.mitchellh.ghostty.desktop" ];
-  };
 }

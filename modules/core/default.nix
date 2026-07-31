@@ -7,6 +7,5 @@
     ./network.nix
     ./firewall.nix
     ./shell.nix
-    ./user.nix
   ];
 }

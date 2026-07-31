@@ -1,10 +1,7 @@
 { lib, ... }:
 
 {
-  imports = [
-    ./base.nix
-    ../features/development/minimal.nix
-  ];
+  imports = [ ./base.nix ];
 
   networking = {
     networkmanager.enable = lib.mkForce false;

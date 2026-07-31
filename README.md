@@ -19,8 +19,8 @@ host settings are kept in `hosts/`. Shared modules are in `modules/`.
 
 ## Desktop
 
-The workstation profile provides Hyprland, Home Manager, Quickshell, and
-desktop applications.
+Workstation inventory selects Hyprland, Home Manager, Quickshell, and desktop
+applications through explicit features.
 
 ![Scylla desktop with a browser, terminal, media player, and audio controls](img/readme/fullscreen_browser_cider_terminal.png)
 
@@ -30,16 +30,18 @@ desktop applications.
 
 - NixOS host configurations for workstations and servers
 - Shared base, desktop, workstation, and server profiles
-- Home Manager configuration for the primary user
+- Workstation-only Home Manager configuration for the primary user
 - Hyprland with a Quickshell desktop shell
 - SOPS secret management for configured hosts
 - Service roles for Authentik, DNS, Forgejo, Headscale, Paperless-ngx, Proxy,
   and Vaultwarden
-- Explicit host, role, feature, address, and architecture inventory
+- Host inventory that directly selects profile, feature, role, address, and
+  architecture modules
 - Proxy ingress generated from validated service publication policies
-- Evaluation checks for duplicate addresses, unknown references, undeclared
-  host directories, deployable placeholder hardware, invalid service
-  protocols, duplicate public domains, and disabled destination roles
+- Evaluation checks for duplicate addresses/features, unknown or incompatible
+  references, invalid feature dependencies, undeclared host directories,
+  deployable placeholder hardware, invalid service protocols, duplicate
+  public domains, and disabled destination roles
 - An installation script for a new or existing host configuration
 
 ## Repository layout
@@ -52,7 +54,7 @@ desktop applications.
 | `inventory/services.nix` | Service listeners, exposure policies, and publication metadata |
 | `hosts/` | Host configuration and hardware files |
 | `templates/host/` | Share-safe host template exposed through the flake |
-| `modules/core/` | Shared boot, firewall, network, shell, system, and user settings |
+| `modules/core/` | Minimal boot, firewall, network, shell, and system settings shared by every host |
 | `modules/profiles/` | Base, server, and workstation composition |
 | `modules/features/` | Cross-cutting desktop, development, gaming, and system features |
 | `modules/networking/` | Inventory-driven exposure policy and firewall rendering |
@@ -94,7 +96,7 @@ Use this procedure after you install NixOS and clone the repository.
 
 4. Enter the new host name.
 
-5. Edit `modules/core/user.nix` when Nano opens.
+5. Edit `modules/profiles/workstation-user.nix` when Nano opens.
 
    Check the user name, full name, home directory, and Git identity. Save the
    file and exit Nano.
@@ -170,10 +172,11 @@ The `update` alias does not rebuild the system. Run `rebuild` or
 
 ## Configure the primary user
 
-The file `modules/core/user.nix` contains the default user information. Other
-modules read the `scylla.user` options from this file.
+The file `modules/profiles/workstation-user.nix` contains the default
+workstation user information. Desktop modules read its `scylla.user` options.
 
-The available options are:
+This module is imported only by the workstation profile. The available options
+are:
 
 ```nix
 scylla.user = {
@@ -220,6 +223,26 @@ module. The `scylla.user` account is the primary Home Manager desktop account.
 
 The flake intentionally rejects host directories that are absent from the
 inventory.
+
+## Configure host features
+
+Every feature named in `inventory/hosts.nix` imports exactly one module. Server
+hosts currently select only CLI development tools and the Tailscale service:
+
+```nix
+features = [
+  "development-minimal"
+  "tailscale"
+];
+```
+
+Workstations explicitly select desktop, audio, firmware, AppImage, printing,
+gaming, Distrobox, development, Tailscale, and desktop-operator integration as
+needed. `tailscale-operator` requires both `tailscale` and `desktop`, and a host
+may select only one of `development-minimal` or `development-full`.
+
+Firmware updates are not part of the server profile. Add `firmware` to a
+specific server only when its hardware requires fwupd.
 
 ## Configure a workload role
 

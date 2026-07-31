@@ -46,22 +46,38 @@
         vaultwarden = ./modules/roles/vaultwarden;
       };
 
+      featureModules = {
+        appimage = ./modules/features/appimage.nix;
+        audio = ./modules/features/audio.nix;
+        desktop = ./modules/features/desktop.nix;
+        development-full = ./modules/features/development/full.nix;
+        development-minimal = ./modules/features/development/minimal.nix;
+        distrobox = ./modules/features/distrobox.nix;
+        firmware = ./modules/features/firmware.nix;
+        gaming = ./modules/features/gaming.nix;
+        github-secret = ./modules/secrets/github.nix;
+        printing = ./modules/features/printing.nix;
+        tailscale = ./modules/features/tailscale.nix;
+        tailscale-operator = ./modules/features/tailscale-operator.nix;
+      };
+
       hardwareModules = {
         framework-amd-ai-300-series =
           inputs.nixos-hardware.nixosModules.framework-amd-ai-300-series;
       };
 
-      knownFeatures = [
+      knownFeatures = builtins.attrNames featureModules;
+
+      workstationOnlyFeatures = [
+        "appimage"
         "audio"
         "desktop"
         "development-full"
-        "development-minimal"
         "distrobox"
-        "firmware"
         "gaming"
         "github-secret"
         "printing"
-        "tailscale"
+        "tailscale-operator"
       ];
 
       hostNames = builtins.attrNames hostInventory;
@@ -107,6 +123,55 @@
           map (feature: "${hostname}:${feature}") (
             lib.filter (feature: !(builtins.elem feature knownFeatures)) hostInventory.${hostname}.features
           )
+        )
+        hostNames;
+
+      duplicateFeatures = lib.filter
+        (
+          hostname:
+          let
+            features = hostInventory.${hostname}.features;
+          in
+          lib.length features != lib.length (lib.unique features)
+        )
+        hostNames;
+
+      incompatibleProfileFeatures = lib.concatMap
+        (
+          hostname:
+          map (feature: "${hostname}:${feature}") (
+            lib.filter
+              (
+                feature:
+                hostInventory.${hostname}.profile != "workstation"
+                && builtins.elem feature workstationOnlyFeatures
+              )
+              hostInventory.${hostname}.features
+          )
+        )
+        hostNames;
+
+      invalidFeatureDependencies = lib.concatMap
+        (
+          hostname:
+          let
+            features = hostInventory.${hostname}.features;
+          in
+          lib.optional
+            (
+              builtins.elem "tailscale-operator" features
+              && (
+                !(builtins.elem "tailscale" features)
+                || !(builtins.elem "desktop" features)
+              )
+            )
+            "${hostname}:tailscale-operator requires tailscale and desktop"
+          ++ lib.optional
+            (
+              builtins.elem "development-full" features
+              && builtins.elem "development-minimal" features
+            )
+            "${hostname}:select only one development feature"
         )
         hostNames;
 
@@ -257,6 +322,18 @@
           ) "Unknown inventory features: ${lib.concatStringsSep ", " unknownFeatures}";
         assert lib.assertMsg
           (
+            duplicateFeatures == [ ]
+          ) "Inventory hosts repeat features: ${lib.concatStringsSep ", " duplicateFeatures}";
+        assert lib.assertMsg
+          (
+            incompatibleProfileFeatures == [ ]
+          ) "Features incompatible with host profiles: ${lib.concatStringsSep ", " incompatibleProfileFeatures}";
+        assert lib.assertMsg
+          (
+            invalidFeatureDependencies == [ ]
+          ) "Invalid feature dependencies: ${lib.concatStringsSep ", " invalidFeatureDependencies}";
+        assert lib.assertMsg
+          (
             unknownHardwareModules == [ ]
           ) "Unknown inventory hardware modules: ${lib.concatStringsSep ", " unknownHardwareModules}";
         assert lib.assertMsg
@@ -364,10 +441,12 @@
             };
           };
           modules = [
-            flatpakModule
             inputs.sops-nix.nixosModules.sops
-            inputs.home-manager.nixosModules.home-manager
             ./modules/networking/exposure.nix
+          ]
+          ++ lib.optionals (hostMeta.profile == "workstation") [
+            flatpakModule
+            inputs.home-manager.nixosModules.home-manager
             {
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
@@ -381,6 +460,7 @@
           ++ [
             profileModules.${hostMeta.profile}
           ]
+          ++ map (feature: featureModules.${feature}) hostMeta.features
           ++ builtins.attrValues roleModules
           ++ [
             {

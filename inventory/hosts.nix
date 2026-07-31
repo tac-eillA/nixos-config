@@ -11,13 +11,12 @@ let
     vaultwarden = "10.254.1.216";
   };
 
-  baseFeatures = [
-    "audio"
-    "firmware"
+  baseFeatures = [ ];
+
+  serverFeatures = [
+    "development-minimal"
     "tailscale"
   ];
-
-  serverFeatures = baseFeatures ++ [ "development-minimal" ];
 
   serverAdministration = {
     ssh = {
@@ -36,12 +35,17 @@ let
   };
 
   workstationFeatures = baseFeatures ++ [
+    "appimage"
+    "audio"
     "desktop"
     "development-full"
     "distrobox"
+    "firmware"
     "gaming"
     "github-secret"
     "printing"
+    "tailscale"
+    "tailscale-operator"
   ];
 in
 {

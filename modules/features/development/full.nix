@@ -37,6 +37,7 @@
     p7zip
     file
     vim
+    ghostty
     kitty
     nixd
     nil
@@ -62,4 +63,9 @@
     python3
     detect-secrets
   ];
+
+  xdg.terminal-exec = {
+    enable = true;
+    settings.default = [ "com.mitchellh.ghostty.desktop" ];
+  };
 }
