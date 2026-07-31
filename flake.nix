@@ -24,7 +24,11 @@
       lib = nixpkgs.lib;
       flatpakModule = inputs."nix-flatpak".nixosModules.nix-flatpak;
       hostInventory = import ./inventory/hosts.nix;
-      serviceInventory = import ./inventory/services.nix;
+      networkInventory = import ./inventory/networks.nix;
+      serviceInventory = import ./inventory/services.nix {
+        hosts = hostInventory;
+        networks = networkInventory;
+      };
 
       profileModules = {
         base = ./modules/profiles/base.nix;
@@ -138,6 +142,83 @@
         )
         hostNames;
 
+      inventoryManagedRoleSettings = [
+        "domain"
+        "listenAddress"
+        "port"
+      ];
+
+      manualServiceListenerSettings = lib.concatMap
+        (
+          hostname:
+          lib.concatMap
+            (
+              role:
+              map (setting: "${hostname}:${role}.${setting}") (
+                lib.filter
+                  (
+                    setting:
+                    builtins.hasAttr setting (
+                      hostInventory.${hostname}.roleSettings.${role} or { }
+                    )
+                  )
+                  inventoryManagedRoleSettings
+              )
+            )
+            hostInventory.${hostname}.roles
+        )
+        hostNames;
+
+      deployableServerNames = lib.filter
+        (
+          hostname:
+          hostInventory.${hostname}.deployable
+          && hostInventory.${hostname}.profile == "server"
+        )
+        hostNames;
+
+      missingAdministrativePolicies = lib.filter
+        (
+          hostname:
+          lib.attrByPath
+            [
+              "administration"
+              "ssh"
+              "exposures"
+            ]
+            [ ]
+            hostInventory.${hostname}
+          == [ ]
+        )
+        deployableServerNames;
+
+      administrativeNetworks = lib.concatMap
+        (
+          hostname:
+          lib.concatMap
+            (exposure: exposure.trustedNetworks or [ ])
+            (
+              lib.attrByPath
+                [
+                  "administration"
+                  "ssh"
+                  "exposures"
+                ]
+                [ ]
+                hostInventory.${hostname}
+            )
+        )
+        deployableServerNames;
+
+      undeclaredAdministrativeNetworks = lib.filter
+        (
+          network:
+            !(builtins.elem network (
+              lib.concatLists (builtins.attrValues networkInventory)
+            ))
+        )
+        administrativeNetworks;
+
       missingHostConfigurations = lib.filter
         (
           hostname: !(builtins.pathExists (./hosts + "/${hostname}/configuration.nix"))
@@ -188,6 +269,18 @@
           ) "Proxy ingress must be generated from service inventory, not set on: ${lib.concatStringsSep ", " manualProxyIngress}";
         assert lib.assertMsg
           (
+            manualServiceListenerSettings == [ ]
+          ) "Service listeners must be generated from service inventory, not set on: ${lib.concatStringsSep ", " manualServiceListenerSettings}";
+        assert lib.assertMsg
+          (
+            missingAdministrativePolicies == [ ]
+          ) "Deployable servers lack an administrative exposure policy: ${lib.concatStringsSep ", " missingAdministrativePolicies}";
+        assert lib.assertMsg
+          (
+            undeclaredAdministrativeNetworks == [ ]
+          ) "Administrative access trusts networks absent from network inventory: ${lib.concatStringsSep ", " undeclaredAdministrativeNetworks}";
+        assert lib.assertMsg
+          (
             missingHostConfigurations == [ ]
           ) "Inventory hosts missing configuration.nix: ${lib.concatStringsSep ", " missingHostConfigurations}";
         assert lib.assertMsg
@@ -203,6 +296,7 @@
       servicePolicy = import ./inventory/validate-services.nix {
         hosts = validatedHostInventory;
         inherit lib;
+        networks = networkInventory;
         knownRoles = builtins.attrNames roleModules;
         services = serviceInventory;
       };
@@ -234,10 +328,30 @@
               enable = true;
             }
             // (hostMeta.roleSettings.${role} or { })
+            // (servicePolicy.roleSettingsByHost.${hostname}.${role} or { })
             // lib.optionalAttrs (role == "proxy") {
               ingress = servicePolicy.cloudflareIngress;
             }
           );
+          sshPolicy = hostMeta.administration.ssh or null;
+          administrativeExposures =
+            if sshPolicy == null
+            then [ ]
+            else
+              map
+                (
+                  exposure:
+                  {
+                    name = "openssh-${exposure.classification}";
+                    address = hostMeta.address;
+                    port = sshPolicy.port;
+                    protocols = [ "tcp" ];
+                    inherit (exposure) classification;
+                    sources = exposure.trustedNetworks;
+                    consumedByProxy = false;
+                  }
+                )
+                sshPolicy.exposures;
         in
         lib.nixosSystem {
           inherit system;
@@ -245,6 +359,7 @@
             inherit inputs pkgsStable hostMeta;
             inventory = {
               hosts = validatedHostInventory;
+              networks = networkInventory;
               services = validatedServiceInventory;
             };
           };
@@ -252,6 +367,7 @@
             flatpakModule
             inputs.sops-nix.nixosModules.sops
             inputs.home-manager.nixosModules.home-manager
+            ./modules/networking/exposure.nix
             {
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
@@ -274,6 +390,9 @@
                   hostMeta.address != null
                 ) "${hostMeta.address}/24";
               scylla.roles = enabledRoles;
+              scylla.network.exposures =
+                servicePolicy.exposuresByHost.${hostname}
+                  ++ administrativeExposures;
             }
             ./hosts/${hostname}/configuration.nix
           ];

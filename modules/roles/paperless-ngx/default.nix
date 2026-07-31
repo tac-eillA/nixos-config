@@ -2,7 +2,6 @@
 
 let
   cfg = config.scylla.roles.paperless-ngx;
-  roleLib = import ../lib.nix { inherit config lib; };
   passwordFile = config.sops.secrets."paperless/admin-password".path;
   paperlessUnits = [
     "paperless-consumer.service"
@@ -33,14 +32,6 @@ in
       description = "Paperless-ngx HTTP port.";
     };
 
-    openFirewall = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Whether to allow the Paperless-ngx port through the firewall.";
-    };
-
-    permittedSources = roleLib.permittedSourcesOption;
-
     installAdminPackages = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -54,51 +45,43 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable (
-    lib.mkMerge [
+  config = lib.mkIf cfg.enable {
+    assertions = [
       {
-        assertions = [
-          {
-            assertion = builtins.pathExists cfg.secretFile;
-            message = "The Paperless-ngx role secret file does not exist.";
-          }
-        ];
-
-        sops.age = {
-          keyFile = "/var/lib/sops-nix/age-key.txt";
-          generateKey = false;
-        };
-
-        sops.secrets."paperless/admin-password" = {
-          sopsFile = cfg.secretFile;
-          owner = "paperless";
-          group = "paperless";
-          mode = "0400";
-          restartUnits = paperlessUnits;
-        };
-
-        services.paperless = {
-          enable = true;
-          address = cfg.listenAddress;
-          inherit (cfg) domain port;
-          inherit passwordFile;
-          database.createLocally = true;
-          configureTika = true;
-
-          settings = {
-            PAPERLESS_OCR_LANGUAGE = "eng";
-            PAPERLESS_CONSUMER_RECURSIVE = true;
-          };
-        };
-
-        environment.systemPackages = lib.optionals cfg.installAdminPackages [
-          config.services.paperless.manage
-        ];
+        assertion = builtins.pathExists cfg.secretFile;
+        message = "The Paperless-ngx role secret file does not exist.";
       }
-      (roleLib.mkRoleFirewall {
-        inherit (cfg) openFirewall permittedSources;
-        tcpPorts = [ cfg.port ];
-      })
-    ]
-  );
+    ];
+
+    sops.age = {
+      keyFile = "/var/lib/sops-nix/age-key.txt";
+      generateKey = false;
+    };
+
+    sops.secrets."paperless/admin-password" = {
+      sopsFile = cfg.secretFile;
+      owner = "paperless";
+      group = "paperless";
+      mode = "0400";
+      restartUnits = paperlessUnits;
+    };
+
+    services.paperless = {
+      enable = true;
+      address = cfg.listenAddress;
+      inherit (cfg) domain port;
+      inherit passwordFile;
+      database.createLocally = true;
+      configureTika = true;
+
+      settings = {
+        PAPERLESS_OCR_LANGUAGE = "eng";
+        PAPERLESS_CONSUMER_RECURSIVE = true;
+      };
+    };
+
+    environment.systemPackages = lib.optionals cfg.installAdminPackages [
+      config.services.paperless.manage
+    ];
+  };
 }

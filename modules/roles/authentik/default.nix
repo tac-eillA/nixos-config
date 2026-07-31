@@ -2,7 +2,6 @@
 
 let
   cfg = config.scylla.roles.authentik;
-  roleLib = import ../lib.nix { inherit config lib; };
   authentikContainers = [
     "podman-authentik-postgres.service"
     "podman-authentik-redis.service"
@@ -69,14 +68,6 @@ in
       description = "Authentik server and worker container image.";
     };
 
-    openFirewall = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Whether to allow the Authentik reverse-proxy port.";
-    };
-
-    permittedSources = roleLib.permittedSourcesOption;
-
     installAdminPackages = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -90,155 +81,147 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable (
-    lib.mkMerge [
+  config = lib.mkIf cfg.enable {
+    assertions = [
       {
-        assertions = [
+        assertion = builtins.pathExists cfg.secretFile;
+        message = "The Authentik role secret file does not exist.";
+      }
+      {
+        assertion = cfg.backendAddress != cfg.listenAddress || cfg.backendPort != cfg.port;
+        message = "Authentik's backend and public listener cannot use the same socket.";
+      }
+    ];
+
+    sops.age = {
+      keyFile = "/var/lib/sops-nix/age-key.txt";
+      generateKey = false;
+    };
+
+    sops.secrets."authentik/env" = {
+      sopsFile = cfg.secretFile;
+      mode = "0400";
+      restartUnits = authentikContainers;
+    };
+
+    virtualisation.oci-containers.backend = "podman";
+
+    virtualisation.podman = {
+      enable = true;
+      dockerCompat = true;
+    };
+
+    virtualisation.oci-containers.containers = {
+      authentik-postgres = {
+        image = cfg.postgresImage;
+        autoStart = true;
+        extraOptions = [ "--network=${cfg.networkName}" ];
+        environment = {
+          POSTGRES_DB = "authentik";
+          POSTGRES_USER = "authentik";
+        };
+        environmentFiles = [ authentikEnv ];
+        volumes = [ "authentik-postgres:/var/lib/postgresql/data" ];
+      };
+
+      authentik-redis = {
+        image = cfg.redisImage;
+        autoStart = true;
+        extraOptions = [ "--network=${cfg.networkName}" ];
+        cmd = [
+          "redis-server"
+          "--save"
+          "60"
+          "1"
+          "--loglevel"
+          "warning"
+        ];
+        volumes = [ "authentik-redis:/data" ];
+      };
+
+      authentik-server = {
+        image = cfg.serverImage;
+        autoStart = true;
+        extraOptions = [ "--network=${cfg.networkName}" ];
+        ports = [ "${cfg.backendAddress}:${toString cfg.backendPort}:9000" ];
+        environment = {
+          AUTHENTIK_REDIS__HOST = "authentik-redis";
+          AUTHENTIK_POSTGRESQL__HOST = "authentik-postgres";
+          AUTHENTIK_POSTGRESQL__USER = "authentik";
+          AUTHENTIK_POSTGRESQL__NAME = "authentik";
+          AUTHENTIK_ERROR_REPORTING__ENABLED = "false";
+        };
+        environmentFiles = [ authentikEnv ];
+        dependsOn = [
+          "authentik-postgres"
+          "authentik-redis"
+        ];
+        cmd = [ "server" ];
+      };
+
+      authentik-worker = {
+        image = cfg.serverImage;
+        autoStart = true;
+        extraOptions = [ "--network=${cfg.networkName}" ];
+        environment = {
+          AUTHENTIK_REDIS__HOST = "authentik-redis";
+          AUTHENTIK_POSTGRESQL__HOST = "authentik-postgres";
+          AUTHENTIK_POSTGRESQL__USER = "authentik";
+          AUTHENTIK_POSTGRESQL__NAME = "authentik";
+          AUTHENTIK_ERROR_REPORTING__ENABLED = "false";
+        };
+        environmentFiles = [ authentikEnv ];
+        dependsOn = [
+          "authentik-postgres"
+          "authentik-redis"
+        ];
+        cmd = [ "worker" ];
+      };
+    };
+
+    systemd.services.authentik-podman-network = {
+      description = "Create Authentik Podman network";
+      wantedBy = [ "multi-user.target" ];
+      requiredBy = authentikContainers;
+      before = authentikContainers;
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+      script = ''
+        ${pkgs.podman}/bin/podman network exists ${lib.escapeShellArg cfg.networkName} || \
+        ${pkgs.podman}/bin/podman network create ${lib.escapeShellArg cfg.networkName}
+      '';
+    };
+
+    services.nginx = {
+      enable = true;
+
+      virtualHosts.${cfg.domain} = {
+        listen = [
           {
-            assertion = builtins.pathExists cfg.secretFile;
-            message = "The Authentik role secret file does not exist.";
-          }
-          {
-            assertion = cfg.backendAddress != cfg.listenAddress || cfg.backendPort != cfg.port;
-            message = "Authentik's backend and public listener cannot use the same socket.";
+            addr = cfg.listenAddress;
+            port = cfg.port;
           }
         ];
 
-        sops.age = {
-          keyFile = "/var/lib/sops-nix/age-key.txt";
-          generateKey = false;
-        };
-
-        sops.secrets."authentik/env" = {
-          sopsFile = cfg.secretFile;
-          mode = "0400";
-          restartUnits = authentikContainers;
-        };
-
-        virtualisation.oci-containers.backend = "podman";
-
-        virtualisation.podman = {
-          enable = true;
-          dockerCompat = true;
-        };
-
-        virtualisation.oci-containers.containers = {
-          authentik-postgres = {
-            image = cfg.postgresImage;
-            autoStart = true;
-            extraOptions = [ "--network=${cfg.networkName}" ];
-            environment = {
-              POSTGRES_DB = "authentik";
-              POSTGRES_USER = "authentik";
-            };
-            environmentFiles = [ authentikEnv ];
-            volumes = [ "authentik-postgres:/var/lib/postgresql/data" ];
-          };
-
-          authentik-redis = {
-            image = cfg.redisImage;
-            autoStart = true;
-            extraOptions = [ "--network=${cfg.networkName}" ];
-            cmd = [
-              "redis-server"
-              "--save"
-              "60"
-              "1"
-              "--loglevel"
-              "warning"
-            ];
-            volumes = [ "authentik-redis:/data" ];
-          };
-
-          authentik-server = {
-            image = cfg.serverImage;
-            autoStart = true;
-            extraOptions = [ "--network=${cfg.networkName}" ];
-            ports = [ "${cfg.backendAddress}:${toString cfg.backendPort}:9000" ];
-            environment = {
-              AUTHENTIK_REDIS__HOST = "authentik-redis";
-              AUTHENTIK_POSTGRESQL__HOST = "authentik-postgres";
-              AUTHENTIK_POSTGRESQL__USER = "authentik";
-              AUTHENTIK_POSTGRESQL__NAME = "authentik";
-              AUTHENTIK_ERROR_REPORTING__ENABLED = "false";
-            };
-            environmentFiles = [ authentikEnv ];
-            dependsOn = [
-              "authentik-postgres"
-              "authentik-redis"
-            ];
-            cmd = [ "server" ];
-          };
-
-          authentik-worker = {
-            image = cfg.serverImage;
-            autoStart = true;
-            extraOptions = [ "--network=${cfg.networkName}" ];
-            environment = {
-              AUTHENTIK_REDIS__HOST = "authentik-redis";
-              AUTHENTIK_POSTGRESQL__HOST = "authentik-postgres";
-              AUTHENTIK_POSTGRESQL__USER = "authentik";
-              AUTHENTIK_POSTGRESQL__NAME = "authentik";
-              AUTHENTIK_ERROR_REPORTING__ENABLED = "false";
-            };
-            environmentFiles = [ authentikEnv ];
-            dependsOn = [
-              "authentik-postgres"
-              "authentik-redis"
-            ];
-            cmd = [ "worker" ];
-          };
-        };
-
-        systemd.services.authentik-podman-network = {
-          description = "Create Authentik Podman network";
-          wantedBy = [ "multi-user.target" ];
-          requiredBy = authentikContainers;
-          before = authentikContainers;
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-          };
-          script = ''
-            ${pkgs.podman}/bin/podman network exists ${lib.escapeShellArg cfg.networkName} || \
-            ${pkgs.podman}/bin/podman network create ${lib.escapeShellArg cfg.networkName}
+        locations."/" = {
+          proxyPass = "http://${cfg.backendAddress}:${toString cfg.backendPort}";
+          recommendedProxySettings = true;
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto https;
           '';
         };
+      };
+    };
 
-        services.nginx = {
-          enable = true;
-
-          virtualHosts.${cfg.domain} = {
-            listen = [
-              {
-                addr = cfg.listenAddress;
-                port = cfg.port;
-              }
-            ];
-
-            locations."/" = {
-              proxyPass = "http://${cfg.backendAddress}:${toString cfg.backendPort}";
-              recommendedProxySettings = true;
-              extraConfig = ''
-                proxy_set_header X-Forwarded-Proto https;
-              '';
-            };
-          };
-        };
-
-        environment.systemPackages = lib.optionals cfg.installAdminPackages (
-          with pkgs;
-          [
-            podman
-            podman-compose
-            openssl
-          ]
-        );
-      }
-      (roleLib.mkRoleFirewall {
-        inherit (cfg) openFirewall permittedSources;
-        tcpPorts = [ cfg.port ];
-      })
-    ]
-  );
+    environment.systemPackages = lib.optionals cfg.installAdminPackages (
+      with pkgs;
+      [
+        podman
+        podman-compose
+        openssl
+      ]
+    );
+  };
 }

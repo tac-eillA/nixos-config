@@ -59,7 +59,6 @@
     opencode
     codex
     claude-code
-    t3code
     python3
     detect-secrets
   ];

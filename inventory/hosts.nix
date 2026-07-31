@@ -1,4 +1,6 @@
 let
+  networks = import ./networks.nix;
+
   addresses = {
     authentik = "10.254.1.210";
     dns1 = "10.254.1.211";
@@ -16,6 +18,22 @@ let
   ];
 
   serverFeatures = baseFeatures ++ [ "development-minimal" ];
+
+  serverAdministration = {
+    ssh = {
+      port = 22;
+      exposures = [
+        {
+          classification = "lan-only";
+          trustedNetworks = networks.lan;
+        }
+        {
+          classification = "tailscale-only";
+          trustedNetworks = networks.tailscale;
+        }
+      ];
+    };
+  };
 
   workstationFeatures = baseFeatures ++ [
     "desktop"
@@ -52,11 +70,9 @@ in
     deployable = true;
     address = addresses.authentik;
     features = serverFeatures;
+    administration = serverAdministration;
     roles = [ "authentik" ];
     roleSettings.authentik = {
-      domain = "auth.allie.sh";
-      listenAddress = "0.0.0.0";
-      port = 9000;
       installAdminPackages = true;
     };
   };
@@ -76,6 +92,7 @@ in
     deployable = true;
     address = addresses.dns1;
     features = serverFeatures;
+    administration = serverAdministration;
     roles = [ "technitium-dns" ];
   };
 
@@ -85,6 +102,7 @@ in
     deployable = true;
     address = addresses.dns2;
     features = serverFeatures;
+    administration = serverAdministration;
     roles = [ "technitium-dns" ];
   };
 
@@ -94,11 +112,9 @@ in
     deployable = true;
     address = addresses.forgejo;
     features = serverFeatures;
+    administration = serverAdministration;
     roles = [ "forgejo" ];
     roleSettings.forgejo = {
-      domain = "git.allie.sh";
-      listenAddress = "0.0.0.0";
-      port = 3000;
       oidcDiscoveryUrl =
         "https://auth.allie.sh/application/o/forgejo/.well-known/openid-configuration";
       installAdminPackages = true;
@@ -111,11 +127,9 @@ in
     deployable = true;
     address = addresses.headscale;
     features = serverFeatures;
+    administration = serverAdministration;
     roles = [ "headscale" ];
     roleSettings.headscale = {
-      domain = "headscale.allie.sh";
-      listenAddress = "0.0.0.0";
-      port = 80;
       oidcIssuer = "https://auth.allie.sh/application/o/headscale/";
       installAdminPackages = true;
     };
@@ -136,6 +150,7 @@ in
     deployable = true;
     address = addresses.proxy;
     features = serverFeatures;
+    administration = serverAdministration;
     roles = [ "proxy" ];
     roleSettings.proxy = {
       installAdminPackages = true;
@@ -157,11 +172,9 @@ in
     deployable = true;
     address = addresses.vaultwarden;
     features = serverFeatures;
+    administration = serverAdministration;
     roles = [ "vaultwarden" ];
     roleSettings.vaultwarden = {
-      domain = "vault.allie.sh";
-      listenAddress = "0.0.0.0";
-      port = 8222;
       oidcIssuer = "https://auth.allie.sh/application/o/vaultwarden/";
     };
   };

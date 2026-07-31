@@ -2,7 +2,6 @@
 
 let
   cfg = config.scylla.roles.headscale;
-  roleLib = import ../lib.nix { inherit config lib; };
   oidcClientSecretFile = config.sops.secrets."headscale/authentik-client-secret".path;
 in
 {
@@ -57,14 +56,6 @@ in
       description = "OIDC client identifier.";
     };
 
-    openFirewall = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Whether to allow the reverse-proxy port through the firewall.";
-    };
-
-    permittedSources = roleLib.permittedSourcesOption;
-
     installAdminPackages = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -78,84 +69,76 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable (
-    lib.mkMerge [
+  config = lib.mkIf cfg.enable {
+    assertions = [
       {
-        assertions = [
+        assertion = builtins.pathExists cfg.secretFile;
+        message = "The Headscale role secret file does not exist.";
+      }
+      {
+        assertion = cfg.backendAddress != cfg.listenAddress || cfg.backendPort != cfg.port;
+        message = "Headscale's backend and public listener cannot use the same socket.";
+      }
+    ];
+
+    sops.age = {
+      keyFile = "/var/lib/sops-nix/age-key.txt";
+      generateKey = false;
+    };
+
+    sops.secrets."headscale/authentik-client-secret" = {
+      sopsFile = cfg.secretFile;
+      owner = "headscale";
+      group = "headscale";
+      mode = "0400";
+      restartUnits = [ "headscale.service" ];
+    };
+
+    services.headscale = {
+      enable = true;
+      address = cfg.backendAddress;
+      port = cfg.backendPort;
+
+      settings = {
+        server_url = "https://${cfg.domain}";
+
+        dns = {
+          magic_dns = true;
+          base_domain = cfg.tailnetDomain;
+          override_local_dns = false;
+        };
+
+        oidc = {
+          issuer = cfg.oidcIssuer;
+          client_id = cfg.oidcClientId;
+          client_secret_path = oidcClientSecretFile;
+          pkce.enabled = true;
+        };
+      };
+    };
+
+    services.nginx = {
+      enable = true;
+
+      virtualHosts.${cfg.domain} = {
+        listen = [
           {
-            assertion = builtins.pathExists cfg.secretFile;
-            message = "The Headscale role secret file does not exist.";
-          }
-          {
-            assertion = cfg.backendAddress != cfg.listenAddress || cfg.backendPort != cfg.port;
-            message = "Headscale's backend and public listener cannot use the same socket.";
+            addr = cfg.listenAddress;
+            port = cfg.port;
           }
         ];
 
-        sops.age = {
-          keyFile = "/var/lib/sops-nix/age-key.txt";
-          generateKey = false;
+        locations."/" = {
+          proxyPass = "http://${cfg.backendAddress}:${toString cfg.backendPort}";
+          proxyWebsockets = true;
+          recommendedProxySettings = true;
+          extraConfig = ''
+            proxy_set_header X-Forwarded-Proto https;
+          '';
         };
+      };
+    };
 
-        sops.secrets."headscale/authentik-client-secret" = {
-          sopsFile = cfg.secretFile;
-          owner = "headscale";
-          group = "headscale";
-          mode = "0400";
-          restartUnits = [ "headscale.service" ];
-        };
-
-        services.headscale = {
-          enable = true;
-          address = cfg.backendAddress;
-          port = cfg.backendPort;
-
-          settings = {
-            server_url = "https://${cfg.domain}";
-
-            dns = {
-              magic_dns = true;
-              base_domain = cfg.tailnetDomain;
-              override_local_dns = false;
-            };
-
-            oidc = {
-              issuer = cfg.oidcIssuer;
-              client_id = cfg.oidcClientId;
-              client_secret_path = oidcClientSecretFile;
-              pkce.enabled = true;
-            };
-          };
-        };
-
-        services.nginx = {
-          enable = true;
-
-          virtualHosts.${cfg.domain} = {
-            listen = [
-              {
-                addr = cfg.listenAddress;
-                port = cfg.port;
-              }
-            ];
-
-            locations."/" = {
-              proxyPass = "http://${cfg.backendAddress}:${toString cfg.backendPort}";
-              proxyWebsockets = true;
-              recommendedProxySettings = true;
-              extraConfig = ''
-                proxy_set_header X-Forwarded-Proto https;
-              '';
-            };
-          };
-        };
-
-        environment.systemPackages = lib.optionals cfg.installAdminPackages [ pkgs.headscale ];
-      }
-      (roleLib.mkRoleFirewall {
-        inherit (cfg) openFirewall permittedSources;
-        tcpPorts = [ cfg.port ];
-      })
-    ]
-  );
+    environment.systemPackages = lib.optionals cfg.installAdminPackages [ pkgs.headscale ];
+  };
 }

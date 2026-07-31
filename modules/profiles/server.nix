@@ -21,6 +21,9 @@
     };
   };
 
-  services.openssh.enable = true;
+  services.openssh = {
+    enable = true;
+    openFirewall = false;
+  };
   services.qemuGuest.enable = true;
 }

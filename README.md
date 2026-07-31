@@ -47,13 +47,15 @@ desktop applications.
 | Path | Content |
 | --- | --- |
 | `flake.nix` | Flake inputs and NixOS host outputs |
-| `inventory/hosts.nix` | Host metadata, deployability, profiles, features, and role settings |
-| `inventory/services.nix` | Service endpoints and publication policies used to generate proxy routes |
+| `inventory/hosts.nix` | Host metadata, deployability, profiles, features, roles, and administrative policy |
+| `inventory/networks.nix` | Trusted LAN and Tailscale networks used by exposure policy |
+| `inventory/services.nix` | Service listeners, exposure policies, and publication metadata |
 | `hosts/` | Host configuration and hardware files |
 | `templates/host/` | Share-safe host template exposed through the flake |
 | `modules/core/` | Shared boot, firewall, network, shell, system, and user settings |
 | `modules/profiles/` | Base, server, and workstation composition |
 | `modules/features/` | Cross-cutting desktop, development, gaming, and system features |
+| `modules/networking/` | Inventory-driven exposure policy and firewall rendering |
 | `modules/home/scylla/` | Home Manager and desktop user settings |
 | `modules/desktop/` | Desktop implementation modules used by the desktop feature |
 | `modules/roles/` | Directory-based server workload roles |
@@ -222,52 +224,79 @@ inventory.
 ## Configure a workload role
 
 All role modules are imported centrally and default to disabled. Enable a role
-through a host's inventory entry:
+through a host's inventory entry and keep role settings limited to
+service-specific behavior:
 
 ```nix
 roles = [ "forgejo" ];
 roleSettings.forgejo = {
-  domain = "git.example.com";
-  listenAddress = "0.0.0.0";
-  port = 3000;
-  permittedSources = [ "10.0.0.0/8" ];
+  oidcDiscoveryUrl =
+    "https://auth.example.com/application/o/forgejo/.well-known/openid-configuration";
   installAdminPackages = false;
 };
 ```
 
-Disabled roles create no service users, listeners, firewall openings, global
-packages, or SOPS declarations. An empty `permittedSources` list retains
-unrestricted access to the role's configured open ports.
+Disabled roles create no service users, listeners, global packages, or SOPS
+declarations. Roles do not open their own firewall ports. Listener addresses,
+ports, and domains come from validated service inventory; exposure policy
+alone decides which sources can reach those listeners.
 
 ## Publish a service
 
-Declare service endpoints and their exposure policy in
+Declare service listeners, exposure policy, and publication metadata in
 `inventory/services.nix`:
 
 ```nix
 forgejo = {
   host = "forgejo";
   role = "forgejo";
-  publicDomain = "git.example.com";
-  scheme = "http";
-  port = 3000;
-  publishVia = "cloudflare";
-  exposure = "public";
+  listener = {
+    address = hosts.forgejo.address;
+    domain = "git.example.com";
+    port = 3000;
+    protocols = [ "tcp" ];
+    scheme = "http";
+  };
+  exposure = {
+    classification = "proxy-only";
+    trustedHosts = [ "proxy" ];
+    trustedNetworks = [ ];
+    consumedByProxy = true;
+  };
+  publication = {
+    via = "cloudflare";
+    domain = "git.example.com";
+  };
 };
 ```
 
 Cloudflare ingress is generated from entries with
-`publishVia = "cloudflare"`. Do not add an `ingress` map to the proxy host.
+`publication.via = "cloudflare"`. Do not add an `ingress` map to the proxy
+host. A Cloudflare-published origin uses `proxy-only` exposure: the public edge
+is Cloudflare, while the backend accepts traffic only from the inventory
+address of the central proxy. The `public` classification is reserved for a
+listener intentionally reachable without a trusted-source restriction.
 
-Every service must identify its destination host, enabled role, scheme, port,
-publication method, and exposure policy. Evaluation rejects missing or
-non-deployable hosts, disabled roles, duplicate domains, invalid ports,
-unsupported schemes, HTTP routing to DNS port 53, public services without a
-publisher, and Cloudflare destinations without inventory addresses.
+Trusted CIDR ranges are declared once in `inventory/networks.nix`. LAN-only
+services may use only declared LAN networks, Tailscale-only services may use
+only declared tailnet networks, and proxy-only services must trust exactly the
+deployable proxy host. Raw DNS is LAN-only on TCP and UDP 53. DNS dashboards
+and application backends are proxy-only.
 
-LAN-only services use `publishVia = "none"` and do not receive a public
-domain. Raw DNS endpoints are inventoried this way; only their HTTP dashboards
-are currently published through Cloudflare.
+The listener domain belongs to the workload even when no publication is
+configured. For a Cloudflare route, the publication domain must match the
+listener domain.
+
+Evaluation rejects invalid or duplicate listener sockets, missing and
+non-deployable hosts, disabled roles, unsupported protocol combinations,
+undeclared trusted hosts or networks, policy/classification mismatches,
+duplicate domains, manual listener settings, and Cloudflare destinations
+without valid proxy-only policy.
+
+Deployable servers also declare administrative SSH exposure in host inventory.
+OpenSSH no longer opens its port automatically; TCP 22 is currently restricted
+to the declared LAN and Tailscale networks. The proxy has no inbound
+application exposure and retains only these administrative SSH rules.
 
 ## Secret management
 

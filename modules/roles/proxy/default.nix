@@ -2,7 +2,6 @@
 
 let
   cfg = config.scylla.roles.proxy;
-  roleLib = import ../lib.nix { inherit config lib; };
   credentialsFile = config.sops.secrets."cloudflare/tunnel-credentials".path;
 in
 {
@@ -36,31 +35,6 @@ in
       description = "Whether to enable Cloudflare WARP routing.";
     };
 
-    openFirewall = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Whether to allow the configured legacy proxy ports.";
-    };
-
-    firewallTCPPorts = lib.mkOption {
-      type = lib.types.listOf lib.types.port;
-      default = [
-        53
-        80
-        443
-        3000
-        5380
-        8222
-        9000
-      ];
-      description = ''
-        Legacy inbound ports retained until Phase 6 separates listeners from
-        exposure policy.
-      '';
-    };
-
-    permittedSources = roleLib.permittedSourcesOption;
-
     installAdminPackages = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -74,49 +48,41 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable (
-    lib.mkMerge [
+  config = lib.mkIf cfg.enable {
+    assertions = [
       {
-        assertions = [
-          {
-            assertion = builtins.pathExists cfg.secretFile;
-            message = "The proxy role secret file does not exist.";
-          }
-          {
-            assertion = cfg.ingress != { };
-            message = "The proxy role requires at least one ingress route.";
-          }
-        ];
-
-        sops.age = {
-          keyFile = "/var/lib/sops-nix/age-key.txt";
-          generateKey = false;
-        };
-
-        sops.secrets."cloudflare/tunnel-credentials" = {
-          sopsFile = cfg.secretFile;
-          owner = "cloudflared";
-          group = "cloudflared";
-          mode = "0400";
-          restartUnits = [ "cloudflared-tunnel-${cfg.tunnelId}.service" ];
-        };
-
-        services.cloudflared = {
-          enable = true;
-          tunnels.${cfg.tunnelId} = {
-            inherit credentialsFile;
-            warp-routing.enabled = cfg.warpRouting;
-            ingress = lib.mapAttrs (_: service: { inherit service; }) cfg.ingress;
-            default = cfg.defaultService;
-          };
-        };
-
-        environment.systemPackages = lib.optionals cfg.installAdminPackages [ pkgs.cloudflared ];
+        assertion = builtins.pathExists cfg.secretFile;
+        message = "The proxy role secret file does not exist.";
       }
-      (roleLib.mkRoleFirewall {
-        inherit (cfg) openFirewall permittedSources;
-        tcpPorts = cfg.firewallTCPPorts;
-      })
-    ]
-  );
+      {
+        assertion = cfg.ingress != { };
+        message = "The proxy role requires at least one ingress route.";
+      }
+    ];
+
+    sops.age = {
+      keyFile = "/var/lib/sops-nix/age-key.txt";
+      generateKey = false;
+    };
+
+    sops.secrets."cloudflare/tunnel-credentials" = {
+      sopsFile = cfg.secretFile;
+      owner = "cloudflared";
+      group = "cloudflared";
+      mode = "0400";
+      restartUnits = [ "cloudflared-tunnel-${cfg.tunnelId}.service" ];
+    };
+
+    services.cloudflared = {
+      enable = true;
+      tunnels.${cfg.tunnelId} = {
+        inherit credentialsFile;
+        warp-routing.enabled = cfg.warpRouting;
+        ingress = lib.mapAttrs (_: service: { inherit service; }) cfg.ingress;
+        default = cfg.defaultService;
+      };
+    };
+
+    environment.systemPackages = lib.optionals cfg.installAdminPackages [ pkgs.cloudflared ];
+  };
 }
