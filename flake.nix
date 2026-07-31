@@ -390,6 +390,93 @@
           system = hostSystem;
         };
 
+      t3codeDevShell =
+        let
+          pkgs = mkPkgs defaultSystem;
+          electronRuntimeLibraries = with pkgs; [
+            alsa-lib
+            at-spi2-atk
+            at-spi2-core
+            atk
+            cairo
+            cups
+            dbus
+            expat
+            glib
+            libdrm
+            libgbm
+            libX11
+            libXcomposite
+            libXcursor
+            libXdamage
+            libXext
+            libXfixes
+            libXi
+            libXinerama
+            libxkbcommon
+            libXrandr
+            libXxf86vm
+            libxcb
+            mesa
+            nspr
+            nss
+            pango
+            wayland
+          ];
+          electronRuntimePath = lib.makeLibraryPath electronRuntimeLibraries;
+          pkgConfigPath = lib.makeSearchPath "lib/pkgconfig" electronRuntimeLibraries;
+        in
+        pkgs.mkShell {
+          packages = with pkgs; [
+            bash
+            cargo
+            cacert
+            coreutils
+            curl
+            file
+            gcc
+            gh
+            git
+            gnumake
+            nodejs_24
+            pkg-config
+            pnpm
+            python3
+            rustc
+            rustfmt
+          ];
+
+          shellHook = ''
+            export PATH="$HOME/.vite-plus/bin:$PWD/node_modules/.bin:$PATH"
+            export PYTHON="${pkgs.python3}/bin/python3"
+            export npm_config_python="$PYTHON"
+            export LD_LIBRARY_PATH="${electronRuntimePath}:''${LD_LIBRARY_PATH:-}"
+            export PKG_CONFIG_PATH="${pkgConfigPath}:''${PKG_CONFIG_PATH:-}"
+
+            missing_tools=()
+            for tool in node vp cargo rustfmt; do
+              if ! command -v "$tool" >/dev/null 2>&1; then
+                missing_tools+=("$tool")
+              fi
+            done
+
+            if (( ''${#missing_tools[@]} > 0 )); then
+              printf 'T3 Code development shell is missing: %s\n' \
+                "''${missing_tools[*]}" >&2
+              if [[ " ''${missing_tools[*]} " == *" vp "* ]]; then
+                printf '%s\n' \
+                  'Install Vite+ with: curl -fsSL https://vite.plus | bash' \
+                  'Then run: vp env off' >&2
+              fi
+              return 1
+            fi
+
+            printf 'T3 Code shell: node %s, vp %s, cargo %s\n' \
+              "$(node --version)" "$(vp --version 2>/dev/null | head -n 1)" \
+              "$(cargo --version)"
+          '';
+        };
+
       mkHost =
         hostname:
         let
@@ -480,6 +567,8 @@
     in
     {
       nixosConfigurations = lib.genAttrs (builtins.attrNames deployableHosts) mkHost;
+
+      devShells.${defaultSystem}.t3code = t3codeDevShell;
 
       templates = rec {
         default = host;

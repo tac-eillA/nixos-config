@@ -6,6 +6,7 @@
     ./ghostty.nix
     ./neovim.nix
     ./tmux.nix
+    ./t3code.nix
     ./zsh.nix
   ];
 
