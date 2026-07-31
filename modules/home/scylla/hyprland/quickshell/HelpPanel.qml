@@ -16,6 +16,7 @@ Variants {
     ["Super + Return", "Open Ghostty terminal"],
     ["Super + B", "Open Firefox"],
     ["Super + Shift + B", "Open Helium"],
+    ["Super + Shift + C", "Open T3 Code"],
     ["Super + E", "Open Thunar files"],
     ["Super + Q", "Close the focused window"],
     ["Super + F", "Toggle fullscreen"],

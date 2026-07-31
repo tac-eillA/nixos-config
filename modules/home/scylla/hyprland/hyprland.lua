@@ -104,6 +104,7 @@ hl.gesture({
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(browser))
 hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd(browser2))
+hl.bind(mainMod .. " + SHIFT + C", hl.dsp.exec_cmd("t3code"))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("vicinae toggle"))
 hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("wdisplays"))
