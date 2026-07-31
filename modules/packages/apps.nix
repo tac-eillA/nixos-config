@@ -1,6 +1,8 @@
 { pkgs, pkgsStable, ... }:
 
 let
+  t3code = pkgs.callPackage ./t3code.nix { };
+
   # Packages use nixos-unstable unless explicitly moved to pkgsStable.
   unstablePackages = with pkgs; [
     blender
@@ -32,5 +34,5 @@ let
   ];
 in
 {
-  environment.systemPackages = unstablePackages ++ stablePackages;
+  environment.systemPackages = unstablePackages ++ stablePackages ++ [ t3code ];
 }
