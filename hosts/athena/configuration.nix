@@ -17,6 +17,7 @@
   # Keep the pre-login UI on the laptop panel. Hyprland applies the user's
   # complete docked layout after SDDM launches the UWSM-managed session.
   scylla.desktop.login.internalDisplayOnly = true;
+  scylla.desktop.shell.internalDisplay = "eDP-1";
 
   # programs.unrealEngine = {
   #     enable = true;

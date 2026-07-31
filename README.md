@@ -22,6 +22,11 @@ host settings are kept in `hosts/`. Shared modules are in `modules/`.
 Workstation inventory selects Hyprland, Home Manager, Quickshell, and desktop
 applications through explicit features.
 
+The shell includes native display controls with rollback, a diagnostics drawer,
+and declarative hardware-adaptive profiles. Its component layout, IPC contract,
+profile options, and keybindings are documented in
+[`modules/home/scylla/hyprland/quickshell/README.md`](modules/home/scylla/hyprland/quickshell/README.md).
+
 ![Scylla desktop with a browser, terminal, media player, and audio controls](img/readme/fullscreen_browser_cider_terminal.png)
 
 ![Scylla desktop with a browser and the Zed editor](img/readme/fullscreen_browser_zed.png)

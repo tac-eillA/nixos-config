@@ -1,8 +1,23 @@
-{ lib, pkgs, ... }:
+{ lib, osConfig, pkgs, ... }:
 
 let
   wallpaper = ../../../img/wallpaper/oilPainting.jpg;
   repositoryWallpapers = ../../../img/wallpaper;
+  shellCfg = osConfig.scylla.desktop.shell;
+  shellRuntimeSettings = {
+    repositoryWallpapers = toString repositoryWallpapers;
+    inherit (shellCfg) displayProfiles internalDisplay tabletModePath;
+    adaptive = shellCfg.adaptive;
+  };
+  shellRuntimeJson = pkgs.writeText "scylla-shell.json"
+    (builtins.toJSON shellRuntimeSettings);
+  shellRuntimeQml = pkgs.writeText "RuntimeConfig.qml" ''
+    import QtQuick
+
+    QtObject {
+      readonly property var settings: (${builtins.toJSON shellRuntimeSettings})
+    }
+  '';
   themeTemplate = ./hyprland/theme.json.tpl;
   themeConfig = pkgs.writeText "scylla-matugen.toml" (
     builtins.replaceStrings
@@ -125,6 +140,28 @@ let
       esac
     '';
   };
+  displayController = pkgs.writeShellApplication {
+    name = "scylla-displayctl";
+    runtimeInputs = with pkgs; [
+      coreutils
+      findutils
+      hyprland
+      jq
+      systemd
+    ];
+    text = builtins.readFile ./hyprland/scripts/scylla-displayctl;
+  };
+  diagnosticsCollector = pkgs.writeShellApplication {
+    name = "scylla-diagnostics";
+    runtimeInputs = with pkgs; [
+      coreutils
+      findutils
+      hyprland
+      jq
+      systemd
+    ];
+    text = builtins.readFile ./hyprland/scripts/scylla-diagnostics;
+  };
   defaultMonitorConfig = pkgs.writeText "hyprland-default-monitors.lua" ''
     -- This file is copied to ~/.config/hypr/monitors.lua only when it does
     -- not already exist. Display changes saved by wdisplays remain mutable.
@@ -149,35 +186,19 @@ let
 
       # Hyprland may disconnect wdisplays after accepting its output-management
       # request, which makes GTK exit non-zero even though the layout changed.
-      # Treat the compositor's resulting state as authoritative instead.
-      config_home="''${XDG_CONFIG_HOME:-$HOME/.config}"
-      monitor_config="$config_home/hypr/monitors.lua"
-      monitor_tmp="$monitor_config.tmp"
-
-      mkdir -p "$config_home/hypr"
-      if ${pkgs.hyprland}/bin/hyprctl monitors all -j | ${pkgs.jq}/bin/jq -r '
-        .[] |
-        if .disabled then
-          "hl.monitor({ output = \(.name | @json), disabled = true })"
-        else
-          "hl.monitor({ output = \(.name | @json), mode = \(("\(.width)x\(.height)@\(.refreshRate)") | @json), position = \(("\(.x)x\(.y)") | @json), scale = \(.scale), transform = \(.transform) })"
-        end
-      ' > "$monitor_tmp" && [ -s "$monitor_tmp" ]; then
-        mv "$monitor_tmp" "$monitor_config"
-        ${pkgs.hyprland}/bin/hyprctl reload
-      else
-        rm -f "$monitor_tmp"
-      fi
+      # Treat the compositor's resulting state as authoritative and serialize
+      # it through the same backend used by native shell controls.
+      ${displayController}/bin/scylla-displayctl persist-current || true
 
       exit "$status"
     '';
   };
-  wallpaperPanelConfig = pkgs.writeText "scylla-wallpaper-panel.qml" (
-    builtins.replaceStrings
-      [ "@REPOSITORY_WALLPAPERS@" ]
-      [ "${repositoryWallpapers}" ]
-      (builtins.readFile ./hyprland/quickshell/WallpaperPanel.qml)
-  );
+  quickshellConfig = pkgs.runCommand "scylla-quickshell-config" { } ''
+    mkdir -p "$out"
+    cp -R ${./hyprland/quickshell}/. "$out/"
+    chmod u+w "$out/RuntimeConfig.qml"
+    cp ${shellRuntimeQml} "$out/RuntimeConfig.qml"
+  '';
 in
 {
   home.packages = with pkgs; [
@@ -193,6 +214,8 @@ in
     networkmanagerapplet
     pavucontrol
     quickshell
+    diagnosticsCollector
+    displayController
     themeSwitcher
     todoManager
     persistentWdisplays
@@ -262,18 +285,8 @@ in
     export XMODIFIERS=
   '';
 
-  xdg.configFile."quickshell/scylla/shell.qml".source =
-    ./hyprland/quickshell/shell.qml;
-  xdg.configFile."quickshell/scylla/CalendarPanel.qml".source =
-    ./hyprland/quickshell/CalendarPanel.qml;
-  xdg.configFile."quickshell/scylla/FingerprintPanel.qml".source =
-    ./hyprland/quickshell/FingerprintPanel.qml;
-  xdg.configFile."quickshell/scylla/HelpPanel.qml".source =
-    ./hyprland/quickshell/HelpPanel.qml;
-  xdg.configFile."quickshell/scylla/TodoList.qml".source =
-    ./hyprland/quickshell/TodoList.qml;
-  xdg.configFile."quickshell/scylla/WallpaperPanel.qml".source =
-    wallpaperPanelConfig;
+  xdg.configFile."quickshell/scylla".source = quickshellConfig;
+  xdg.configFile."scylla/shell.json".source = shellRuntimeJson;
   xdg.configFile."matugen/config.toml".source = themeConfig;
   xdg.configFile."matugen/theme.json.tpl".source = themeTemplate;
 
@@ -294,12 +307,8 @@ in
       After = [ "graphical-session.target" ];
       PartOf = [ "graphical-session.target" ];
       X-Restart-Triggers = [
-        "${./hyprland/quickshell/shell.qml}"
-        "${./hyprland/quickshell/CalendarPanel.qml}"
-        "${./hyprland/quickshell/FingerprintPanel.qml}"
-        "${./hyprland/quickshell/HelpPanel.qml}"
-        "${./hyprland/quickshell/TodoList.qml}"
-        wallpaperPanelConfig
+        quickshellConfig
+        shellRuntimeJson
       ];
     };
     Service = {

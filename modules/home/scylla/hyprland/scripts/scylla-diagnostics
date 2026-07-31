@@ -1,0 +1,160 @@
+read_optional() {
+  local path="$1"
+  if [ -r "$path" ]; then
+    tr -d '\n' <"$path"
+  fi
+}
+
+failed_units() {
+  local scope="$1"
+  local -a command_args
+  command_args=(systemctl --no-pager --no-legend --plain --state=failed list-units)
+  if [ "$scope" = user ]; then
+    command_args=(systemctl --user --no-pager --no-legend --plain --state=failed list-units)
+  fi
+
+  "${command_args[@]}" 2>/dev/null | jq -Rsc '
+    split("\n")
+    | map(select(length > 0)
+      | capture("^(?<unit>[^ ]+)[ ]+(?<load>[^ ]+)[ ]+(?<active>[^ ]+)[ ]+(?<sub>[^ ]+)[ ]*(?<description>.*)$"))'
+}
+
+batteries() {
+  local result='[]'
+  local battery name capacity status cycles full design health
+  shopt -s nullglob
+  for battery in /sys/class/power_supply/BAT*; do
+    [ -d "$battery" ] || continue
+    name="$(basename "$battery")"
+    capacity="$(read_optional "$battery/capacity")"
+    status="$(read_optional "$battery/status")"
+    cycles="$(read_optional "$battery/cycle_count")"
+    full="$(read_optional "$battery/energy_full")"
+    design="$(read_optional "$battery/energy_full_design")"
+    if [ -z "$full" ]; then
+      full="$(read_optional "$battery/charge_full")"
+      design="$(read_optional "$battery/charge_full_design")"
+    fi
+    health=null
+    if [[ "$full" =~ ^[0-9]+$ ]] && [[ "$design" =~ ^[0-9]+$ ]] && [ "$design" -gt 0 ]; then
+      health="$(jq -n --argjson full "$full" --argjson design "$design" \
+        '($full / $design * 1000 | round) / 10')"
+    fi
+    result="$(jq -c \
+      --arg name "$name" \
+      --arg status "$status" \
+      --arg capacity "${capacity:-0}" \
+      --arg cycles "$cycles" \
+      --argjson health "$health" \
+      '. + [{name: $name, status: $status, capacity: ($capacity | tonumber),
+        cycles: (if $cycles == "" then null else ($cycles | tonumber) end),
+        health: $health}]' <<<"$result")"
+  done
+  shopt -u nullglob
+  printf '%s\n' "$result"
+}
+
+thermal_zones() {
+  local result='[]'
+  local zone label raw_temp temperature severity
+  shopt -s nullglob
+  for zone in /sys/class/thermal/thermal_zone*; do
+    [ -r "$zone/temp" ] || continue
+    label="$(read_optional "$zone/type")"
+    raw_temp="$(read_optional "$zone/temp")"
+    [[ "$raw_temp" =~ ^-?[0-9]+$ ]] || continue
+    temperature="$(jq -n --argjson raw "$raw_temp" \
+      'if ($raw | fabs) > 1000 then $raw / 1000 else $raw end')"
+    severity="normal"
+    if jq -en --argjson value "$temperature" '$value >= 90' >/dev/null; then
+      severity="critical"
+    elif jq -en --argjson value "$temperature" '$value >= 80' >/dev/null; then
+      severity="warning"
+    fi
+    result="$(jq -c \
+      --arg name "${label:-$(basename "$zone")}" \
+      --argjson temperature "$temperature" \
+      --arg severity "$severity" \
+      '. + [{name: $name, temperature: $temperature, severity: $severity}]' \
+      <<<"$result")"
+  done
+  shopt -u nullglob
+  printf '%s\n' "$result"
+}
+
+generation_state() {
+  local booted active latest booted_kernel active_kernel booted_initrd active_initrd generations
+  booted="$(readlink -f /run/booted-system 2>/dev/null || true)"
+  active="$(readlink -f /run/current-system 2>/dev/null || true)"
+  latest="$(readlink -f /nix/var/nix/profiles/system 2>/dev/null || true)"
+  booted_kernel="$(readlink -f /run/booted-system/kernel 2>/dev/null || true)"
+  active_kernel="$(readlink -f /run/current-system/kernel 2>/dev/null || true)"
+  booted_initrd="$(readlink -f /run/booted-system/initrd 2>/dev/null || true)"
+  active_initrd="$(readlink -f /run/current-system/initrd 2>/dev/null || true)"
+  generations="$({
+    find /nix/var/nix/profiles -maxdepth 1 -type l -name 'system-*-link' -printf '%f\n' 2>/dev/null || true
+  } | sort -V | tail -n 10 | jq -Rsc '
+    split("\n") | map(select(length > 0)
+      | capture("^system-(?<generation>[0-9]+)-link$")
+      | .generation |= tonumber)')"
+
+  jq -n \
+    --arg booted "$booted" \
+    --arg active "$active" \
+    --arg latest "$latest" \
+    --arg bootedKernel "$booted_kernel" \
+    --arg activeKernel "$active_kernel" \
+    --arg bootedInitrd "$booted_initrd" \
+    --arg activeInitrd "$active_initrd" \
+    --argjson generations "$generations" \
+    '{booted: $booted, active: $active, latest: $latest,
+      rebootPending: (($bootedKernel != "" and $activeKernel != ""
+          and $bootedKernel != $activeKernel)
+        or ($bootedInitrd != "" and $activeInitrd != ""
+          and $bootedInitrd != $activeInitrd)),
+      activationPending: ($active != "" and $latest != "" and $active != $latest),
+      generations: $generations}'
+}
+
+suspend_state() {
+  local result lines
+  result="$(systemctl show systemd-suspend.service --property=Result --value 2>/dev/null || true)"
+  lines="$(journalctl -b --no-pager -n 16 -u systemd-suspend.service -o short-iso \
+    2>/dev/null | jq -Rsc 'split("\n") | map(select(length > 0))')"
+  jq -n --arg result "${result:-unknown}" --argjson lines "$lines" \
+    '{result: $result, recent: $lines}'
+}
+
+hyprland_errors() {
+  if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+    hyprctl configerrors 2>/dev/null | jq -Rsc \
+      'split("\n") | map(select(length > 0 and . != "no errors"))'
+  else
+    printf '[]\n'
+  fi
+}
+
+system_failed="$(failed_units system)"
+user_failed="$(failed_units user)"
+battery_data="$(batteries)"
+thermal_data="$(thermal_zones)"
+generation_data="$(generation_state)"
+suspend_data="$(suspend_state)"
+hyprland_data="$(hyprland_errors)"
+
+jq -n \
+  --arg generatedAt "$(date --iso-8601=seconds)" \
+  --argjson systemFailed "$system_failed" \
+  --argjson userFailed "$user_failed" \
+  --argjson batteries "$battery_data" \
+  --argjson thermal "$thermal_data" \
+  --argjson generations "$generation_data" \
+  --argjson suspend "$suspend_data" \
+  --argjson hyprlandErrors "$hyprland_data" \
+  '{version: 1, generatedAt: $generatedAt,
+    failedServices: {system: $systemFailed, user: $userFailed},
+    batteries: $batteries,
+    thermal: $thermal,
+    generations: $generations,
+    suspend: $suspend,
+    hyprlandErrors: $hyprlandErrors}'

@@ -11,15 +11,12 @@ Scope {
     id: wallpaperRoot
 
     required property var shell
-    property string repositoryWallpapers: "@REPOSITORY_WALLPAPERS@"
+    property string repositoryWallpapers: shell.repositoryWallpapers
 
     function toggle() {
-        shell.wallpaperPickerVisible = !shell.wallpaperPickerVisible;
-        shell.launcherVisible = false;
-        shell.powerVisible = false;
-        shell.quickSettingsVisible = false;
-        shell.notificationsVisible = false;
-        shell.calendarVisible = false;
+        const opening = !shell.wallpaperPickerVisible;
+        shell.closeSurfaces();
+        shell.wallpaperPickerVisible = opening;
         if (shell.wallpaperPickerVisible && !wallpaperScan.running)
             wallpaperScan.running = true;
     }
