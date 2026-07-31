@@ -5,7 +5,8 @@ set -euo pipefail
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_dir="$(cd -- "${script_dir}/.." && pwd)"
 hosts_dir="${repo_dir}/hosts"
-default_dir="${hosts_dir}/default"
+template_dir="${repo_dir}/templates/host"
+inventory_file="${repo_dir}/inventory/hosts.nix"
 
 die() {
   printf 'Error: %s\n' "$*" >&2
@@ -34,8 +35,8 @@ case "${host_type,,}" in
     destination="${hosts_dir}/${host}"
     [[ "$host" != "default" ]] || die '"default" is reserved for the template.'
     [[ ! -e "$destination" ]] || die "Host already exists: ${destination}"
-    [[ -f "${default_dir}/configuration.nix" ]] \
-      || die "Default host template is missing: ${default_dir}/configuration.nix"
+    [[ -f "${template_dir}/configuration.nix" ]] \
+      || die "Host template is missing: ${template_dir}/configuration.nix"
 
     require_command nixos-generate-config
     require_command nano
@@ -47,9 +48,7 @@ case "${host_type,,}" in
     nano "${repo_dir}/modules/core/user.nix"
 
     mkdir -- "$destination"
-    cp -- "${default_dir}/configuration.nix" "${destination}/configuration.nix"
-    sed -i "s/networking\\.hostName = \"default\";/networking.hostName = \"${host}\";/" \
-      "${destination}/configuration.nix"
+    cp -- "${template_dir}/configuration.nix" "${destination}/configuration.nix"
 
     printf '\nGenerating hardware configuration for %s...\n' "$host"
     if ! sudo nixos-generate-config --show-hardware-config \
@@ -62,6 +61,10 @@ case "${host_type,,}" in
     fi
 
     printf 'Created host configuration in %s\n' "$destination"
+    printf '\nAdd %s to inventory/hosts.nix and mark it deployable when ready.\n' "$host"
+    printf 'Nano will open the host inventory now.\n'
+    read -r -p 'Press Enter to open the host inventory. '
+    nano "$inventory_file"
     ;;
   2|other)
     read -r -p 'Enter the existing host configuration name: ' host
@@ -76,8 +79,20 @@ case "${host_type,,}" in
     ;;
 esac
 
+require_command nix
 require_command nixos-rebuild
 require_command sudo
+
+if ! configured_hostname="$(
+  nix eval --offline --raw \
+    "path:${repo_dir}#nixosConfigurations.${host}.config.networking.hostName" \
+    2>/dev/null
+)"; then
+  die "Host '${host}' is not declared as deployable in inventory/hosts.nix."
+fi
+
+[[ "$configured_hostname" == "$host" ]] \
+  || die "Inventory output '${host}' evaluated with hostname '${configured_hostname}'."
 
 printf '\nBuilding the boot configuration for %s...\n' "$host"
 sudo nixos-rebuild boot \

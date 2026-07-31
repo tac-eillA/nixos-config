@@ -1,10 +1,5 @@
 { ... }:
 
 {
-  imports = [
-    ./hardware-configuration.nix
-    ../../modules/profiles/workstation.nix
-  ];
-
-  networking.hostName = "artemis";
+  imports = [ ./hardware-configuration.nix ];
 }

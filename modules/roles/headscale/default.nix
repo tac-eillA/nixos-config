@@ -1,75 +1,161 @@
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
-  domain = "headscale.allie.sh";
-  authDomain = "auth.allie.sh";
-  authApplication = "headscale";
-  httpPort = 8080;
+  cfg = config.scylla.roles.headscale;
+  roleLib = import ../lib.nix { inherit config lib; };
   oidcClientSecretFile = config.sops.secrets."headscale/authentik-client-secret".path;
 in
 {
-  imports = [ ../../secrets/runtime-age.nix ];
+  options.scylla.roles.headscale = {
+    enable = lib.mkEnableOption "the Headscale workload";
 
-  sops.secrets."headscale/authentik-client-secret" = {
-    sopsFile = ../../../secrets/headscale.yaml;
-    owner = "headscale";
-    group = "headscale";
-    mode = "0400";
-  };
+    domain = lib.mkOption {
+      type = lib.types.nonEmptyStr;
+      default = "headscale.allie.sh";
+      description = "Public Headscale domain.";
+    };
 
-  services.headscale = {
-    enable = true;
-    address = "127.0.0.1";
-    port = httpPort;
+    listenAddress = lib.mkOption {
+      type = lib.types.nonEmptyStr;
+      default = "0.0.0.0";
+      description = "Address on which the Headscale reverse proxy listens.";
+    };
 
-    settings = {
-      server_url = "https://${domain}";
+    port = lib.mkOption {
+      type = lib.types.port;
+      default = 80;
+      description = "Public reverse-proxy port.";
+    };
 
-      dns = {
-        magic_dns = true;
-        base_domain = "tailnet.allie.sh";
-        override_local_dns = false;
-      };
+    backendAddress = lib.mkOption {
+      type = lib.types.nonEmptyStr;
+      default = "127.0.0.1";
+      description = "Address on which Headscale itself listens.";
+    };
 
-      oidc = {
-        issuer = "https://${authDomain}/application/o/${authApplication}/";
-        client_id = authApplication;
-        client_secret_path = oidcClientSecretFile;
-        pkce.enabled = true;
-      };
+    backendPort = lib.mkOption {
+      type = lib.types.port;
+      default = 8080;
+      description = "Internal Headscale HTTP port.";
+    };
+
+    tailnetDomain = lib.mkOption {
+      type = lib.types.nonEmptyStr;
+      default = "tailnet.allie.sh";
+      description = "MagicDNS base domain.";
+    };
+
+    oidcIssuer = lib.mkOption {
+      type = lib.types.nonEmptyStr;
+      default = "https://auth.allie.sh/application/o/headscale/";
+      description = "OIDC issuer URL.";
+    };
+
+    oidcClientId = lib.mkOption {
+      type = lib.types.nonEmptyStr;
+      default = "headscale";
+      description = "OIDC client identifier.";
+    };
+
+    openFirewall = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether to allow the reverse-proxy port through the firewall.";
+    };
+
+    permittedSources = roleLib.permittedSourcesOption;
+
+    installAdminPackages = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Whether to install the Headscale CLI globally.";
+    };
+
+    secretFile = lib.mkOption {
+      type = lib.types.path;
+      default = ../../../secrets/headscale.yaml;
+      description = "SOPS file containing the Headscale OIDC client secret.";
     };
   };
 
-  services.nginx = {
-    enable = true;
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      {
+        assertions = [
+          {
+            assertion = builtins.pathExists cfg.secretFile;
+            message = "The Headscale role secret file does not exist.";
+          }
+          {
+            assertion = cfg.backendAddress != cfg.listenAddress || cfg.backendPort != cfg.port;
+            message = "Headscale's backend and public listener cannot use the same socket.";
+          }
+        ];
 
-    virtualHosts.${domain} = {
-      listen = [
-        {
-          addr = "0.0.0.0";
-          port = 80;
-        }
-      ];
+        sops.age = {
+          keyFile = "/var/lib/sops-nix/age-key.txt";
+          generateKey = false;
+        };
 
-      locations."/" = {
-        proxyPass = "http://127.0.0.1:${toString httpPort}";
-        proxyWebsockets = true;
-        recommendedProxySettings = true;
-        extraConfig = ''
-          proxy_set_header X-Forwarded-Proto https;
-        '';
-      };
-    };
-  };
+        sops.secrets."headscale/authentik-client-secret" = {
+          sopsFile = cfg.secretFile;
+          owner = "headscale";
+          group = "headscale";
+          mode = "0400";
+          restartUnits = [ "headscale.service" ];
+        };
 
-  networking.firewall = {
-    allowedTCPPorts = [
-      22
-      80
-    ];
-  };
+        services.headscale = {
+          enable = true;
+          address = cfg.backendAddress;
+          port = cfg.backendPort;
 
-  environment.systemPackages = with pkgs; [
-    headscale
-  ];
+          settings = {
+            server_url = "https://${cfg.domain}";
+
+            dns = {
+              magic_dns = true;
+              base_domain = cfg.tailnetDomain;
+              override_local_dns = false;
+            };
+
+            oidc = {
+              issuer = cfg.oidcIssuer;
+              client_id = cfg.oidcClientId;
+              client_secret_path = oidcClientSecretFile;
+              pkce.enabled = true;
+            };
+          };
+        };
+
+        services.nginx = {
+          enable = true;
+
+          virtualHosts.${cfg.domain} = {
+            listen = [
+              {
+                addr = cfg.listenAddress;
+                port = cfg.port;
+              }
+            ];
+
+            locations."/" = {
+              proxyPass = "http://${cfg.backendAddress}:${toString cfg.backendPort}";
+              proxyWebsockets = true;
+              recommendedProxySettings = true;
+              extraConfig = ''
+                proxy_set_header X-Forwarded-Proto https;
+              '';
+            };
+          };
+        };
+
+        environment.systemPackages = lib.optionals cfg.installAdminPackages [ pkgs.headscale ];
+      }
+      (roleLib.mkRoleFirewall {
+        inherit (cfg) openFirewall permittedSources;
+        tcpPorts = [ cfg.port ];
+      })
+    ]
+  );
 }

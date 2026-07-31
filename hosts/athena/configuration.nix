@@ -1,10 +1,8 @@
-{ inputs, ... }:
+{ ... }:
 
 {
   imports = [
     ./hardware-configuration.nix
-    inputs.nixos-hardware.nixosModules.framework-amd-ai-300-series
-    ../../modules/profiles/workstation.nix
     #../../modules/features/development/unreal.nix
   ];
 
@@ -56,6 +54,4 @@
   #     enableGraphics = true;
   #     enableAudio = true;
   #   };
-
-  networking.hostName = "athena";
 }

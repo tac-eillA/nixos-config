@@ -3,7 +3,6 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ../../modules/profiles/workstation.nix
     #../../modules/features/development/unreal.nix
   ];
 
@@ -24,6 +23,4 @@
   #     enableSteamCompat = false;
   #     enableGamemode = true;
   #   };
-
-  networking.hostName = "demeter";
 }

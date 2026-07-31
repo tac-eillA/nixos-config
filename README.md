@@ -8,13 +8,14 @@
   A modular NixOS configuration for workstations and servers.
 </p>
 
-Scylla uses Nix flakes to define each host. Host files are in `hosts/`.
-Shared modules are in `modules/`.
+Scylla uses Nix flakes to define each host. Deployable systems and their role
+assignments are declared in `inventory/hosts.nix`; hardware and exceptional
+host settings are kept in `hosts/`. Shared modules are in `modules/`.
 
 > [!IMPORTANT]
 > This repository contains personal host configurations and encrypted secrets.
-> Use the `default` host as the template for a new system. The template does
-> not use SOPS secrets.
+> Use `templates/host/` or the `host` flake template for a new system. The
+> template does not use SOPS secrets and is not a deployable host output.
 
 ## Desktop
 
@@ -34,7 +35,9 @@ desktop applications.
 - SOPS secret management for configured hosts
 - Service roles for Authentik, DNS, Forgejo, Headscale, Paperless-ngx, Proxy,
   and Vaultwarden
-- Automatic host discovery from the `hosts/` directory
+- Explicit host, role, feature, address, and architecture inventory
+- Evaluation checks for duplicate addresses, unknown references, undeclared
+  host directories, and deployable placeholder hardware
 - An installation script for a new or existing host configuration
 
 ## Repository layout
@@ -42,7 +45,10 @@ desktop applications.
 | Path | Content |
 | --- | --- |
 | `flake.nix` | Flake inputs and NixOS host outputs |
+| `inventory/hosts.nix` | Host metadata, deployability, profiles, features, and role settings |
+| `inventory/services.nix` | Published service facts for later route generation |
 | `hosts/` | Host configuration and hardware files |
+| `templates/host/` | Share-safe host template exposed through the flake |
 | `modules/core/` | Shared boot, firewall, network, shell, system, and user settings |
 | `modules/profiles/` | Base, server, and workstation composition |
 | `modules/features/` | Cross-cutting desktop, development, gaming, and system features |
@@ -89,13 +95,19 @@ Use this procedure after you install NixOS and clone the repository.
    Check the user name, full name, home directory, and Git identity. Save the
    file and exit Nano.
 
-The script then does these tasks:
+6. Add the new host to `inventory/hosts.nix` when Nano opens it.
 
-1. It copies the `default` host configuration.
-2. It sets the new host name.
-3. It generates `hardware-configuration.nix`.
-4. It installs the bootloader.
-5. It builds the configuration with `nixos-rebuild boot`.
+   Select its architecture, profile, deployability, features, and roles. The
+   installer will not build a host that is absent or marked non-deployable.
+
+The script performs these tasks:
+
+1. It copies `templates/host/configuration.nix`.
+2. It generates `hardware-configuration.nix`.
+3. It opens the inventory for the new host declaration.
+4. It verifies that the flake exposes the requested hostname.
+5. It installs the bootloader.
+6. It builds the configuration with `nixos-rebuild boot`.
 
 The script does not reboot the system. Reboot the system manually after the
 script reports a successful build.
@@ -104,8 +116,8 @@ script reports a successful build.
 sudo reboot
 ```
 
-Commit the new `hosts/<host-name>/` directory if you want to keep the host
-configuration in the repository.
+Commit the new `hosts/<host-name>/` directory and its inventory entry if you
+want to keep the host configuration in the repository.
 
 ## Install an existing host
 
@@ -174,33 +186,56 @@ module. The `scylla.user` account is the primary Home Manager desktop account.
 
 ## Add a host manually
 
-1. Create `hosts/<host-name>/`.
+1. Create `hosts/<host-name>/`, starting from the host template:
 
-2. Add `configuration.nix`.
+   ```console
+   mkdir hosts/<host-name>
+   cp templates/host/configuration.nix hosts/<host-name>/configuration.nix
+   ```
 
-3. Import a hardware file and one profile:
+2. Keep host configuration focused on its hardware file and exceptional
+   overrides:
 
    ```nix
    { ... }:
 
    {
-     imports = [
-       ./hardware-configuration.nix
-       ../../modules/profiles/base.nix
-     ];
-
-     networking.hostName = "<host-name>";
+     imports = [ ./hardware-configuration.nix ];
    }
    ```
 
-4. Generate the hardware file:
+3. Generate the hardware file:
 
    ```console
    sudo nixos-generate-config --show-hardware-config \
      > hosts/<host-name>/hardware-configuration.nix
    ```
 
-The flake detects the new directory. You do not have to edit `flake.nix`.
+4. Add the host to `inventory/hosts.nix`. The inventory selects the profile,
+   architecture, address, deployability, features, and enabled roles.
+
+The flake intentionally rejects host directories that are absent from the
+inventory.
+
+## Configure a workload role
+
+All role modules are imported centrally and default to disabled. Enable a role
+through a host's inventory entry:
+
+```nix
+roles = [ "forgejo" ];
+roleSettings.forgejo = {
+  domain = "git.example.com";
+  listenAddress = "0.0.0.0";
+  port = 3000;
+  permittedSources = [ "10.0.0.0/8" ];
+  installAdminPackages = false;
+};
+```
+
+Disabled roles create no service users, listeners, firewall openings, global
+packages, or SOPS declarations. An empty `permittedSources` list retains
+unrestricted access to the role's configured open ports.
 
 ## Secret management
 
@@ -210,13 +245,13 @@ Scylla uses `sops-nix` and an Age key at:
 /var/lib/sops-nix/age-key.txt
 ```
 
-The `default` host imports only the base profile. It does not declare a SOPS
-secret. Server and workstation profiles can declare secrets.
+The host template does not declare a SOPS secret. Secret-consuming roles
+declare their own SOPS files, Age key settings, ownership, and restart targets.
 
 Do not commit an unencrypted secret or an Age private key.
 
 ## Placeholder hosts
 
-Some host directories contain placeholder hardware settings. Do not deploy a
-placeholder configuration. Replace its `hardware-configuration.nix` file with
-the output from the target system.
+Placeholder systems remain visible in `inventory/hosts.nix` with
+`deployable = false`. The flake refuses to expose a deployable host whose
+hardware file still contains the template disk labels.

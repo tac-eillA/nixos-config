@@ -1,74 +1,122 @@
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
-  forgejoHost = "10.254.1.213";
-  headscaleHost = "10.254.1.214";
-  authHost = "10.254.1.210";
-  vaultwardenHost = "10.254.1.216";
-  dns1Host = "10.254.1.211";
-  dns2Host = "10.254.1.212";
+  cfg = config.scylla.roles.proxy;
+  roleLib = import ../lib.nix { inherit config lib; };
+  credentialsFile = config.sops.secrets."cloudflare/tunnel-credentials".path;
 in
 {
-  imports = [ ../../secrets/runtime-age.nix ];
+  options.scylla.roles.proxy = {
+    enable = lib.mkEnableOption "the Cloudflare tunnel proxy workload";
 
-  sops.secrets."cloudflare/tunnel-credentials" = {
-    sopsFile = ../../../secrets/proxy.yaml;
-    owner = "cloudflared";
-    group = "cloudflared";
-    mode = "0400";
-  };
+    tunnelId = lib.mkOption {
+      type = lib.types.nonEmptyStr;
+      default = "8eaa3da2-b2ae-4cbf-86f0-73bda6de85bd";
+      description = "Cloudflare tunnel identifier.";
+    };
 
-  services.cloudflared = {
-    enable = true;
-    tunnels = {
-      "8eaa3da2-b2ae-4cbf-86f0-73bda6de85bd" = {
-        credentialsFile = config.sops.secrets."cloudflare/tunnel-credentials".path;
-        warp-routing.enabled = true;
-        ingress = {
-          "git.allie.sh" = {
-            service = "http://${forgejoHost}:3000";
-          };
-          "headscale.allie.sh" = {
-            service = "http://${headscaleHost}:80";
-          };
-          "auth.allie.sh" = {
-            service = "http://${authHost}:9000";
-          };
-          "vault.allie.sh" = {
-            service = "http://${vaultwardenHost}:8222";
-          };
-          "dns1-dash.allie.sh" = {
-            service = "http://${dns1Host}:5380";
-          };
-          "dns2-dash.allie.sh" = {
-            service = "http://${dns2Host}:5380";
-          };
-          "dns1.allie.sh" = {
-            service = "http://${dns1Host}:53";
-          };
-          "dns2.allie.sh" = {
-            service = "http://${dns2Host}:53";
-          };
-        };
-        default = "http_status:404";
+    ingress = lib.mkOption {
+      type = lib.types.attrsOf lib.types.nonEmptyStr;
+      default = { };
+      example = {
+        "git.example.com" = "http://10.0.0.10:3000";
       };
+      description = "Map of public domains to Cloudflare tunnel service URLs.";
+    };
+
+    defaultService = lib.mkOption {
+      type = lib.types.nonEmptyStr;
+      default = "http_status:404";
+      description = "Cloudflare tunnel fallback service.";
+    };
+
+    warpRouting = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether to enable Cloudflare WARP routing.";
+    };
+
+    openFirewall = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether to allow the configured legacy proxy ports.";
+    };
+
+    firewallTCPPorts = lib.mkOption {
+      type = lib.types.listOf lib.types.port;
+      default = [
+        53
+        80
+        443
+        3000
+        5380
+        8222
+        9000
+      ];
+      description = ''
+        Legacy inbound ports retained until Phase 6 separates listeners from
+        exposure policy.
+      '';
+    };
+
+    permittedSources = roleLib.permittedSourcesOption;
+
+    installAdminPackages = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Whether to install cloudflared globally.";
+    };
+
+    secretFile = lib.mkOption {
+      type = lib.types.path;
+      default = ../../../secrets/proxy.yaml;
+      description = "SOPS file containing the Cloudflare tunnel credentials.";
     };
   };
 
-  networking.firewall = {
-    allowedTCPPorts = [
-      22
-      53
-      80
-      443
-      3000
-      5380
-      8222
-      9000
-    ];
-  };
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      {
+        assertions = [
+          {
+            assertion = builtins.pathExists cfg.secretFile;
+            message = "The proxy role secret file does not exist.";
+          }
+          {
+            assertion = cfg.ingress != { };
+            message = "The proxy role requires at least one ingress route.";
+          }
+        ];
 
-  environment.systemPackages = with pkgs; [
-    cloudflared
-  ];
+        sops.age = {
+          keyFile = "/var/lib/sops-nix/age-key.txt";
+          generateKey = false;
+        };
+
+        sops.secrets."cloudflare/tunnel-credentials" = {
+          sopsFile = cfg.secretFile;
+          owner = "cloudflared";
+          group = "cloudflared";
+          mode = "0400";
+          restartUnits = [ "cloudflared-tunnel-${cfg.tunnelId}.service" ];
+        };
+
+        services.cloudflared = {
+          enable = true;
+          tunnels.${cfg.tunnelId} = {
+            inherit credentialsFile;
+            warp-routing.enabled = cfg.warpRouting;
+            ingress = lib.mapAttrs (_: service: { inherit service; }) cfg.ingress;
+            default = cfg.defaultService;
+          };
+        };
+
+        environment.systemPackages = lib.optionals cfg.installAdminPackages [ pkgs.cloudflared ];
+      }
+      (roleLib.mkRoleFirewall {
+        inherit (cfg) openFirewall permittedSources;
+        tcpPorts = cfg.firewallTCPPorts;
+      })
+    ]
+  );
 }

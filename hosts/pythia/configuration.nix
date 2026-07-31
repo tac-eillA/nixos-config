@@ -1,10 +1,5 @@
 { ... }:
 
 {
-  imports = [
-    ./hardware-configuration.nix
-    ../../modules/profiles/base.nix
-  ];
-
-  networking.hostName = "pythia";
+  imports = [ ./hardware-configuration.nix ];
 }

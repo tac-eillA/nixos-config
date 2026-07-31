@@ -20,9 +20,197 @@
   outputs =
     inputs@{ nixpkgs, ... }:
     let
-      system = "x86_64-linux";
+      defaultSystem = "x86_64-linux";
       lib = nixpkgs.lib;
       flatpakModule = inputs."nix-flatpak".nixosModules.nix-flatpak;
+      hostInventory = import ./inventory/hosts.nix;
+      serviceInventory = import ./inventory/services.nix;
+
+      profileModules = {
+        base = ./modules/profiles/base.nix;
+        server = ./modules/profiles/server.nix;
+        workstation = ./modules/profiles/workstation.nix;
+      };
+
+      roleModules = {
+        authentik = ./modules/roles/authentik;
+        forgejo = ./modules/roles/forgejo;
+        headscale = ./modules/roles/headscale;
+        paperless-ngx = ./modules/roles/paperless-ngx;
+        proxy = ./modules/roles/proxy;
+        technitium-dns = ./modules/roles/technitium-dns;
+        vaultwarden = ./modules/roles/vaultwarden;
+      };
+
+      hardwareModules = {
+        framework-amd-ai-300-series =
+          inputs.nixos-hardware.nixosModules.framework-amd-ai-300-series;
+      };
+
+      knownFeatures = [
+        "audio"
+        "desktop"
+        "development-full"
+        "development-minimal"
+        "distrobox"
+        "firmware"
+        "gaming"
+        "github-secret"
+        "printing"
+        "tailscale"
+      ];
+
+      hostNames = builtins.attrNames hostInventory;
+      hostDirectories = builtins.readDir ./hosts;
+      configuredHostDirectories = lib.filter
+        (
+          hostname:
+          hostDirectories.${hostname} == "directory"
+          && builtins.pathExists (./hosts + "/${hostname}/configuration.nix")
+        )
+        (builtins.attrNames hostDirectories);
+
+      addresses = lib.filter (address: address != null) (
+        map (hostname: hostInventory.${hostname}.address or null) hostNames
+      );
+
+      duplicateAddresses = lib.unique (
+        lib.filter
+          (
+            address: lib.length (lib.filter (candidate: candidate == address) addresses) > 1
+          )
+          addresses
+      );
+
+      unknownProfiles = lib.filter
+        (
+          hostname: !(builtins.hasAttr hostInventory.${hostname}.profile profileModules)
+        )
+        hostNames;
+
+      unknownRoles = lib.concatMap
+        (
+          hostname:
+          map (role: "${hostname}:${role}") (
+            lib.filter (role: !(builtins.hasAttr role roleModules)) hostInventory.${hostname}.roles
+          )
+        )
+        hostNames;
+
+      unknownFeatures = lib.concatMap
+        (
+          hostname:
+          map (feature: "${hostname}:${feature}") (
+            lib.filter (feature: !(builtins.elem feature knownFeatures)) hostInventory.${hostname}.features
+          )
+        )
+        hostNames;
+
+      unknownHardwareModules = lib.concatMap
+        (
+          hostname:
+          map (hardwareModule: "${hostname}:${hardwareModule}") (
+            lib.filter
+              (
+                hardwareModule: !(builtins.hasAttr hardwareModule hardwareModules)
+              )
+              (hostInventory.${hostname}.hardwareModules or [ ])
+          )
+        )
+        hostNames;
+
+      mismatchedRoleSettings = lib.filter
+        (
+          hostname:
+          let
+            settings = builtins.attrNames (hostInventory.${hostname}.roleSettings or { });
+          in
+          lib.any (role: !(builtins.elem role hostInventory.${hostname}.roles)) settings
+        )
+        hostNames;
+
+      missingHostConfigurations = lib.filter
+        (
+          hostname: !(builtins.pathExists (./hosts + "/${hostname}/configuration.nix"))
+        )
+        hostNames;
+
+      unregisteredHostDirectories = lib.subtractLists hostNames configuredHostDirectories;
+
+      placeholderDeployments = lib.filter
+        (
+          hostname:
+          hostInventory.${hostname}.deployable
+          && builtins.pathExists (./hosts + "/${hostname}/hardware-configuration.nix")
+          && lib.hasInfix "replace-me-root" (
+            builtins.readFile (./hosts + "/${hostname}/hardware-configuration.nix")
+          )
+        )
+        hostNames;
+
+      undeclaredServiceHosts = lib.unique (
+        lib.filter (hostname: !(builtins.hasAttr hostname hostInventory)) (
+          map (service: service.host) (builtins.attrValues serviceInventory)
+        )
+      );
+
+      nonDeployableServiceHosts = lib.unique (
+        lib.filter
+          (
+            hostname:
+            builtins.hasAttr hostname hostInventory && !hostInventory.${hostname}.deployable
+          )
+          (map (service: service.host) (builtins.attrValues serviceInventory))
+      );
+
+      validatedHostInventory =
+        assert lib.assertMsg
+          (
+            duplicateAddresses == [ ]
+          ) "Duplicate inventory addresses: ${lib.concatStringsSep ", " duplicateAddresses}";
+        assert lib.assertMsg
+          (
+            unknownProfiles == [ ]
+          ) "Unknown inventory profiles: ${lib.concatStringsSep ", " unknownProfiles}";
+        assert lib.assertMsg
+          (
+            unknownRoles == [ ]
+          ) "Unknown inventory roles: ${lib.concatStringsSep ", " unknownRoles}";
+        assert lib.assertMsg
+          (
+            unknownFeatures == [ ]
+          ) "Unknown inventory features: ${lib.concatStringsSep ", " unknownFeatures}";
+        assert lib.assertMsg
+          (
+            unknownHardwareModules == [ ]
+          ) "Unknown inventory hardware modules: ${lib.concatStringsSep ", " unknownHardwareModules}";
+        assert lib.assertMsg
+          (
+            mismatchedRoleSettings == [ ]
+          ) "Role settings exist for disabled roles on: ${lib.concatStringsSep ", " mismatchedRoleSettings}";
+        assert lib.assertMsg
+          (
+            missingHostConfigurations == [ ]
+          ) "Inventory hosts missing configuration.nix: ${lib.concatStringsSep ", " missingHostConfigurations}";
+        assert lib.assertMsg
+          (
+            unregisteredHostDirectories == [ ]
+          ) "Host directories missing from inventory: ${lib.concatStringsSep ", " unregisteredHostDirectories}";
+        assert lib.assertMsg
+          (
+            placeholderDeployments == [ ]
+          ) "Deployable hosts still use placeholder disks: ${lib.concatStringsSep ", " placeholderDeployments}";
+        assert lib.assertMsg
+          (
+            undeclaredServiceHosts == [ ]
+          ) "Services reference undeclared hosts: ${lib.concatStringsSep ", " undeclaredServiceHosts}";
+        assert lib.assertMsg
+          (
+            nonDeployableServiceHosts == [ ]
+          ) "Services reference non-deployable hosts: ${lib.concatStringsSep ", " nonDeployableServiceHosts}";
+        hostInventory;
+
+      deployableHosts = lib.filterAttrs (_: host: host.deployable) validatedHostInventory;
 
       mkPkgs =
         hostSystem:
@@ -33,14 +221,29 @@
       mkHost =
         hostname:
         let
+          hostMeta = deployableHosts.${hostname};
+          system = hostMeta.system;
           pkgsStable = import inputs.nix-stable {
             inherit system;
             config.allowUnfree = true;
           };
+          enabledRoles = lib.genAttrs hostMeta.roles (
+            role:
+            {
+              enable = true;
+            }
+            // (hostMeta.roleSettings.${role} or { })
+          );
         in
         lib.nixosSystem {
           inherit system;
-          specialArgs = { inherit inputs pkgsStable; };
+          specialArgs = {
+            inherit inputs pkgsStable hostMeta;
+            inventory = {
+              hosts = validatedHostInventory;
+              services = serviceInventory;
+            };
+          };
           modules = [
             flatpakModule
             inputs.sops-nix.nixosModules.sops
@@ -51,20 +254,38 @@
               home-manager.backupFileExtension = "before-home-manager";
               home-manager.extraSpecialArgs = { inherit pkgsStable; };
             }
+          ]
+          ++ map (hardwareModule: hardwareModules.${hardwareModule}) (
+            hostMeta.hardwareModules or [ ]
+          )
+          ++ [
+            profileModules.${hostMeta.profile}
+          ]
+          ++ builtins.attrValues roleModules
+          ++ [
+            {
+              networking.hostName = hostname;
+              systemd.network.networks."10-uplink".address = lib.optional
+                (
+                  hostMeta.address != null
+                ) "${hostMeta.address}/24";
+              scylla.roles = enabledRoles;
+            }
             ./hosts/${hostname}/configuration.nix
           ];
         };
-
-      hostDirectories = builtins.readDir ./hosts;
-      hostNames = lib.filter (
-        hostname:
-        hostDirectories.${hostname} == "directory"
-        && builtins.pathExists (./hosts + "/${hostname}/configuration.nix")
-      ) (builtins.attrNames hostDirectories);
     in
     {
-      nixosConfigurations = lib.genAttrs hostNames mkHost;
+      nixosConfigurations = lib.genAttrs (builtins.attrNames deployableHosts) mkHost;
 
-      formatter.${system} = (mkPkgs system).nixpkgs-fmt;
+      templates = rec {
+        default = host;
+        host = {
+          path = ./templates/host;
+          description = "A share-safe Scylla host configuration";
+        };
+      };
+
+      formatter.${defaultSystem} = (mkPkgs defaultSystem).nixpkgs-fmt;
     };
 }
