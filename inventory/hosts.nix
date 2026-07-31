@@ -139,16 +139,6 @@ in
     roles = [ "proxy" ];
     roleSettings.proxy = {
       installAdminPackages = true;
-      ingress = {
-        "git.allie.sh" = "http://${addresses.forgejo}:3000";
-        "headscale.allie.sh" = "http://${addresses.headscale}:80";
-        "auth.allie.sh" = "http://${addresses.authentik}:9000";
-        "vault.allie.sh" = "http://${addresses.vaultwarden}:8222";
-        "dns1-dash.allie.sh" = "http://${addresses.dns1}:5380";
-        "dns2-dash.allie.sh" = "http://${addresses.dns2}:5380";
-        "dns1.allie.sh" = "http://${addresses.dns1}:53";
-        "dns2.allie.sh" = "http://${addresses.dns2}:53";
-      };
     };
   };
 

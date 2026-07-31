@@ -15,8 +15,6 @@ let
     calibre
     mpv
     cider-2
-    #wireshark
-    google-chrome
     hyfetch
     gparted
     ffmpeg
@@ -28,8 +26,9 @@ let
   ];
 
   stablePackages = with pkgsStable; [
-    # LACT 0.9.1 currently fails to build on unstable.
     lact
+    wireshark
+    google-chrome #needed for webserial for web based via/vial
   ];
 in
 {

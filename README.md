@@ -36,8 +36,10 @@ desktop applications.
 - Service roles for Authentik, DNS, Forgejo, Headscale, Paperless-ngx, Proxy,
   and Vaultwarden
 - Explicit host, role, feature, address, and architecture inventory
+- Proxy ingress generated from validated service publication policies
 - Evaluation checks for duplicate addresses, unknown references, undeclared
-  host directories, and deployable placeholder hardware
+  host directories, deployable placeholder hardware, invalid service
+  protocols, duplicate public domains, and disabled destination roles
 - An installation script for a new or existing host configuration
 
 ## Repository layout
@@ -46,7 +48,7 @@ desktop applications.
 | --- | --- |
 | `flake.nix` | Flake inputs and NixOS host outputs |
 | `inventory/hosts.nix` | Host metadata, deployability, profiles, features, and role settings |
-| `inventory/services.nix` | Published service facts for later route generation |
+| `inventory/services.nix` | Service endpoints and publication policies used to generate proxy routes |
 | `hosts/` | Host configuration and hardware files |
 | `templates/host/` | Share-safe host template exposed through the flake |
 | `modules/core/` | Shared boot, firewall, network, shell, system, and user settings |
@@ -236,6 +238,36 @@ roleSettings.forgejo = {
 Disabled roles create no service users, listeners, firewall openings, global
 packages, or SOPS declarations. An empty `permittedSources` list retains
 unrestricted access to the role's configured open ports.
+
+## Publish a service
+
+Declare service endpoints and their exposure policy in
+`inventory/services.nix`:
+
+```nix
+forgejo = {
+  host = "forgejo";
+  role = "forgejo";
+  publicDomain = "git.example.com";
+  scheme = "http";
+  port = 3000;
+  publishVia = "cloudflare";
+  exposure = "public";
+};
+```
+
+Cloudflare ingress is generated from entries with
+`publishVia = "cloudflare"`. Do not add an `ingress` map to the proxy host.
+
+Every service must identify its destination host, enabled role, scheme, port,
+publication method, and exposure policy. Evaluation rejects missing or
+non-deployable hosts, disabled roles, duplicate domains, invalid ports,
+unsupported schemes, HTTP routing to DNS port 53, public services without a
+publisher, and Cloudflare destinations without inventory addresses.
+
+LAN-only services use `publishVia = "none"` and do not receive a public
+domain. Raw DNS endpoints are inventoried this way; only their HTTP dashboards
+are currently published through Cloudflare.
 
 ## Secret management
 

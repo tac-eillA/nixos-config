@@ -6,15 +6,17 @@
     scheme = "http";
     port = 9000;
     publishVia = "cloudflare";
+    exposure = "public";
   };
 
   dns1 = {
     host = "dns1";
     role = "technitium-dns";
-    publicDomain = "dns1.allie.sh";
-    scheme = "http";
+    publicDomain = null;
+    scheme = "dns";
     port = 53;
-    publishVia = "cloudflare";
+    publishVia = "none";
+    exposure = "lan";
   };
 
   dns1-dashboard = {
@@ -24,15 +26,17 @@
     scheme = "http";
     port = 5380;
     publishVia = "cloudflare";
+    exposure = "public";
   };
 
   dns2 = {
     host = "dns2";
     role = "technitium-dns";
-    publicDomain = "dns2.allie.sh";
-    scheme = "http";
+    publicDomain = null;
+    scheme = "dns";
     port = 53;
-    publishVia = "cloudflare";
+    publishVia = "none";
+    exposure = "lan";
   };
 
   dns2-dashboard = {
@@ -42,6 +46,7 @@
     scheme = "http";
     port = 5380;
     publishVia = "cloudflare";
+    exposure = "public";
   };
 
   forgejo = {
@@ -51,6 +56,7 @@
     scheme = "http";
     port = 3000;
     publishVia = "cloudflare";
+    exposure = "public";
   };
 
   headscale = {
@@ -60,6 +66,7 @@
     scheme = "http";
     port = 80;
     publishVia = "cloudflare";
+    exposure = "public";
   };
 
   vaultwarden = {
@@ -69,5 +76,6 @@
     scheme = "http";
     port = 8222;
     publishVia = "cloudflare";
+    exposure = "public";
   };
 }

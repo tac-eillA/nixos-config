@@ -129,6 +129,15 @@
         )
         hostNames;
 
+      manualProxyIngress = lib.filter
+        (
+          hostname:
+          builtins.hasAttr "ingress" (
+            hostInventory.${hostname}.roleSettings.proxy or { }
+          )
+        )
+        hostNames;
+
       missingHostConfigurations = lib.filter
         (
           hostname: !(builtins.pathExists (./hosts + "/${hostname}/configuration.nix"))
@@ -147,21 +156,6 @@
           )
         )
         hostNames;
-
-      undeclaredServiceHosts = lib.unique (
-        lib.filter (hostname: !(builtins.hasAttr hostname hostInventory)) (
-          map (service: service.host) (builtins.attrValues serviceInventory)
-        )
-      );
-
-      nonDeployableServiceHosts = lib.unique (
-        lib.filter
-          (
-            hostname:
-            builtins.hasAttr hostname hostInventory && !hostInventory.${hostname}.deployable
-          )
-          (map (service: service.host) (builtins.attrValues serviceInventory))
-      );
 
       validatedHostInventory =
         assert lib.assertMsg
@@ -190,6 +184,10 @@
           ) "Role settings exist for disabled roles on: ${lib.concatStringsSep ", " mismatchedRoleSettings}";
         assert lib.assertMsg
           (
+            manualProxyIngress == [ ]
+          ) "Proxy ingress must be generated from service inventory, not set on: ${lib.concatStringsSep ", " manualProxyIngress}";
+        assert lib.assertMsg
+          (
             missingHostConfigurations == [ ]
           ) "Inventory hosts missing configuration.nix: ${lib.concatStringsSep ", " missingHostConfigurations}";
         assert lib.assertMsg
@@ -200,17 +198,20 @@
           (
             placeholderDeployments == [ ]
           ) "Deployable hosts still use placeholder disks: ${lib.concatStringsSep ", " placeholderDeployments}";
-        assert lib.assertMsg
-          (
-            undeclaredServiceHosts == [ ]
-          ) "Services reference undeclared hosts: ${lib.concatStringsSep ", " undeclaredServiceHosts}";
-        assert lib.assertMsg
-          (
-            nonDeployableServiceHosts == [ ]
-          ) "Services reference non-deployable hosts: ${lib.concatStringsSep ", " nonDeployableServiceHosts}";
         hostInventory;
 
-      deployableHosts = lib.filterAttrs (_: host: host.deployable) validatedHostInventory;
+      servicePolicy = import ./inventory/validate-services.nix {
+        hosts = validatedHostInventory;
+        inherit lib;
+        knownRoles = builtins.attrNames roleModules;
+        services = serviceInventory;
+      };
+
+      validatedServiceInventory = servicePolicy.services;
+
+      deployableHosts = builtins.deepSeq servicePolicy (
+        lib.filterAttrs (_: host: host.deployable) validatedHostInventory
+      );
 
       mkPkgs =
         hostSystem:
@@ -233,6 +234,9 @@
               enable = true;
             }
             // (hostMeta.roleSettings.${role} or { })
+            // lib.optionalAttrs (role == "proxy") {
+              ingress = servicePolicy.cloudflareIngress;
+            }
           );
         in
         lib.nixosSystem {
@@ -241,7 +245,7 @@
             inherit inputs pkgsStable hostMeta;
             inventory = {
               hosts = validatedHostInventory;
-              services = serviceInventory;
+              services = validatedServiceInventory;
             };
           };
           modules = [

@@ -43,7 +43,6 @@
 
     pciutils
     usbutils
-    # lact
     btop
 
     vulkan-tools
@@ -59,6 +58,8 @@
     zed-editor-fhs
     opencode
     codex
+    claude-code
+    t3code
     python3
     detect-secrets
   ];
