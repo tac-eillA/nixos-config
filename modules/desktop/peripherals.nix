@@ -23,7 +23,6 @@
   environment.systemPackages = with pkgs; [
     brightnessctl
     ddcutil
-    fprintd
     fwupd
     librepods
   ];

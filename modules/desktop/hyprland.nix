@@ -8,8 +8,6 @@
       xwayland.enable = true;
     };
 
-    programs.uwsm.enable = true;
-
     programs.thunar = {
       enable = true;
       plugins = [ pkgs.thunar-archive-plugin ];

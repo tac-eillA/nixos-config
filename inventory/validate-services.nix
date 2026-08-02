@@ -1,7 +1,9 @@
-{ hosts, knownRoles, lib, networks, services }:
+args@{ hosts, knownRoles, lib, networks, ... }:
 
 let
-  serviceNames = builtins.attrNames services;
+  validation = import ./validation-helpers.nix { inherit lib; };
+  rawServices = args.services;
+  rawServiceNames = builtins.attrNames rawServices;
   hostNames = builtins.attrNames hosts;
   declaredNetworks = lib.unique (lib.concatLists (builtins.attrValues networks));
 
@@ -38,22 +40,25 @@ let
       serviceName:
       map (field: "${serviceName}.${field}") (
         lib.filter
-          (field: !(builtins.hasAttr field services.${serviceName}))
+          (field: !(builtins.hasAttr field rawServices.${serviceName}))
           requiredTopLevelFields
       )
     )
-    serviceNames;
+    rawServiceNames;
 
   invalidSections = lib.concatMap
     (
       serviceName:
       map (section: "${serviceName}.${section}") (
         lib.filter
-          (section: !builtins.isAttrs services.${serviceName}.${section})
+          (
+            section:
+              !builtins.isAttrs (rawServices.${serviceName}.${section} or null)
+          )
           (builtins.attrNames requiredSectionFields)
       )
     )
-    serviceNames;
+    rawServiceNames;
 
   missingSectionFields = lib.concatMap
     (
@@ -61,15 +66,29 @@ let
       lib.concatMap
         (
           section:
-          map (field: "${serviceName}.${section}.${field}") (
-            lib.filter
-              (field: !(builtins.hasAttr field services.${serviceName}.${section}))
-              requiredSectionFields.${section}
+          let
+            sectionValue = rawServices.${serviceName}.${section} or null;
+          in
+          lib.optionals (builtins.isAttrs sectionValue) (
+            map (field: "${serviceName}.${section}.${field}") (
+              lib.filter
+                (field: !(builtins.hasAttr field sectionValue))
+                requiredSectionFields.${section}
+            )
           )
         )
         (builtins.attrNames requiredSectionFields)
     )
-    serviceNames;
+    rawServiceNames;
+
+  structurallyValidatedServices = validation.assertChecks [
+    (validation.checkEmpty "Services missing required fields" missingTopLevelFields)
+    (validation.checkEmpty "Service sections must be attribute sets" invalidSections)
+    (validation.checkEmpty "Service sections missing required fields" missingSectionFields)
+  ]
+    rawServices;
+
+  structurallyValidatedServiceNames = builtins.attrNames structurallyValidatedServices;
 
   isNonEmptyString = value: builtins.isString value && value != "";
   isNonEmptyStringList =
@@ -81,7 +100,7 @@ let
     (
       serviceName:
       let
-        service = services.${serviceName};
+        service = structurallyValidatedServices.${serviceName};
       in
       lib.optional (!isNonEmptyString service.host) "${serviceName}.host"
       ++ lib.optional (!isNonEmptyString service.role) "${serviceName}.role"
@@ -117,7 +136,14 @@ let
         )
         "${serviceName}.publication.domain"
     )
-    serviceNames;
+    structurallyValidatedServiceNames;
+
+  services = validation.assertChecks [
+    (validation.checkEmpty "Services contain invalid field types" invalidFieldTypes)
+  ]
+    structurallyValidatedServices;
+
+  serviceNames = builtins.attrNames services;
 
   invalidPorts = lib.filter
     (
@@ -622,127 +648,46 @@ let
     )
     enabledManagedHostRoles;
 
-  validatedServices =
-    assert lib.assertMsg
-      (missingTopLevelFields == [ ])
-      "Services missing required fields: ${lib.concatStringsSep ", " missingTopLevelFields}";
-    assert lib.assertMsg
-      (invalidSections == [ ])
-      "Service sections must be attribute sets: ${lib.concatStringsSep ", " invalidSections}";
-    assert lib.assertMsg
-      (missingSectionFields == [ ])
-      "Service sections missing required fields: ${lib.concatStringsSep ", " missingSectionFields}";
-    assert lib.assertMsg
-      (invalidFieldTypes == [ ])
-      "Services contain invalid field types: ${lib.concatStringsSep ", " invalidFieldTypes}";
-    assert lib.assertMsg
-      (invalidPorts == [ ])
-      "Services contain invalid listener ports: ${lib.concatStringsSep ", " invalidPorts}";
-    assert lib.assertMsg
-      (undeclaredHosts == [ ])
-      "Services reference undeclared hosts: ${lib.concatStringsSep ", " undeclaredHosts}";
-    assert lib.assertMsg
-      (nonDeployableHosts == [ ])
-      "Services reference non-deployable hosts: ${lib.concatStringsSep ", " nonDeployableHosts}";
-    assert lib.assertMsg
-      (unknownRoles == [ ])
-      "Services reference unknown roles: ${lib.concatStringsSep ", " unknownRoles}";
-    assert lib.assertMsg
-      (disabledDestinationRoles == [ ])
-      "Services reference roles disabled on their destination: ${lib.concatStringsSep ", " disabledDestinationRoles}";
-    assert lib.assertMsg
-      (unknownProtocols == [ ])
-      "Services use unknown transport protocols: ${lib.concatStringsSep ", " unknownProtocols}";
-    assert lib.assertMsg
-      (duplicateProtocols == [ ])
-      "Services repeat transport protocols: ${lib.concatStringsSep ", " duplicateProtocols}";
-    assert lib.assertMsg
-      (unknownSchemes == [ ])
-      "Services use unknown application schemes: ${lib.concatStringsSep ", " unknownSchemes}";
-    assert lib.assertMsg
-      (unknownPublishers == [ ])
-      "Services use unknown publication methods: ${lib.concatStringsSep ", " unknownPublishers}";
-    assert lib.assertMsg
-      (unknownClassifications == [ ])
-      "Services use unknown exposure classifications: ${lib.concatStringsSep ", " unknownClassifications}";
-    assert lib.assertMsg
-      (invalidListenerAddresses == [ ])
-      "Services use listener addresses outside their destination host: ${lib.concatStringsSep ", " invalidListenerAddresses}";
-    assert lib.assertMsg
-      (undeclaredTrustedHosts == [ ])
-      "Services trust undeclared hosts: ${lib.concatStringsSep ", " undeclaredTrustedHosts}";
-    assert lib.assertMsg
-      (unusableTrustedHosts == [ ])
-      "Services trust hosts without deployable addresses: ${lib.concatStringsSep ", " unusableTrustedHosts}";
-    assert lib.assertMsg
-      (undeclaredTrustedNetworks == [ ])
-      "Services trust networks absent from network inventory: ${lib.concatStringsSep ", " undeclaredTrustedNetworks}";
-    assert lib.assertMsg
-      (restrictedWithoutSources == [ ])
-      "Restricted services require trusted sources: ${lib.concatStringsSep ", " restrictedWithoutSources}";
-    assert lib.assertMsg
-      (publicWithTrustedSources == [ ])
-      "Public services cannot retain trusted-source restrictions: ${lib.concatStringsSep ", " publicWithTrustedSources}";
-    assert lib.assertMsg
-      (lanPolicyDrift == [ ])
-      "LAN-only services may trust only declared LAN networks: ${lib.concatStringsSep ", " lanPolicyDrift}";
-    assert lib.assertMsg
-      (tailscalePolicyDrift == [ ])
-      "Tailscale-only services may trust only declared Tailscale networks: ${lib.concatStringsSep ", " tailscalePolicyDrift}";
-    assert lib.assertMsg
-      (proxyPolicyDrift == [ ])
-      "Proxy-only services must trust exactly the deployable proxy and be consumed by it: ${lib.concatStringsSep ", " proxyPolicyDrift}";
-    assert lib.assertMsg
-      (proxyConsumersWithoutTrust == [ ])
-      "Proxy-consumed services must trust every deployable proxy: ${lib.concatStringsSep ", " proxyConsumersWithoutTrust}";
-    assert lib.assertMsg
-      (publicProxyConsumers == [ ])
-      "Public listeners cannot also be classified as proxy-consumed backends: ${lib.concatStringsSep ", " publicProxyConsumers}";
-    assert lib.assertMsg
-      (proxyConsumersWithLoopbackListeners == [ ])
-      "Proxy-consumed listeners cannot bind only to loopback: ${lib.concatStringsSep ", " proxyConsumersWithLoopbackListeners}";
-    assert lib.assertMsg
-      (unsupportedProtocolCombinations == [ ])
-      "Services use unsupported listener scheme, port, or protocol combinations: ${lib.concatStringsSep ", " unsupportedProtocolCombinations}";
-    assert lib.assertMsg
-      (duplicateListenerSockets == [ ])
-      "Services declare duplicate listener sockets: ${lib.concatStringsSep ", " duplicateListenerSockets}";
-    assert lib.assertMsg
-      (cloudflareWithoutDomains == [ ])
-      "Cloudflare services lack public domains: ${lib.concatStringsSep ", " cloudflareWithoutDomains}";
-    assert lib.assertMsg
-      (cloudflareWithoutProxyPolicy == [ ])
-      "Cloudflare origins must use proxy-only exposure: ${lib.concatStringsSep ", " cloudflareWithoutProxyPolicy}";
-    assert lib.assertMsg
-      (cloudflareDomainMismatches == [ ])
-      "Cloudflare publication domains must match listener domains: ${lib.concatStringsSep ", " cloudflareDomainMismatches}";
-    assert lib.assertMsg
-      (nonPublishedWithDomains == [ ])
-      "Non-published services retain public domains: ${lib.concatStringsSep ", " nonPublishedWithDomains}";
-    assert lib.assertMsg
-      (unsupportedCloudflareSchemes == [ ])
-      "Cloudflare services use unsupported origin schemes: ${lib.concatStringsSep ", " unsupportedCloudflareSchemes}";
-    assert lib.assertMsg
-      (cloudflareWithoutAddresses == [ ])
-      "Cloudflare services require destination addresses: ${lib.concatStringsSep ", " cloudflareWithoutAddresses}";
-    assert lib.assertMsg
-      (duplicatePublicDomains == [ ])
-      "Duplicate public service domains: ${lib.concatStringsSep ", " duplicatePublicDomains}";
-    assert lib.assertMsg
-      (duplicateManagedRoleListeners == [ ])
-      "Roles with generated listeners require exactly one service: ${lib.concatStringsSep ", " duplicateManagedRoleListeners}";
-    assert lib.assertMsg
-      (managedListenersWithoutDomains == [ ])
-      "Roles with generated listeners require a domain: ${lib.concatStringsSep ", " managedListenersWithoutDomains}";
-    assert lib.assertMsg
-      (managedRolesWithoutListeners == [ ])
-      "Inventory-managed roles require exactly one service listener: ${lib.concatStringsSep ", " managedRolesWithoutListeners}";
-    assert lib.assertMsg
-      (
-        cloudflareServiceNames == [ ]
-        || lib.length proxyHosts == 1
-      )
-      "Cloudflare publication requires exactly one deployable proxy role";
+  validatedServices = validation.assertChecks [
+    (validation.checkEmpty "Services contain invalid listener ports" invalidPorts)
+    (validation.checkEmpty "Services reference undeclared hosts" undeclaredHosts)
+    (validation.checkEmpty "Services reference non-deployable hosts" nonDeployableHosts)
+    (validation.checkEmpty "Services reference unknown roles" unknownRoles)
+    (validation.checkEmpty "Services reference roles disabled on their destination" disabledDestinationRoles)
+    (validation.checkEmpty "Services use unknown transport protocols" unknownProtocols)
+    (validation.checkEmpty "Services repeat transport protocols" duplicateProtocols)
+    (validation.checkEmpty "Services use unknown application schemes" unknownSchemes)
+    (validation.checkEmpty "Services use unknown publication methods" unknownPublishers)
+    (validation.checkEmpty "Services use unknown exposure classifications" unknownClassifications)
+    (validation.checkEmpty "Services use listener addresses outside their destination host" invalidListenerAddresses)
+    (validation.checkEmpty "Services trust undeclared hosts" undeclaredTrustedHosts)
+    (validation.checkEmpty "Services trust hosts without deployable addresses" unusableTrustedHosts)
+    (validation.checkEmpty "Services trust networks absent from network inventory" undeclaredTrustedNetworks)
+    (validation.checkEmpty "Restricted services require trusted sources" restrictedWithoutSources)
+    (validation.checkEmpty "Public services cannot retain trusted-source restrictions" publicWithTrustedSources)
+    (validation.checkEmpty "LAN-only services may trust only declared LAN networks" lanPolicyDrift)
+    (validation.checkEmpty "Tailscale-only services may trust only declared Tailscale networks" tailscalePolicyDrift)
+    (validation.checkEmpty "Proxy-only services must trust exactly the deployable proxy and be consumed by it" proxyPolicyDrift)
+    (validation.checkEmpty "Proxy-consumed services must trust every deployable proxy" proxyConsumersWithoutTrust)
+    (validation.checkEmpty "Public listeners cannot also be classified as proxy-consumed backends" publicProxyConsumers)
+    (validation.checkEmpty "Proxy-consumed listeners cannot bind only to loopback" proxyConsumersWithLoopbackListeners)
+    (validation.checkEmpty "Services use unsupported listener scheme, port, or protocol combinations" unsupportedProtocolCombinations)
+    (validation.checkEmpty "Services declare duplicate listener sockets" duplicateListenerSockets)
+    (validation.checkEmpty "Cloudflare services lack public domains" cloudflareWithoutDomains)
+    (validation.checkEmpty "Cloudflare origins must use proxy-only exposure" cloudflareWithoutProxyPolicy)
+    (validation.checkEmpty "Cloudflare publication domains must match listener domains" cloudflareDomainMismatches)
+    (validation.checkEmpty "Non-published services retain public domains" nonPublishedWithDomains)
+    (validation.checkEmpty "Cloudflare services use unsupported origin schemes" unsupportedCloudflareSchemes)
+    (validation.checkEmpty "Cloudflare services require destination addresses" cloudflareWithoutAddresses)
+    (validation.checkEmpty "Duplicate public service domains" duplicatePublicDomains)
+    (validation.checkEmpty "Roles with generated listeners require exactly one service" duplicateManagedRoleListeners)
+    (validation.checkEmpty "Roles with generated listeners require a domain" managedListenersWithoutDomains)
+    (validation.checkEmpty "Inventory-managed roles require exactly one service listener" managedRolesWithoutListeners)
+    {
+      valid = cloudflareServiceNames == [ ] || lib.length proxyHosts == 1;
+      message = "Cloudflare publication requires exactly one deployable proxy role";
+    }
+  ]
     services;
 
   validatedServiceNames = builtins.attrNames validatedServices;
@@ -754,15 +699,12 @@ let
     )
     validatedServiceNames;
 
-  publishedServices = lib.genAttrs publishedServiceNames
-    (serviceName: validatedServices.${serviceName});
-
   cloudflareIngress = builtins.listToAttrs (
     map
       (
         serviceName:
         let
-          service = publishedServices.${serviceName};
+          service = validatedServices.${serviceName};
           address = hosts.${service.host}.address;
         in
         {
@@ -834,8 +776,6 @@ in
   inherit
     cloudflareIngress
     exposuresByHost
-    proxyHosts
-    publishedServices
     roleSettingsByHost
     ;
 }

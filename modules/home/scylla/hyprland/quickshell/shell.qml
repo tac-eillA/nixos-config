@@ -106,15 +106,8 @@ ShellRoot {
   }
 
   function closeSurface(name) {
-    if (name === "quickSettings") surfaces.quickSettingsVisible = false;
-    else if (name === "launcher") surfaces.launcherVisible = false;
-    else if (name === "power") surfaces.powerVisible = false;
-    else if (name === "notifications") surfaces.notificationsVisible = false;
-    else if (name === "diagnostics") surfaces.diagnosticsVisible = false;
-    else if (name === "calendar") surfaces.calendarVisible = false;
-    else if (name === "help") surfaces.helpVisible = false;
-    else if (name === "fingerprint") fingerprintPanel.close();
-    else if (name === "wallpaper") surfaces.wallpaperPickerVisible = false;
+    if (name === "fingerprint") fingerprintPanel.close();
+    else surfaces.close(name);
     if (name === "quickSettings") core.setBluetoothDiscovery(false);
   }
 

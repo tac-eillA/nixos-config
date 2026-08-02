@@ -2,10 +2,7 @@
 
 let
   username = config.scylla.user.name;
-  homeDirectory =
-    if config.scylla.user.homeDirectory == null
-    then "/home/${username}"
-    else config.scylla.user.homeDirectory;
+  homeDirectory = config.users.users.${username}.home;
 in
 {
   imports = [ ./runtime-age.nix ];

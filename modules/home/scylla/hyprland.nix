@@ -145,7 +145,6 @@ let
     runtimeInputs = with pkgs; [
       coreutils
       ddcutil
-      findutils
       gawk
       hyprland
       jq
@@ -177,12 +176,6 @@ let
   '';
   persistentWdisplays = pkgs.writeShellApplication {
     name = "wdisplays";
-    runtimeInputs = with pkgs; [
-      coreutils
-      hyprland
-      jq
-      wdisplays
-    ];
     text = ''
       status=0
       ${pkgs.wdisplays}/bin/wdisplays || status=$?
@@ -205,11 +198,9 @@ let
 in
 {
   home.packages = with pkgs; [
-    bibata-cursors
     brightnessctl
     grimblast
     hypridle
-    hyprlock
     hyprpolkitagent
     libnotify
     blueman

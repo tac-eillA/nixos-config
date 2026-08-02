@@ -11,8 +11,6 @@ let
     vaultwarden = "10.254.1.216";
   };
 
-  baseFeatures = [ ];
-
   serverFeatures = [
     "development-minimal"
     "tailscale"
@@ -34,7 +32,7 @@ let
     };
   };
 
-  workstationFeatures = baseFeatures ++ [
+  workstationFeatures = [
     "appimage"
     "audio"
     "desktop"
@@ -47,77 +45,50 @@ let
     "tailscale"
     "tailscale-operator"
   ];
+
+  mkHost = profile: features: overrides: {
+    system = "x86_64-linux";
+    inherit profile features;
+    deployable = true;
+    address = null;
+    roles = [ ];
+  } // overrides;
+
+  mkWorkstation = mkHost "workstation" workstationFeatures;
+
+  mkServer = hostname: role: overrides:
+    mkHost "server" serverFeatures ({
+      address = addresses.${hostname};
+      administration = serverAdministration;
+      roles = [ role ];
+    } // overrides);
+
+  placeholderHost = mkHost "base" [ ] {
+    deployable = false;
+  };
 in
 {
-  artemis = {
-    system = "x86_64-linux";
-    profile = "workstation";
+  artemis = mkWorkstation {
     deployable = false;
-    address = null;
-    features = workstationFeatures;
-    roles = [ ];
   };
 
-  athena = {
-    system = "x86_64-linux";
-    profile = "workstation";
-    deployable = true;
-    address = null;
+  athena = mkWorkstation {
     hardwareModules = [ "framework-amd-ai-300-series" ];
-    features = workstationFeatures;
-    roles = [ ];
   };
 
-  authentik = {
-    system = "x86_64-linux";
-    profile = "server";
-    deployable = true;
-    address = addresses.authentik;
-    features = serverFeatures;
-    administration = serverAdministration;
-    roles = [ "authentik" ];
+  authentik = mkServer "authentik" "authentik" {
     roleSettings.authentik = {
       installAdminPackages = true;
     };
   };
 
-  demeter = {
-    system = "x86_64-linux";
-    profile = "workstation";
-    deployable = true;
-    address = null;
-    features = workstationFeatures;
-    roles = [ ];
-  };
+  demeter = mkWorkstation { };
 
-  dns1 = {
-    system = "x86_64-linux";
-    profile = "server";
-    deployable = true;
-    address = addresses.dns1;
-    features = serverFeatures;
-    administration = serverAdministration;
-    roles = [ "technitium-dns" ];
-  };
+  dns1 = mkServer "dns1" "technitium-dns" { };
 
-  dns2 = {
-    system = "x86_64-linux";
-    profile = "server";
-    deployable = true;
-    address = addresses.dns2;
-    features = serverFeatures;
-    administration = serverAdministration;
-    roles = [ "technitium-dns" ];
-  };
+  dns2 = mkServer "dns2" "technitium-dns" { };
 
-  forgejo = {
-    system = "x86_64-linux";
-    profile = "server";
-    deployable = true;
-    address = addresses.forgejo;
-    features = serverFeatures;
-    administration = serverAdministration;
-    roles = [ "forgejo" ];
+  forgejo = mkServer "forgejo" "forgejo" {
     roleSettings.forgejo = {
       oidcDiscoveryUrl =
         "https://auth.allie.sh/application/o/forgejo/.well-known/openid-configuration";
@@ -125,59 +96,24 @@ in
     };
   };
 
-  headscale = {
-    system = "x86_64-linux";
-    profile = "server";
-    deployable = true;
-    address = addresses.headscale;
-    features = serverFeatures;
-    administration = serverAdministration;
-    roles = [ "headscale" ];
+  headscale = mkServer "headscale" "headscale" {
     roleSettings.headscale = {
       oidcIssuer = "https://auth.allie.sh/application/o/headscale/";
       installAdminPackages = true;
     };
   };
 
-  hera = {
-    system = "x86_64-linux";
-    profile = "base";
-    deployable = false;
-    address = null;
-    features = baseFeatures;
-    roles = [ ];
-  };
+  hera = placeholderHost;
 
-  proxy = {
-    system = "x86_64-linux";
-    profile = "server";
-    deployable = true;
-    address = addresses.proxy;
-    features = serverFeatures;
-    administration = serverAdministration;
-    roles = [ "proxy" ];
+  proxy = mkServer "proxy" "proxy" {
     roleSettings.proxy = {
       installAdminPackages = true;
     };
   };
 
-  pythia = {
-    system = "x86_64-linux";
-    profile = "base";
-    deployable = false;
-    address = null;
-    features = baseFeatures;
-    roles = [ ];
-  };
+  pythia = placeholderHost;
 
-  vaultwarden = {
-    system = "x86_64-linux";
-    profile = "server";
-    deployable = true;
-    address = addresses.vaultwarden;
-    features = serverFeatures;
-    administration = serverAdministration;
-    roles = [ "vaultwarden" ];
+  vaultwarden = mkServer "vaultwarden" "vaultwarden" {
     roleSettings.vaultwarden = {
       oidcIssuer = "https://auth.allie.sh/application/o/vaultwarden/";
     };

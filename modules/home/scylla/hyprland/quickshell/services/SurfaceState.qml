@@ -14,42 +14,52 @@ QtObject {
   property bool notificationsVisible: false
   property bool diagnosticsVisible: false
 
+  readonly property var surfaceProperties: ({
+    launcher: "launcherVisible",
+    power: "powerVisible",
+    wallpaper: "wallpaperPickerVisible",
+    calendar: "calendarVisible",
+    fingerprint: "fingerprintVisible",
+    help: "helpVisible",
+    quickSettings: "quickSettingsVisible",
+    notifications: "notificationsVisible",
+    diagnostics: "diagnosticsVisible"
+  })
+
+  function propertyFor(surface) {
+    return surfaceProperties[surface] || "";
+  }
+
+  function isVisible(surface) {
+    const property = propertyFor(surface);
+    return property.length > 0 && state[property];
+  }
+
+  function setVisible(surface, visible) {
+    const property = propertyFor(surface);
+    if (property.length === 0) return false;
+    state[property] = visible;
+    return true;
+  }
+
+  function close(surface) {
+    return setVisible(surface, false);
+  }
+
   function closeAll() {
-    launcherVisible = false;
-    powerVisible = false;
-    wallpaperPickerVisible = false;
-    calendarVisible = false;
-    fingerprintVisible = false;
-    helpVisible = false;
-    quickSettingsVisible = false;
-    notificationsVisible = false;
-    diagnosticsVisible = false;
+    for (const surface in surfaceProperties)
+      setVisible(surface, false);
   }
 
   function openExclusive(surface) {
     closeAll();
-    if (surface === "launcher") launcherVisible = true;
-    else if (surface === "power") powerVisible = true;
-    else if (surface === "wallpaper") wallpaperPickerVisible = true;
-    else if (surface === "calendar") calendarVisible = true;
-    else if (surface === "fingerprint") fingerprintVisible = true;
-    else if (surface === "help") helpVisible = true;
-    else if (surface === "notifications") notificationsVisible = true;
-    else if (surface === "diagnostics") diagnosticsVisible = true;
+    setVisible(surface, true);
   }
 
   function toggleExclusive(surface) {
-    let wasVisible = false;
-    if (surface === "launcher") wasVisible = launcherVisible;
-    else if (surface === "power") wasVisible = powerVisible;
-    else if (surface === "wallpaper") wasVisible = wallpaperPickerVisible;
-    else if (surface === "calendar") wasVisible = calendarVisible;
-    else if (surface === "fingerprint") wasVisible = fingerprintVisible;
-    else if (surface === "help") wasVisible = helpVisible;
-    else if (surface === "notifications") wasVisible = notificationsVisible;
-    else if (surface === "diagnostics") wasVisible = diagnosticsVisible;
+    const wasVisible = isVisible(surface);
     closeAll();
-    if (!wasVisible) openExclusive(surface);
+    if (!wasVisible) setVisible(surface, true);
   }
 
   function toggleQuickSettings(section) {
