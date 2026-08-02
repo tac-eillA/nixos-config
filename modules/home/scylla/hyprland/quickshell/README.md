@@ -38,6 +38,13 @@ not confirmed, `scylla-displayctl` restores the previous layout. Both the native
 surface and the `wdisplays` fallback serialize through the same mutable
 `~/.config/hypr/monitors.lua` backend.
 
+The Displays panel also exposes a brightness slider for each enabled monitor.
+The internal panel uses `brightnessctl`; external monitors use DDC/CI VCP 0x10
+through `ddcutil`, matched to the monitor's DRM connector and EDID description.
+Monitors or docks that do not expose DDC/CI brightness remain visible but show
+brightness as unavailable. DDC operations are bounded and slider updates are
+debounced so a slow monitor cannot block the shell indefinitely.
+
 ## Declarative profiles
 
 Reusable policy is declared through `scylla.desktop.shell`. Host configuration

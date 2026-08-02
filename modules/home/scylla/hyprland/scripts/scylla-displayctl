@@ -12,6 +12,8 @@ Commands:
   set OUTPUT enabled|mode|position|scale|transform|vrr|mirror VALUE
   cap-refresh OUTPUT MAX_HZ
   restore-refresh OUTPUT
+  brightness-list
+  brightness-set OUTPUT PERCENT
   persist-current
   confirm
   rollback
@@ -69,6 +71,283 @@ monitors_json() {
       focused: (.focused // false),
       availableModes: ((.availableModes // []) | map(sub("Hz$"; "")))
     })'
+}
+
+configured_internal_display() {
+  if [ -r "$shell_config" ]; then
+    jq -r '.internalDisplay // empty' "$shell_config" 2>/dev/null || true
+  fi
+}
+
+is_internal_monitor() {
+  local output="$1"
+  local internal_display="$2"
+
+  if [ -n "$internal_display" ]; then
+    [ "$output" = "$internal_display" ]
+    return
+  fi
+
+  case "$output" in
+    eDP-*|LVDS-*|DSI-*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+backlight_device() {
+  local path
+  for path in /sys/class/backlight/*; do
+    [ -e "$path" ] || continue
+    basename "$path"
+    return 0
+  done
+  return 1
+}
+
+# ddcutil's display numbers are session-local, so resolve them every time from
+# the DRM connector reported by its verbose detector. The model fallback keeps
+# this usable with ddcutil versions or drivers that omit the DRM connector.
+ddc_records_json() {
+  local detect_output
+  if ! command -v ddcutil >/dev/null 2>&1; then
+    printf '[]\n'
+    return 0
+  fi
+
+  detect_output="$(timeout 5s ddcutil detect --verbose 2>/dev/null || true)"
+  [ -n "$detect_output" ] || {
+    printf '[]\n'
+    return 0
+  }
+
+  printf '%s\n' "$detect_output" |
+    awk '
+      function reset() {
+        display = "";
+        bus = "";
+        connector = "";
+        mfg = "";
+        model = "";
+        serial = "";
+      }
+      function value_after_colon(line) {
+        sub(/^[^:]*:[[:space:]]*/, "", line);
+        return line;
+      }
+      function emit() {
+        if (display == "") return;
+        sub(/^card[0-9]+-/, "", connector);
+        print display "\t" bus "\t" connector "\t" mfg "\t" model "\t" serial;
+        reset();
+      }
+      BEGIN { reset() }
+      /^[[:space:]]*Display[[:space:]]+[0-9]+/ {
+        emit();
+        display = $2;
+        gsub(/[^0-9].*/, "", display);
+        next;
+      }
+      /^[[:space:]]*I2C bus:/ {
+        bus = $3;
+        sub(/^\/dev\/i2c-/, "", bus);
+        next;
+      }
+      /^[[:space:]]*DRM connector:/ { connector = $3; next }
+      /^[[:space:]]*Mfg id:/ { mfg = value_after_colon($0); next }
+      /^[[:space:]]*Model:/ { model = value_after_colon($0); next }
+      /^[[:space:]]*Serial number:/ { serial = value_after_colon($0); next }
+      END { emit() }
+    ' |
+    while IFS=$'\t' read -r display bus connector mfg model serial; do
+      [ -n "$display" ] || continue
+      jq -n \
+        --arg display "$display" \
+        --arg bus "$bus" \
+        --arg connector "$connector" \
+        --arg mfg "$mfg" \
+        --arg model "$model" \
+        --arg serial "$serial" \
+        '{display: ($display | tonumber), bus: $bus, connector: $connector,
+          mfg: $mfg, model: $model, serial: $serial}'
+    done |
+    jq -s '.'
+}
+
+ddc_display_for_monitor() {
+  local monitor_name="$1"
+  local monitor_description="$2"
+  local ddc_records="$3"
+
+  jq -r \
+    --arg name "$monitor_name" \
+    --arg description "$monitor_description" \
+    'first(.[] | . as $display
+      | select($display.connector == $name
+        or ($display.model != ""
+          and ($description | contains($display.model))))
+      | (.display | tostring)) // empty' \
+    <<<"$ddc_records"
+}
+
+ddc_monitor_identifier() {
+  local display_number="$1"
+  local ddc_records="$2"
+
+  jq -r --argjson display "$display_number" \
+    'first(.[] | select(.display == $display)
+      | if .serial != "" then
+          ([.mfg, .model, .serial] | map(select(length > 0)) | join(":"))
+        else ([.mfg, .model] | map(select(length > 0)) | join(":"))
+        end) // empty' \
+    <<<"$ddc_records"
+}
+
+brightness_record() {
+  local monitor_json="$1"
+  local ddc_records="$2"
+  local name description enabled internal_display device info value maximum
+  local display_number vcp_output vcp_values identifier backend reason
+  local supported=false
+
+  name="$(jq -r '.name // empty' <<<"$monitor_json")"
+  description="$(jq -r '.description // .name // empty' <<<"$monitor_json")"
+  enabled="$(jq -r 'if .enabled == false then "false" else "true" end' <<<"$monitor_json")"
+  internal_display="$(configured_internal_display)"
+  backend="none"
+  identifier="$description"
+  reason="Brightness control unavailable"
+  value=0
+  maximum=100
+
+  if is_internal_monitor "$name" "$internal_display"; then
+    backend="backlight"
+    device="$(backlight_device || true)"
+    identifier="$device"
+    if [ "$enabled" = true ] && [ -n "$device" ]; then
+      info="$(brightnessctl -m -d "$device" info 2>/dev/null || true)"
+      value="$(awk -F, 'NR == 1 { gsub(/%/, "", $4); print $4 }' <<<"$info")"
+      if [[ "$value" =~ ^[0-9]+$ ]]; then
+        supported=true
+        reason=""
+      else
+        value=0
+        reason="Unable to read the backlight"
+      fi
+    elif [ "$enabled" != true ]; then
+      reason="Display is disabled"
+    else
+      reason="No backlight device found"
+    fi
+  elif [ "$enabled" = true ]; then
+    backend="ddc"
+    display_number="$(ddc_display_for_monitor "$name" "$description" "$ddc_records")"
+    if [ -n "$display_number" ]; then
+      identifier="$(ddc_monitor_identifier "$display_number" "$ddc_records")"
+      [ -n "$identifier" ] || identifier="$description"
+      vcp_output="$(timeout 3s ddcutil getvcp 10 --display "$display_number" --brief 2>/dev/null || true)"
+      vcp_values="$(awk '$1 == "VCP" && toupper($2) == "10" && $3 == "C" { print $4, $5; exit }' <<<"$vcp_output")"
+      value="${vcp_values%% *}"
+      maximum="${vcp_values#* }"
+      if [[ "$value" =~ ^[0-9]+$ ]] && [[ "$maximum" =~ ^[0-9]+$ ]] && [ "$maximum" -gt 0 ]; then
+        value=$((value * 100 / maximum))
+        maximum=100
+        supported=true
+        reason=""
+      else
+        value=0
+        maximum=100
+        reason="Monitor does not expose DDC/CI brightness"
+      fi
+    else
+      reason="Monitor was not found by DDC/CI"
+    fi
+  else
+    backend="ddc"
+    reason="Display is disabled"
+  fi
+
+  jq -n \
+    --arg name "$name" \
+    --arg backend "$backend" \
+    --arg identifier "$identifier" \
+    --arg reason "$reason" \
+    --argjson supported "$supported" \
+    --argjson value "${value:-0}" \
+    --argjson maximum "${maximum:-100}" \
+    '{name: $name, supported: $supported, value: $value, maximum: $maximum,
+      backend: $backend, identifier: $identifier, reason: $reason}'
+}
+
+brightness_list_json() {
+  local monitors="$1"
+  local ddc_records="$2"
+  local monitor
+  local -a records=()
+
+  while IFS= read -r monitor; do
+    [ -n "$monitor" ] || continue
+    records+=("$(brightness_record "$monitor" "$ddc_records")")
+  done < <(jq -c '.[]' <<<"$monitors")
+
+  if [ "${#records[@]}" -eq 0 ]; then
+    printf '[]\n'
+  else
+    printf '%s\n' "${records[@]}" | jq -s '.'
+  fi
+}
+
+brightness_set() {
+  local output="$1"
+  local percent="$2"
+  local monitors monitor description enabled internal_display device
+  local ddc_records display_number vcp_output vcp_values maximum target
+
+  if ! [[ "$percent" =~ ^[0-9]+$ ]] || [ "$percent" -gt 100 ]; then
+    echo "Brightness must be an integer from 0 to 100" >&2
+    return 2
+  fi
+
+  monitors="$(monitors_json)"
+  monitor="$(jq -c --arg output "$output" 'first(.[] | select(.name == $output)) // empty' <<<"$monitors")"
+  [ -n "$monitor" ] || {
+    echo "Unknown output: $output" >&2
+    return 1
+  }
+
+  enabled="$(jq -r 'if .enabled == false then "false" else "true" end' <<<"$monitor")"
+  [ "$enabled" = true ] || {
+    echo "Cannot change brightness for disabled output: $output" >&2
+    return 1
+  }
+
+  internal_display="$(configured_internal_display)"
+  if is_internal_monitor "$output" "$internal_display"; then
+    device="$(backlight_device || true)"
+    [ -n "$device" ] || {
+      echo "No backlight device found for $output" >&2
+      return 1
+    }
+    brightnessctl -q -n 0 -d "$device" set "${percent}%"
+    return 0
+  fi
+
+  description="$(jq -r '.description // .name // empty' <<<"$monitor")"
+  ddc_records="$(ddc_records_json)"
+  display_number="$(ddc_display_for_monitor "$output" "$description" "$ddc_records")"
+  [ -n "$display_number" ] || {
+    echo "Monitor $output does not expose a usable DDC/CI brightness control" >&2
+    return 1
+  }
+
+  vcp_output="$(timeout 3s ddcutil getvcp 10 --display "$display_number" --brief 2>/dev/null || true)"
+  vcp_values="$(awk '$1 == "VCP" && toupper($2) == "10" && $3 == "C" { print $4, $5; exit }' <<<"$vcp_output")"
+  maximum="${vcp_values#* }"
+  [[ "$maximum" =~ ^[0-9]+$ ]] && [ "$maximum" -gt 0 ] || {
+    echo "Monitor $output does not expose DDC/CI brightness VCP 0x10" >&2
+    return 1
+  }
+  target=$((percent * maximum / 100))
+  timeout 5s ddcutil setvcp 10 "$target" --display "$display_number" --noverify
 }
 
 profiles_json() {
@@ -245,6 +524,24 @@ case "$command" in
       --argjson confirmationPending "$([ -r "$rollback_file" ] && echo true || echo false)" \
       '{monitors: $monitors, profiles: $profiles, currentProfile: $currentProfile,
         confirmationPending: $confirmationPending}'
+    ;;
+
+  brightness-list)
+    [ "$#" -eq 1 ] || {
+      usage
+      exit 2
+    }
+    current_monitors="$(monitors_json)"
+    current_ddc_records="$(ddc_records_json)"
+    brightness_list_json "$current_monitors" "$current_ddc_records"
+    ;;
+
+  brightness-set)
+    [ "$#" -eq 3 ] || {
+      usage
+      exit 2
+    }
+    brightness_set "$2" "$3"
     ;;
 
   persist-current)

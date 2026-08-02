@@ -77,6 +77,10 @@ Scope {
       displays.setMonitor(output, field, value);
       return "ok";
     }
+    function setBrightness(output: string, value: string): string {
+      displays.setBrightness(output, Number(value));
+      return "ok";
+    }
     function confirm(): string {
       displays.confirm();
       return "ok";

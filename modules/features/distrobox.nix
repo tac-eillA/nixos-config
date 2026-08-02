@@ -147,6 +147,18 @@ EOF
     }
   '';
 
+  t3codeVitePlusEnv = pkgs.writeText "t3code-vite-plus-env.sh" ''
+    export VP_HOME="''${VP_HOME:-$HOME/.vite-plus}"
+
+    case ":''${PATH}:" in
+      *":''${VP_HOME}/bin:"*) ;;
+      *) export PATH="''${VP_HOME}/bin:''${PATH}" ;;
+    esac
+
+    unset LD_LIBRARY_PATH
+    unset NIX_LD_LIBRARY_PATH
+  '';
+
   distroboxIniText = ''
     [unreal-dev]
     pull=true
@@ -168,7 +180,29 @@ EOF
     init_hooks="grep -qxF 'source /opt/distrobox-aliases/aliases.sh' ~/.zshrc || echo 'source /opt/distrobox-aliases/aliases.sh' >> ~/.zshrc"
   '';
 
-  distroboxIniFile = pkgs.writeText "distrobox.ini" distroboxIniText;
+  t3codeDistroboxIniText = ''
+    [t3code-dev]
+    pull=true
+    image=quay.io/fedora/fedora-toolbox:43
+    init=false
+    root=false
+    replace=false
+    start_now=false
+    nvidia=true
+    additional_packages="bash zsh curl ca-certificates git gh git-lfs gcc gcc-c++ make python3 pkgconf-pkg-config rust cargo rustfmt gtk3 glib2 nss nspr atk at-spi2-atk cups-libs dbus-libs pango cairo alsa-lib libX11 libXcomposite libXcursor libXdamage libXext libXfixes libXi libXinerama libXrandr libxcb libxkbcommon mesa-libgbm libdrm systemd-libs vulkan-loader xdg-utils procps-ng util-linux"
+
+    home=${homeDirectory}/.local/share/distrobox/homes/t3code-dev
+
+    volume="${homeDirectory}/Projects:/workspace/projects"
+    volume="${t3codeVitePlusEnv}:/opt/t3code/vite-plus-env.sh:ro"
+
+    init_hooks="touch ~/.bashrc; grep -qxF 'source /opt/t3code/vite-plus-env.sh' ~/.bashrc || echo 'source /opt/t3code/vite-plus-env.sh' >> ~/.bashrc"
+    init_hooks="touch ~/.bash_profile; grep -qxF 'source /opt/t3code/vite-plus-env.sh' ~/.bash_profile || echo 'source /opt/t3code/vite-plus-env.sh' >> ~/.bash_profile"
+    init_hooks="touch ~/.profile; grep -qxF 'source /opt/t3code/vite-plus-env.sh' ~/.profile || echo 'source /opt/t3code/vite-plus-env.sh' >> ~/.profile"
+    init_hooks="touch ~/.zshrc; grep -qxF 'source /opt/t3code/vite-plus-env.sh' ~/.zshrc || echo 'source /opt/t3code/vite-plus-env.sh' >> ~/.zshrc"
+  '';
+
+  distroboxIniFile = pkgs.writeText "distrobox.ini" (distroboxIniText + t3codeDistroboxIniText);
 
   distroboxAssemblePath = lib.makeBinPath [
     pkgs.distrobox
@@ -224,5 +258,5 @@ in
     "io.github.dvlv.boxbuddyrs"
   ];
 
-  environment.etc."distrobox/distrobox.ini".text = distroboxIniText;
+  environment.etc."distrobox/distrobox.ini".text = distroboxIniText + t3codeDistroboxIniText;
 }

@@ -727,6 +727,45 @@ Variants {
                     }
                     RowLayout {
                       Layout.fillWidth: true
+                      visible: modelData.enabled && modelData.brightness
+                      Text { text: "Brightness"; color: quick.shell.muted }
+                      Slider {
+                        id: brightnessSlider
+                        Layout.fillWidth: true
+                        from: 0
+                        to: 100
+                        enabled: modelData.brightness && modelData.brightness.supported
+                        value: enabled ? Number(modelData.brightness.value) : 0
+                        property bool changedByUser: false
+                        onMoved: {
+                          if (!enabled) return;
+                          changedByUser = true;
+                          quick.displays.setBrightness(modelData.name, value);
+                        }
+                        onPressedChanged: {
+                          if (!pressed && changedByUser) {
+                            quick.displays.setBrightness(modelData.name, value);
+                            changedByUser = false;
+                          }
+                        }
+                      }
+                      Text {
+                        text: brightnessSlider.enabled
+                          ? Math.round(brightnessSlider.value) + "%" : "—"
+                        color: quick.shell.muted
+                      }
+                    }
+                    Text {
+                      Layout.fillWidth: true
+                      visible: modelData.enabled && modelData.brightness
+                        && !modelData.brightness.supported
+                      text: modelData.brightness.reason || "Brightness unavailable"
+                      color: quick.shell.muted
+                      font.pixelSize: 10
+                      elide: Text.ElideRight
+                    }
+                    RowLayout {
+                      Layout.fillWidth: true
                       visible: modelData.enabled && !modelData.mirror.length
                       Text { text: "Position"; color: quick.shell.muted }
                       SpinBox { id: positionX; from: -16384; to: 16384; value: modelData.x; editable: true }

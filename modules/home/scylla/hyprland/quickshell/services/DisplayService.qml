@@ -13,12 +13,15 @@ Scope {
   signal osdRequested(string icon, string label, int value, bool hasProgress)
 
   property var monitors: []
+  property var brightnessEntries: []
   property var profiles: ({})
   property string currentProfile: ""
   property bool confirmationPending: false
   property string error: ""
   property bool busy: displayQuery.running || displayAction.running
+    || brightnessQuery.running || brightnessAction.running
   property var queuedAction: null
+  property var pendingBrightness: null
 
   readonly property var enabledMonitors: monitors.filter(monitor => monitor.enabled)
   readonly property bool internalDisplayPresent: internalDisplay.length > 0
@@ -29,6 +32,60 @@ Scope {
 
   function refresh() {
     if (!displayQuery.running) displayQuery.running = true;
+  }
+
+  function fallbackBrightness(monitor) {
+    return {
+      name: monitor.name,
+      supported: false,
+      value: 0,
+      maximum: 100,
+      backend: "none",
+      identifier: monitor.description || monitor.name,
+      reason: "Brightness control unavailable"
+    };
+  }
+
+  function decorateMonitors(values) {
+    const entries = {};
+    for (let i = 0; i < brightnessEntries.length; ++i) {
+      const entry = brightnessEntries[i];
+      if (entry && entry.name) entries[entry.name] = entry;
+    }
+    return (values || []).map(monitor => Object.assign({}, monitor, {
+      brightness: entries[monitor.name] || fallbackBrightness(monitor)
+    }));
+  }
+
+  function mergeBrightness(values) {
+    brightnessEntries = values || [];
+    service.monitors = service.decorateMonitors(service.monitors);
+  }
+
+  function refreshBrightness() {
+    if (!brightnessQuery.running && !brightnessAction.running)
+      brightnessQuery.running = true;
+  }
+
+  function setBrightness(output, value) {
+    const amount = Math.max(0, Math.min(100, Math.round(Number(value))));
+    if (!output || isNaN(amount)) return;
+    pendingBrightness = { output: output, value: amount };
+    error = "";
+    brightnessDebounce.restart();
+  }
+
+  function flushBrightness() {
+    if (!pendingBrightness || brightnessAction.running) return;
+    if (displayAction.running) {
+      brightnessDebounce.restart();
+      return;
+    }
+    const request = pendingBrightness;
+    pendingBrightness = null;
+    brightnessAction.command = ["scylla-displayctl", "brightness-set",
+      request.output, String(request.value)];
+    brightnessAction.running = true;
   }
 
   function runAction(command, label, quiet) {
@@ -99,13 +156,28 @@ Scope {
       onStreamFinished: {
         try {
           const result = JSON.parse(text);
-          service.monitors = result.monitors || [];
+          service.monitors = service.decorateMonitors(result.monitors || []);
           service.profiles = result.profiles || {};
           service.currentProfile = result.currentProfile || "";
           service.confirmationPending = result.confirmationPending === true;
           service.error = "";
         } catch (parseError) {
           service.error = "Unable to read display state";
+        }
+        service.refreshBrightness();
+      }
+    }
+  }
+
+  Process {
+    id: brightnessQuery
+    command: ["scylla-displayctl", "brightness-list"]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        try {
+          service.mergeBrightness(JSON.parse(text));
+        } catch (parseError) {
+          service.error = "Unable to read display brightness";
         }
       }
     }
@@ -131,6 +203,19 @@ Scope {
     }
   }
 
+  Process {
+    id: brightnessAction
+    stderr: StdioCollector {
+      onStreamFinished: if (text.trim().length) service.error = text.trim()
+    }
+    onExited: exitCode => {
+      if (exitCode !== 0 && service.error.length === 0)
+        service.error = "Display brightness change failed";
+      service.refreshBrightness();
+      if (service.pendingBrightness) brightnessDebounce.restart();
+    }
+  }
+
   Connections {
     target: Hyprland
     function onRawEvent(event) {
@@ -151,5 +236,11 @@ Scope {
     repeat: true
     triggeredOnStart: true
     onTriggered: service.refresh()
+  }
+
+  Timer {
+    id: brightnessDebounce
+    interval: 180
+    onTriggered: service.flushBrightness()
   }
 }

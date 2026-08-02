@@ -144,9 +144,12 @@ let
     name = "scylla-displayctl";
     runtimeInputs = with pkgs; [
       coreutils
+      ddcutil
       findutils
+      gawk
       hyprland
       jq
+      brightnessctl
       systemd
     ];
     text = builtins.readFile ./hyprland/scripts/scylla-displayctl;
@@ -219,6 +222,7 @@ in
     themeSwitcher
     todoManager
     persistentWdisplays
+    ddcutil
   ];
 
   home.pointerCursor = {

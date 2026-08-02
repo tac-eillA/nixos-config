@@ -271,10 +271,10 @@ Variants {
 
         StatusItem {
           shell: bar.shell
-          visible: bar.diagnostics.issueCount > 0
           icon: "󰒡"
-          text: bar.diagnostics.issueCount
-          textColor: bar.shell.urgent
+          text: bar.diagnostics.issueCount > 0 ? bar.diagnostics.issueCount : ""
+          textColor: bar.diagnostics.issueCount > 0
+            ? bar.shell.urgent : bar.shell.muted
           onClicked: bar.shell.toggleSurface("diagnostics")
         }
 
