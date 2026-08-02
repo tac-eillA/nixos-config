@@ -257,6 +257,15 @@ Variants {
 
         StatusItem {
           shell: bar.shell
+          icon: "󰍹"
+          textColor: bar.shell.quickSettingsVisible
+            && bar.shell.quickSettingsSection === "display"
+            ? bar.shell.accent : bar.shell.foreground
+          onClicked: bar.shell.toggleQuickSettings("display")
+        }
+
+        StatusItem {
+          shell: bar.shell
           icon: bar.adaptive.manualProfile === "presentation" ? "󰐩" : "󰌪"
           text: bar.adaptive.activeProfile
           textColor: bar.adaptive.manualProfile.length
