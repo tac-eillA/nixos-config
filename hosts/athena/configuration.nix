@@ -3,7 +3,6 @@
 {
   imports = [
     ./hardware-configuration.nix
-    #../../modules/features/development/unreal.nix
   ];
 
   # Ryzen AI 300 firmware does not describe every device dependency needed
@@ -18,41 +17,4 @@
   # complete docked layout after SDDM launches the UWSM-managed session.
   scylla.desktop.login.internalDisplayOnly = true;
   scylla.desktop.shell.internalDisplay = "eDP-1";
-
-  # programs.unrealEngine = {
-  #     enable = true;
-  #     user = "scylla";
-
-  #     # Use "nvidia" or "amd"
-  #     # Use "generic" if unsure.
-  #     gpu = "amd";
-
-  #     engineRoot = "$HOME/src/UnrealEngine";
-  #     projectsDir = "$HOME/UnrealProjects";
-  #     engineRef = "release";
-  #     jobs = null;
-  #     enableSteamCompat = false;
-  #     enableGamemode = true;
-  #   };
-
-  # programs.unrealEnginePrebuilt = {
-  #     enable = true;
-  #     user = "scylla";
-
-  #     # This is where ue-bin-install will place the extracted engine by default.
-  #     engineRoot = "$HOME/Applications/UnrealEngine";
-
-  #     projectsDir = "$HOME/UnrealProjects";
-
-  #     # For athena, probably "nvidia" if that is your NVIDIA desktop.
-  #     gpu = "nvidia";
-
-  #     # Your repo already has gaming/dev modules, so these are safe defaults.
-  #     enableCppTools = true;
-  #     installCppToolsGlobally = false;
-  #     enableGamemode = true;
-  #     enableNixLd = true;
-  #     enableGraphics = true;
-  #     enableAudio = true;
-  #   };
 }

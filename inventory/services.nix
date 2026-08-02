@@ -17,133 +17,90 @@ let
     via = "none";
     domain = null;
   };
+
+  mkProxyService =
+    { host
+    , role ? host
+    , domain
+    , port
+    , address ? hosts.${host}.address
+    ,
+    }:
+    {
+      inherit host role;
+      listener = {
+        inherit address domain port;
+        protocols = [ "tcp" ];
+        scheme = "http";
+      };
+      exposure = proxyOnly;
+      publication = cloudflarePublication domain;
+    };
+
+  mkDnsService = host: {
+    inherit host;
+    role = "technitium-dns";
+    listener = {
+      address = "0.0.0.0";
+      domain = null;
+      port = 53;
+      protocols = [
+        "tcp"
+        "udp"
+      ];
+      scheme = "dns";
+    };
+    exposure = {
+      classification = "lan-only";
+      trustedHosts = [ ];
+      trustedNetworks = networks.lan;
+      consumedByProxy = false;
+    };
+    publication = unpublished;
+  };
 in
 {
-  authentik = {
+  authentik = mkProxyService {
     host = "authentik";
-    role = "authentik";
-    listener = {
-      address = hosts.authentik.address;
-      domain = "auth.allie.sh";
-      port = 9000;
-      protocols = [ "tcp" ];
-      scheme = "http";
-    };
-    exposure = proxyOnly;
-    publication = cloudflarePublication "auth.allie.sh";
+    domain = "auth.allie.sh";
+    port = 9000;
   };
 
-  dns1 = {
+  dns1 = mkDnsService "dns1";
+
+  dns1-dashboard = mkProxyService {
     host = "dns1";
     role = "technitium-dns";
-    listener = {
-      address = "0.0.0.0";
-      domain = null;
-      port = 53;
-      protocols = [
-        "tcp"
-        "udp"
-      ];
-      scheme = "dns";
-    };
-    exposure = {
-      classification = "lan-only";
-      trustedHosts = [ ];
-      trustedNetworks = networks.lan;
-      consumedByProxy = false;
-    };
-    publication = unpublished;
+    address = "0.0.0.0";
+    domain = "dns1-dash.allie.sh";
+    port = 5380;
   };
 
-  dns1-dashboard = {
-    host = "dns1";
-    role = "technitium-dns";
-    listener = {
-      address = "0.0.0.0";
-      domain = "dns1-dash.allie.sh";
-      port = 5380;
-      protocols = [ "tcp" ];
-      scheme = "http";
-    };
-    exposure = proxyOnly;
-    publication = cloudflarePublication "dns1-dash.allie.sh";
-  };
+  dns2 = mkDnsService "dns2";
 
-  dns2 = {
+  dns2-dashboard = mkProxyService {
     host = "dns2";
     role = "technitium-dns";
-    listener = {
-      address = "0.0.0.0";
-      domain = null;
-      port = 53;
-      protocols = [
-        "tcp"
-        "udp"
-      ];
-      scheme = "dns";
-    };
-    exposure = {
-      classification = "lan-only";
-      trustedHosts = [ ];
-      trustedNetworks = networks.lan;
-      consumedByProxy = false;
-    };
-    publication = unpublished;
+    address = "0.0.0.0";
+    domain = "dns2-dash.allie.sh";
+    port = 5380;
   };
 
-  dns2-dashboard = {
-    host = "dns2";
-    role = "technitium-dns";
-    listener = {
-      address = "0.0.0.0";
-      domain = "dns2-dash.allie.sh";
-      port = 5380;
-      protocols = [ "tcp" ];
-      scheme = "http";
-    };
-    exposure = proxyOnly;
-    publication = cloudflarePublication "dns2-dash.allie.sh";
-  };
-
-  forgejo = {
+  forgejo = mkProxyService {
     host = "forgejo";
-    role = "forgejo";
-    listener = {
-      address = hosts.forgejo.address;
-      domain = "git.allie.sh";
-      port = 3000;
-      protocols = [ "tcp" ];
-      scheme = "http";
-    };
-    exposure = proxyOnly;
-    publication = cloudflarePublication "git.allie.sh";
+    domain = "git.allie.sh";
+    port = 3000;
   };
 
-  headscale = {
+  headscale = mkProxyService {
     host = "headscale";
-    role = "headscale";
-    listener = {
-      address = hosts.headscale.address;
-      domain = "headscale.allie.sh";
-      port = 80;
-      protocols = [ "tcp" ];
-      scheme = "http";
-    };
-    exposure = proxyOnly;
-    publication = cloudflarePublication "headscale.allie.sh";
+    domain = "headscale.allie.sh";
+    port = 80;
   };
 
-  vaultwarden = {
+  vaultwarden = mkProxyService {
     host = "vaultwarden";
-    role = "vaultwarden";
-    listener = {
-      address = hosts.vaultwarden.address;
-      domain = "vault.allie.sh";
-      port = 8222;
-      protocols = [ "tcp" ];
-      scheme = "http";
-    };
-    exposure = proxyOnly;
-    publication = cloudflarePublication "vault.allie.sh";
+    domain = "vault.allie.sh";
+    port = 8222;
   };
 }

@@ -66,8 +66,6 @@
           inputs.nixos-hardware.nixosModules.framework-amd-ai-300-series;
       };
 
-      knownFeatures = builtins.attrNames featureModules;
-
       workstationOnlyFeatures = [
         "appimage"
         "audio"
@@ -80,295 +78,15 @@
         "tailscale-operator"
       ];
 
-      hostNames = builtins.attrNames hostInventory;
-      hostDirectories = builtins.readDir ./hosts;
-      configuredHostDirectories = lib.filter
-        (
-          hostname:
-          hostDirectories.${hostname} == "directory"
-          && builtins.pathExists (./hosts + "/${hostname}/configuration.nix")
-        )
-        (builtins.attrNames hostDirectories);
-
-      addresses = lib.filter (address: address != null) (
-        map (hostname: hostInventory.${hostname}.address or null) hostNames
-      );
-
-      duplicateAddresses = lib.unique (
-        lib.filter
-          (
-            address: lib.length (lib.filter (candidate: candidate == address) addresses) > 1
-          )
-          addresses
-      );
-
-      unknownProfiles = lib.filter
-        (
-          hostname: !(builtins.hasAttr hostInventory.${hostname}.profile profileModules)
-        )
-        hostNames;
-
-      unknownRoles = lib.concatMap
-        (
-          hostname:
-          map (role: "${hostname}:${role}") (
-            lib.filter (role: !(builtins.hasAttr role roleModules)) hostInventory.${hostname}.roles
-          )
-        )
-        hostNames;
-
-      unknownFeatures = lib.concatMap
-        (
-          hostname:
-          map (feature: "${hostname}:${feature}") (
-            lib.filter (feature: !(builtins.elem feature knownFeatures)) hostInventory.${hostname}.features
-          )
-        )
-        hostNames;
-
-      duplicateFeatures = lib.filter
-        (
-          hostname:
-          let
-            features = hostInventory.${hostname}.features;
-          in
-          lib.length features != lib.length (lib.unique features)
-        )
-        hostNames;
-
-      incompatibleProfileFeatures = lib.concatMap
-        (
-          hostname:
-          map (feature: "${hostname}:${feature}") (
-            lib.filter
-              (
-                feature:
-                hostInventory.${hostname}.profile != "workstation"
-                && builtins.elem feature workstationOnlyFeatures
-              )
-              hostInventory.${hostname}.features
-          )
-        )
-        hostNames;
-
-      invalidFeatureDependencies = lib.concatMap
-        (
-          hostname:
-          let
-            features = hostInventory.${hostname}.features;
-          in
-          lib.optional
-            (
-              builtins.elem "tailscale-operator" features
-              && (
-                !(builtins.elem "tailscale" features)
-                || !(builtins.elem "desktop" features)
-              )
-            )
-            "${hostname}:tailscale-operator requires tailscale and desktop"
-          ++ lib.optional
-            (
-              builtins.elem "development-full" features
-              && builtins.elem "development-minimal" features
-            )
-            "${hostname}:select only one development feature"
-        )
-        hostNames;
-
-      unknownHardwareModules = lib.concatMap
-        (
-          hostname:
-          map (hardwareModule: "${hostname}:${hardwareModule}") (
-            lib.filter
-              (
-                hardwareModule: !(builtins.hasAttr hardwareModule hardwareModules)
-              )
-              (hostInventory.${hostname}.hardwareModules or [ ])
-          )
-        )
-        hostNames;
-
-      mismatchedRoleSettings = lib.filter
-        (
-          hostname:
-          let
-            settings = builtins.attrNames (hostInventory.${hostname}.roleSettings or { });
-          in
-          lib.any (role: !(builtins.elem role hostInventory.${hostname}.roles)) settings
-        )
-        hostNames;
-
-      manualProxyIngress = lib.filter
-        (
-          hostname:
-          builtins.hasAttr "ingress" (
-            hostInventory.${hostname}.roleSettings.proxy or { }
-          )
-        )
-        hostNames;
-
-      inventoryManagedRoleSettings = [
-        "domain"
-        "listenAddress"
-        "port"
-      ];
-
-      manualServiceListenerSettings = lib.concatMap
-        (
-          hostname:
-          lib.concatMap
-            (
-              role:
-              map (setting: "${hostname}:${role}.${setting}") (
-                lib.filter
-                  (
-                    setting:
-                    builtins.hasAttr setting (
-                      hostInventory.${hostname}.roleSettings.${role} or { }
-                    )
-                  )
-                  inventoryManagedRoleSettings
-              )
-            )
-            hostInventory.${hostname}.roles
-        )
-        hostNames;
-
-      deployableServerNames = lib.filter
-        (
-          hostname:
-          hostInventory.${hostname}.deployable
-          && hostInventory.${hostname}.profile == "server"
-        )
-        hostNames;
-
-      missingAdministrativePolicies = lib.filter
-        (
-          hostname:
-          lib.attrByPath
-            [
-              "administration"
-              "ssh"
-              "exposures"
-            ]
-            [ ]
-            hostInventory.${hostname}
-          == [ ]
-        )
-        deployableServerNames;
-
-      administrativeNetworks = lib.concatMap
-        (
-          hostname:
-          lib.concatMap
-            (exposure: exposure.trustedNetworks or [ ])
-            (
-              lib.attrByPath
-                [
-                  "administration"
-                  "ssh"
-                  "exposures"
-                ]
-                [ ]
-                hostInventory.${hostname}
-            )
-        )
-        deployableServerNames;
-
-      undeclaredAdministrativeNetworks = lib.filter
-        (
-          network:
-            !(builtins.elem network (
-              lib.concatLists (builtins.attrValues networkInventory)
-            ))
-        )
-        administrativeNetworks;
-
-      missingHostConfigurations = lib.filter
-        (
-          hostname: !(builtins.pathExists (./hosts + "/${hostname}/configuration.nix"))
-        )
-        hostNames;
-
-      unregisteredHostDirectories = lib.subtractLists hostNames configuredHostDirectories;
-
-      placeholderDeployments = lib.filter
-        (
-          hostname:
-          hostInventory.${hostname}.deployable
-          && builtins.pathExists (./hosts + "/${hostname}/hardware-configuration.nix")
-          && lib.hasInfix "replace-me-root" (
-            builtins.readFile (./hosts + "/${hostname}/hardware-configuration.nix")
-          )
-        )
-        hostNames;
-
-      validatedHostInventory =
-        assert lib.assertMsg
-          (
-            duplicateAddresses == [ ]
-          ) "Duplicate inventory addresses: ${lib.concatStringsSep ", " duplicateAddresses}";
-        assert lib.assertMsg
-          (
-            unknownProfiles == [ ]
-          ) "Unknown inventory profiles: ${lib.concatStringsSep ", " unknownProfiles}";
-        assert lib.assertMsg
-          (
-            unknownRoles == [ ]
-          ) "Unknown inventory roles: ${lib.concatStringsSep ", " unknownRoles}";
-        assert lib.assertMsg
-          (
-            unknownFeatures == [ ]
-          ) "Unknown inventory features: ${lib.concatStringsSep ", " unknownFeatures}";
-        assert lib.assertMsg
-          (
-            duplicateFeatures == [ ]
-          ) "Inventory hosts repeat features: ${lib.concatStringsSep ", " duplicateFeatures}";
-        assert lib.assertMsg
-          (
-            incompatibleProfileFeatures == [ ]
-          ) "Features incompatible with host profiles: ${lib.concatStringsSep ", " incompatibleProfileFeatures}";
-        assert lib.assertMsg
-          (
-            invalidFeatureDependencies == [ ]
-          ) "Invalid feature dependencies: ${lib.concatStringsSep ", " invalidFeatureDependencies}";
-        assert lib.assertMsg
-          (
-            unknownHardwareModules == [ ]
-          ) "Unknown inventory hardware modules: ${lib.concatStringsSep ", " unknownHardwareModules}";
-        assert lib.assertMsg
-          (
-            mismatchedRoleSettings == [ ]
-          ) "Role settings exist for disabled roles on: ${lib.concatStringsSep ", " mismatchedRoleSettings}";
-        assert lib.assertMsg
-          (
-            manualProxyIngress == [ ]
-          ) "Proxy ingress must be generated from service inventory, not set on: ${lib.concatStringsSep ", " manualProxyIngress}";
-        assert lib.assertMsg
-          (
-            manualServiceListenerSettings == [ ]
-          ) "Service listeners must be generated from service inventory, not set on: ${lib.concatStringsSep ", " manualServiceListenerSettings}";
-        assert lib.assertMsg
-          (
-            missingAdministrativePolicies == [ ]
-          ) "Deployable servers lack an administrative exposure policy: ${lib.concatStringsSep ", " missingAdministrativePolicies}";
-        assert lib.assertMsg
-          (
-            undeclaredAdministrativeNetworks == [ ]
-          ) "Administrative access trusts networks absent from network inventory: ${lib.concatStringsSep ", " undeclaredAdministrativeNetworks}";
-        assert lib.assertMsg
-          (
-            missingHostConfigurations == [ ]
-          ) "Inventory hosts missing configuration.nix: ${lib.concatStringsSep ", " missingHostConfigurations}";
-        assert lib.assertMsg
-          (
-            unregisteredHostDirectories == [ ]
-          ) "Host directories missing from inventory: ${lib.concatStringsSep ", " unregisteredHostDirectories}";
-        assert lib.assertMsg
-          (
-            placeholderDeployments == [ ]
-          ) "Deployable hosts still use placeholder disks: ${lib.concatStringsSep ", " placeholderDeployments}";
-        hostInventory;
+      validatedHostInventory = import ./inventory/validate-hosts.nix {
+        hosts = hostInventory;
+        knownFeatures = builtins.attrNames featureModules;
+        knownHardwareModules = builtins.attrNames hardwareModules;
+        knownProfiles = builtins.attrNames profileModules;
+        knownRoles = builtins.attrNames roleModules;
+        networks = networkInventory;
+        inherit lib workstationOnlyFeatures;
+      };
 
       servicePolicy = import ./inventory/validate-services.nix {
         hosts = validatedHostInventory;
@@ -378,17 +96,9 @@
         services = serviceInventory;
       };
 
-      validatedServiceInventory = servicePolicy.services;
-
       deployableHosts = builtins.deepSeq servicePolicy (
         lib.filterAttrs (_: host: host.deployable) validatedHostInventory
       );
-
-      mkPkgs =
-        hostSystem:
-        import nixpkgs {
-          system = hostSystem;
-        };
 
       mkHost =
         hostname:
@@ -437,7 +147,7 @@
             inventory = {
               hosts = validatedHostInventory;
               networks = networkInventory;
-              services = validatedServiceInventory;
+              services = servicePolicy.services;
             };
           };
           modules = [
@@ -489,6 +199,8 @@
         };
       };
 
-      formatter.${defaultSystem} = (mkPkgs defaultSystem).nixpkgs-fmt;
+      formatter.${defaultSystem} = (import nixpkgs {
+        system = defaultSystem;
+      }).nixpkgs-fmt;
     };
 }

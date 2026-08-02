@@ -20,7 +20,6 @@ let
     hyfetch
     gparted
     ffmpeg
-    flatpak
     libreoffice-fresh
     streamrip
     kontainer
@@ -28,7 +27,6 @@ let
   ];
 
   stablePackages = with pkgsStable; [
-    lact
     wireshark
     google-chrome #needed for webserial for web based via/vial
   ];

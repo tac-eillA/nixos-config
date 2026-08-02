@@ -11,10 +11,7 @@
 
   home = {
     username = osConfig.scylla.user.name;
-    homeDirectory =
-      if osConfig.scylla.user.homeDirectory == null
-      then "/home/${osConfig.scylla.user.name}"
-      else osConfig.scylla.user.homeDirectory;
+    homeDirectory = osConfig.users.users.${osConfig.scylla.user.name}.home;
     stateVersion = "26.11";
     sessionVariables = {
       EDITOR = "nvim";

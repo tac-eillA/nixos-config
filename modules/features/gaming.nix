@@ -3,8 +3,6 @@
 {
   environment.systemPackages = with pkgs; [
     heroic
-    steam
-    steam-run
     wineWow64Packages.staging
   ];
   programs = {

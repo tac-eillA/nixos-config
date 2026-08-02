@@ -2,37 +2,34 @@
 
 let
   username = config.scylla.user.name;
-  homeDirectory =
-    if config.scylla.user.homeDirectory == null
-    then "/home/${username}"
-    else config.scylla.user.homeDirectory;
+  homeDirectory = config.users.users.${username}.home;
 
   hostBrowserWrappers = pkgs.runCommand "distrobox-host-browser-wrappers" { } ''
-    mkdir -p "$out/bin"
+        mkdir -p "$out/bin"
 
-    for name in xdg-open sensible-browser x-www-browser; do
-      cat > "$out/bin/$name" <<'EOF'
-#!/bin/sh
-exec distrobox-host-exec xdg-open "$@"
-EOF
-      chmod +x "$out/bin/$name"
-    done
+        for name in xdg-open sensible-browser x-www-browser; do
+          cat > "$out/bin/$name" <<'EOF'
+    #!/bin/sh
+    exec distrobox-host-exec xdg-open "$@"
+    EOF
+          chmod +x "$out/bin/$name"
+        done
 
-    for name in firefox firefox-esr; do
-      cat > "$out/bin/$name" <<'EOF'
-#!/bin/sh
-exec distrobox-host-exec firefox "$@"
-EOF
-      chmod +x "$out/bin/$name"
-    done
+        for name in firefox firefox-esr; do
+          cat > "$out/bin/$name" <<'EOF'
+    #!/bin/sh
+    exec distrobox-host-exec firefox "$@"
+    EOF
+          chmod +x "$out/bin/$name"
+        done
 
-    for name in helium google-chrome google-chrome-stable; do
-      cat > "$out/bin/$name" <<'EOF'
-#!/bin/sh
-exec distrobox-host-exec xdg-open "$@"
-EOF
-      chmod +x "$out/bin/$name"
-    done
+        for name in helium google-chrome google-chrome-stable; do
+          cat > "$out/bin/$name" <<'EOF'
+    #!/bin/sh
+    exec distrobox-host-exec xdg-open "$@"
+    EOF
+          chmod +x "$out/bin/$name"
+        done
   '';
 
   unrealDevAliases = pkgs.writeText "unreal-dev-aliases.sh" ''
@@ -202,7 +199,7 @@ EOF
     init_hooks="touch ~/.zshrc; grep -qxF 'source /opt/t3code/vite-plus-env.sh' ~/.zshrc || echo 'source /opt/t3code/vite-plus-env.sh' >> ~/.zshrc"
   '';
 
-  distroboxIniFile = pkgs.writeText "distrobox.ini" (distroboxIniText + t3codeDistroboxIniText);
+  distroboxConfig = distroboxIniText + t3codeDistroboxIniText;
 
   distroboxAssemblePath = lib.makeBinPath [
     pkgs.distrobox
@@ -228,7 +225,6 @@ in
 
   environment.systemPackages = with pkgs; [
     distrobox
-    podman
     podman-compose
     passt
     podman-tui
@@ -240,7 +236,7 @@ in
 
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "${pkgs.distrobox}/bin/distrobox-assemble create --file ${distroboxIniFile}";
+      ExecStart = "${pkgs.distrobox}/bin/distrobox-assemble create --file /etc/distrobox/distrobox.ini";
     };
   };
 
@@ -258,5 +254,5 @@ in
     "io.github.dvlv.boxbuddyrs"
   ];
 
-  environment.etc."distrobox/distrobox.ini".text = distroboxIniText + t3codeDistroboxIniText;
+  environment.etc."distrobox/distrobox.ini".text = distroboxConfig;
 }
