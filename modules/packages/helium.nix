@@ -6,20 +6,14 @@
 }:
 
 let
+  appimageVersions = builtins.fromJSON (builtins.readFile ./appimage-versions.json);
+  release = appimageVersions.helium;
   pname = "helium";
-  version = "0.14.9.1";
+  inherit (release) tag version;
 
-  sources = {
-    x86_64-linux = fetchurl {
-      url = "https://github.com/imputnet/helium-linux/releases/download/${version}/helium-${version}-x86_64.AppImage";
-      hash = "sha256-cuQiMGhOPjE7ixuZiFGpRuGF9SdVcNPYUXSXhjZBLKQ=";
-    };
-
-    aarch64-linux = fetchurl {
-      url = "https://github.com/imputnet/helium-linux/releases/download/${version}/helium-${version}-arm64.AppImage";
-      hash = "sha256-vK5WcsRCDFnW/AzNEMefnJmhvyP5ou1rrtZhgBiwVdQ=";
-    };
-  };
+  sources = lib.mapAttrs (_: source: fetchurl {
+    inherit (source) hash url;
+  }) release.sources;
 
   src = sources.${stdenv.hostPlatform.system};
   contents = appimageTools.extractType2 {
@@ -40,7 +34,7 @@ appimageTools.wrapType2 {
   meta = {
     description = "Private, fast, and honest web browser based on Chromium";
     homepage = "https://helium.computer";
-    changelog = "https://github.com/imputnet/helium-linux/releases/tag/${version}";
+    changelog = "https://github.com/imputnet/helium-linux/releases/tag/${tag}";
     license = lib.licenses.gpl3;
     mainProgram = "helium";
     platforms = builtins.attrNames sources;

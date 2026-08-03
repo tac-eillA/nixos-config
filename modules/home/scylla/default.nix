@@ -5,6 +5,7 @@
     ./git.nix
     ./ghostty.nix
     ./neovim.nix
+    ./appimages.nix
     ./tmux.nix
     ./zsh.nix
   ];

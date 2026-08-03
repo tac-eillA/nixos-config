@@ -7,12 +7,14 @@
 }:
 
 let
+  appimageVersions = builtins.fromJSON (builtins.readFile ./appimage-versions.json);
+  release = appimageVersions.t3code;
+  source = release.sources."x86_64-linux";
   pname = "t3code";
-  version = "0.0.31";
+  inherit (release) tag version;
 
   src = fetchurl {
-    url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/T3-Code-${version}-x86_64.AppImage";
-    hash = "sha256-AqTkoSKeQwmql3L9F5SbD1XyqeFyqe11ciq9Tp04Zyw=";
+    inherit (source) hash url;
   };
 
   contents = appimageTools.extractType2 {
@@ -23,7 +25,7 @@ let
     description = "Minimal web GUI for coding agents";
     homepage = "https://t3.codes";
     downloadPage = "https://t3.codes/download";
-    changelog = "https://github.com/pingdotgg/t3code/releases/tag/v${version}";
+    changelog = "https://github.com/pingdotgg/t3code/releases/tag/${tag}";
     license = lib.licenses.mit;
     mainProgram = "t3code";
     platforms = [ "x86_64-linux" ];

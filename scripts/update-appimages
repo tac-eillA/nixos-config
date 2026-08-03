@@ -1,0 +1,256 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+  printf 'Usage: %s [REPOSITORY_PATH]\n' "${0##*/}" >&2
+}
+
+die() {
+  printf 'Error: %s\n' "$*" >&2
+  exit 1
+}
+
+if [[ "$#" -gt 1 ]]; then
+  usage
+  exit 2
+fi
+
+repo_dir="${1:-${HOME}/nixos-config}"
+if ! repo_dir="$(cd -- "$repo_dir" && pwd -P)"; then
+  die "Repository path does not exist: ${repo_dir}"
+fi
+
+metadata_relative_path='modules/packages/appimage-versions.json'
+metadata_file="${repo_dir}/${metadata_relative_path}"
+
+for command_name in curl gh git jq nix; do
+  command -v "$command_name" >/dev/null 2>&1 \
+    || die "Required command is not available: ${command_name}"
+done
+
+git -C "$repo_dir" rev-parse --show-toplevel >/dev/null 2>&1 \
+  || die "Not a Git repository: ${repo_dir}"
+
+[[ -f "$metadata_file" ]] \
+  || die "Metadata file does not exist: ${metadata_file}"
+
+if git -C "$repo_dir" ls-files --error-unmatch "$metadata_relative_path" \
+  >/dev/null 2>&1 \
+  && [[ -n "$(git -C "$repo_dir" status --porcelain=v1 -- "$metadata_relative_path")" ]]; then
+  die "Metadata file has uncommitted changes: ${metadata_relative_path}"
+fi
+
+tmp_dir="$(mktemp -d)"
+trap 'rm -rf -- "$tmp_dir"' EXIT
+
+version_pattern='^[0-9]+([.][0-9]+)*([+-][0-9A-Za-z.-]+)?$'
+
+fetch_release() {
+  local repository="$1"
+
+  gh api \
+    --header 'Accept: application/vnd.github+json' \
+    --header 'X-GitHub-Api-Version: 2022-11-28' \
+    "repos/${repository}/releases/latest"
+}
+
+read_release() {
+  local release_json="$1"
+
+  if jq -e '.draft == true or .prerelease == true' \
+    <<<"$release_json" >/dev/null; then
+    die "Release is not a published stable release"
+  fi
+
+  release_tag="$(jq -er '.tag_name | select(type == "string" and length > 0)' \
+    <<<"$release_json")" \
+    || die "Release has no valid tag"
+  release_version="${release_tag#v}"
+
+  [[ "$release_version" =~ $version_pattern ]] \
+    || die "Release tag has an unsupported version: ${release_tag}"
+}
+
+read_asset() {
+  local release_json="$1"
+  local asset_pattern="$2"
+  local asset_label="$3"
+  local asset_json
+  local asset_name
+
+  asset_json="$(jq -cer --arg pattern "$asset_pattern" '
+    [
+      .assets[]
+      | select(.name | test($pattern))
+      | { name, url: .browser_download_url }
+    ]
+    | if length == 1 then .[0] else error("expected exactly one matching asset") end
+  ' <<<"$release_json")" \
+    || die "Could not find exactly one ${asset_label} AppImage"
+
+  asset_name="$(jq -er '.name' <<<"$asset_json")"
+  [[ "$asset_name" == *"${release_version}"* ]] \
+    || die "${asset_label} asset does not match release ${release_tag}: ${asset_name}"
+
+  asset_url="$(jq -er '.url' <<<"$asset_json")"
+}
+
+download_and_hash() {
+  local destination="$1"
+
+  curl \
+    --fail \
+    --location \
+    --retry 3 \
+    --retry-delay 1 \
+    --silent \
+    --show-error \
+    --output "$destination" \
+    "$asset_url" \
+    || die "Failed to download ${asset_url}"
+
+  [[ -s "$destination" ]] \
+    || die "Downloaded asset is empty: ${asset_url}"
+
+  asset_hash="$(nix hash file --type sha256 --sri "$destination")" \
+    || die "Failed to hash ${asset_url}"
+}
+
+is_version_downgrade() {
+  local candidate="$1"
+  local current="$2"
+  local first
+
+  [[ "$candidate" != "$current" ]] || return 1
+  first="$(printf '%s\n%s\n' "$candidate" "$current" | sort -V | head -n 1)"
+  [[ "$first" == "$candidate" ]]
+}
+
+check_release_version() {
+  local application="$1"
+  local candidate_version="$2"
+  local current_version
+
+  current_version="$(jq -er --arg application "$application" \
+    '.[$application].version' "$metadata_file")" \
+    || die "Metadata has no version for ${application}"
+
+  if is_version_downgrade "$candidate_version" "$current_version"; then
+    die "Refusing to downgrade ${application} from ${current_version} to ${candidate_version}"
+  fi
+}
+
+check_unchanged_release_asset() {
+  local application="$1"
+  local platform="$2"
+  local candidate_tag="$3"
+  local candidate_url="$4"
+  local candidate_hash="$5"
+  local current_tag
+  local current_url
+  local current_hash
+
+  current_tag="$(jq -er --arg application "$application" \
+    '.[$application].tag' "$metadata_file")" \
+    || die "Metadata has no tag for ${application}"
+
+  [[ "$current_tag" == "$candidate_tag" ]] || return 0
+
+  current_url="$(jq -er --arg application "$application" --arg platform "$platform" \
+    '.[$application].sources[$platform].url' "$metadata_file")" \
+    || die "Metadata has no URL for ${application} ${platform}"
+  current_hash="$(jq -er --arg application "$application" --arg platform "$platform" \
+    '.[$application].sources[$platform].hash' "$metadata_file")" \
+    || die "Metadata has no hash for ${application} ${platform}"
+
+  [[ "$current_url" == "$candidate_url" && "$current_hash" == "$candidate_hash" ]] \
+    || die "Release asset changed under immutable tag ${candidate_tag}: ${application} ${platform}"
+}
+
+t3_release_json="$(fetch_release 'pingdotgg/t3code')" \
+  || die 'Failed to query the T3 Code release'
+read_release "$t3_release_json"
+t3_tag="$release_tag"
+t3_version="$release_version"
+read_asset "$t3_release_json" '^T3-Code-.*-x86_64[.]AppImage$' 'T3 Code x86_64'
+t3_url="$asset_url"
+download_and_hash "${tmp_dir}/t3code.AppImage"
+t3_hash="$asset_hash"
+
+helium_release_json="$(fetch_release 'imputnet/helium-linux')" \
+  || die 'Failed to query the Helium release'
+read_release "$helium_release_json"
+helium_tag="$release_tag"
+helium_version="$release_version"
+
+read_asset "$helium_release_json" '^helium-.*-x86_64[.]AppImage$' 'Helium x86_64'
+helium_x86_64_url="$asset_url"
+download_and_hash "${tmp_dir}/helium-x86_64.AppImage"
+helium_x86_64_hash="$asset_hash"
+
+read_asset "$helium_release_json" '^helium-.*-arm64[.]AppImage$' 'Helium arm64'
+helium_aarch64_url="$asset_url"
+download_and_hash "${tmp_dir}/helium-arm64.AppImage"
+helium_aarch64_hash="$asset_hash"
+
+check_release_version 't3code' "$t3_version"
+check_release_version 'helium' "$helium_version"
+check_unchanged_release_asset 't3code' 'x86_64-linux' \
+  "$t3_tag" "$t3_url" "$t3_hash"
+check_unchanged_release_asset 'helium' 'x86_64-linux' \
+  "$helium_tag" "$helium_x86_64_url" "$helium_x86_64_hash"
+check_unchanged_release_asset 'helium' 'aarch64-linux' \
+  "$helium_tag" "$helium_aarch64_url" "$helium_aarch64_hash"
+
+new_metadata_file="$(mktemp "${metadata_file}.tmp.XXXXXX")"
+trap 'rm -f -- "$new_metadata_file"; rm -rf -- "$tmp_dir"' EXIT
+
+jq -S -n \
+  --arg t3_version "$t3_version" \
+  --arg t3_tag "$t3_tag" \
+  --arg t3_url "$t3_url" \
+  --arg t3_hash "$t3_hash" \
+  --arg helium_version "$helium_version" \
+  --arg helium_tag "$helium_tag" \
+  --arg helium_x86_64_url "$helium_x86_64_url" \
+  --arg helium_x86_64_hash "$helium_x86_64_hash" \
+  --arg helium_aarch64_url "$helium_aarch64_url" \
+  --arg helium_aarch64_hash "$helium_aarch64_hash" \
+  '{
+    helium: {
+      sources: {
+        "aarch64-linux": {
+          hash: $helium_aarch64_hash,
+          url: $helium_aarch64_url
+        },
+        "x86_64-linux": {
+          hash: $helium_x86_64_hash,
+          url: $helium_x86_64_url
+        }
+      },
+      tag: $helium_tag,
+      version: $helium_version
+    },
+    t3code: {
+      sources: {
+        "x86_64-linux": {
+          hash: $t3_hash,
+          url: $t3_url
+        }
+      },
+      tag: $t3_tag,
+      version: $t3_version
+    }
+  }' >"$new_metadata_file" \
+  || die 'Failed to generate AppImage metadata'
+
+if cmp -s "$metadata_file" "$new_metadata_file"; then
+  rm -f -- "$new_metadata_file"
+  printf 'T3 Code and Helium are already current.\n'
+  exit 0
+fi
+
+mv -- "$new_metadata_file" "$metadata_file"
+printf 'Updated %s.\n' "$metadata_relative_path"
+printf 'Run the rebuild alias to activate the new AppImages.\n'
