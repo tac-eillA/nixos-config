@@ -1,0 +1,314 @@
+read_optional() {
+  local path="$1"
+  if [ -r "$path" ]; then
+    tr -d '\n' <"$path"
+  fi
+}
+
+cpu_stat() {
+  awk '
+    /^cpu / {
+      idle = $5 + $6
+      total = $2 + $3 + $4 + $5 + $6 + $7 + $8 + $9 + $10 + $11
+      printf "%.0f %.0f\n", idle, total
+      exit
+    }
+  ' /proc/stat 2>/dev/null || true
+}
+
+memory_data() {
+  awk '
+    /^MemTotal:/ { total = $2 * 1024 }
+    /^MemAvailable:/ { available = $2 * 1024 }
+    END {
+      if (total > 0 && available >= 0) {
+        used = total - available
+        printf "%.0f %.0f %.2f\n", used, total, used / total * 100
+      }
+    }
+  ' /proc/meminfo 2>/dev/null || true
+}
+
+battery_power() {
+  local battery status power current voltage
+  local total=0
+  local discharging=0
+  local charging=0
+  local found=0
+  shopt -s nullglob
+  for battery in /sys/class/power_supply/BAT*; do
+    [ -d "$battery" ] || continue
+    found=1
+    status="$(read_optional "$battery/status")"
+    case "$status" in
+      Discharging) discharging=1 ;;
+      Charging) charging=1 ;;
+    esac
+
+    power="$(read_optional "$battery/power_now")"
+    if ! [[ "$power" =~ ^-?[0-9]+$ ]]; then
+      current="$(read_optional "$battery/current_now")"
+      voltage="$(read_optional "$battery/voltage_now")"
+      if [[ "$current" =~ ^-?[0-9]+$ ]] && [[ "$voltage" =~ ^-?[0-9]+$ ]]; then
+        power="$((current * voltage / 1000000))"
+      fi
+    fi
+    if [[ "$power" =~ ^-?[0-9]+$ ]]; then
+      (( power < 0 )) && power=$((power * -1))
+      total=$((total + power))
+    fi
+  done
+  shopt -u nullglob
+
+  local state="unknown"
+  if (( discharging )); then
+    state="discharging"
+  elif (( charging )); then
+    state="charging"
+  elif (( found )); then
+    state="idle"
+  fi
+  printf '%s %s %s\n' "$total" "$state" "$found"
+}
+
+rapl_total() {
+  local path value
+  local total=0
+  local count=0
+  shopt -s nullglob
+  for path in /sys/class/powercap/*/energy_uj; do
+    value="$(read_optional "$path")"
+    if [[ "$value" =~ ^[0-9]+$ ]]; then
+      total=$((total + value))
+      count=$((count + 1))
+    fi
+  done
+  shopt -u nullglob
+  printf '%s %s\n' "$total" "$count"
+}
+
+amd_gpu_data() {
+  local path device card busy used total used_json total_json
+  local result='[]'
+  shopt -s nullglob
+  for path in /sys/class/drm/card*/device/gpu_busy_percent; do
+    device="${path%/gpu_busy_percent}"
+    card="$(basename "$(dirname "$device")")"
+    busy="$(read_optional "$path")"
+    [[ "$busy" =~ ^[0-9]+$ ]] || continue
+
+    used="$(read_optional "$device/mem_info_vram_used")"
+    total="$(read_optional "$device/mem_info_vram_total")"
+    used_json=null
+    total_json=null
+    [[ "$used" =~ ^[0-9]+$ ]] && used_json="$used"
+    [[ "$total" =~ ^[0-9]+$ ]] && total_json="$total"
+    result="$(jq -c \
+      --arg name "$card" \
+      --argjson utilization "$busy" \
+      --argjson used "$used_json" \
+      --argjson total "$total_json" \
+      '. + [{name: $name, utilizationPercent: $utilization,
+        memoryUsedBytes: $used, memoryTotalBytes: $total,
+        source: "amdgpu"}]' <<<"$result")"
+  done
+  shopt -u nullglob
+  printf '%s\n' "$result"
+}
+
+nvidia_gpu_data() {
+  if ! command -v nvidia-smi >/dev/null 2>&1; then
+    printf '[]\n'
+    return
+  fi
+
+  local lines
+  lines="$(nvidia-smi \
+    --query-gpu=name,utilization.gpu,memory.used,memory.total \
+    --format=csv,noheader,nounits 2>/dev/null || true)"
+  jq -Rsc '
+      split("\n")
+      | map(select(length > 0)
+        | try capture("^[[:space:]]*(?<name>[^,]+),[[:space:]]*(?<util>[^,]+),[[:space:]]*(?<used>[^,]+),[[:space:]]*(?<total>[^,]+)[[:space:]]*$") catch null)
+      | map(select(. != null))
+      | map({
+          name: (.name | sub("[[:space:]]+$"; "")),
+          utilizationPercent: (if .util == "N/A" then null else (.util | tonumber) end),
+          memoryUsedBytes: (if .used == "N/A" then null else ((.used | tonumber) * 1048576) end),
+          memoryTotalBytes: (if .total == "N/A" then null else ((.total | tonumber) * 1048576) end),
+          source: "nvidia-smi"
+        })' <<<"$lines"
+}
+
+nvidia_gpu_processes() {
+  if ! command -v nvidia-smi >/dev/null 2>&1; then
+    printf '[]\n'
+    return
+  fi
+
+  local lines
+  lines="$(nvidia-smi pmon -c 1 -s um 2>/dev/null || true)"
+  jq -Rsc '
+      split("\n")
+      | map(try capture("^[[:space:]]*(?<gpu>[0-9]+)[[:space:]]+(?<pid>[0-9]+)[[:space:]]+(?<type>[^[:space:]]+)[[:space:]]+(?<sm>-|[0-9]+)[[:space:]]+(?<mem>-|[0-9]+)") catch null)
+      | map(select(. != null and .sm != "-"))
+      | map({pid: (.pid | tonumber), gpuPercent: (.sm | tonumber)})' <<<"$lines"
+}
+
+process_data() {
+  local lines
+  lines="$(ps -u "$(id -u)" -o pid=,comm=,pcpu=,pmem=,rss= 2>/dev/null || true)"
+  jq -Rsc '
+    split("\n")
+    | map(select(length > 0)
+      | try capture("^[[:space:]]*(?<pid>[0-9]+)[[:space:]]+(?<name>[^[:space:]]+)[[:space:]]+(?<cpu>[0-9.]+)[[:space:]]+(?<mem>[0-9.]+)[[:space:]]+(?<rss>[0-9]+)[[:space:]]*$") catch null)
+    | map(select(. != null and .name != "ps")
+      | {pid: (.pid | tonumber), name: .name,
+         cpuPercent: (.cpu | tonumber), memoryPercent: (.mem | tonumber),
+         memoryBytes: ((.rss | tonumber) * 1024)})' <<<"$lines"
+}
+
+cpu_before="$(cpu_stat)"
+cpu_idle_before=0
+cpu_total_before=0
+read -r cpu_idle_before cpu_total_before <<<"${cpu_before:-0 0}" || true
+rapl_before="$(rapl_total)"
+rapl_energy_before=0
+rapl_count_before=0
+read -r rapl_energy_before rapl_count_before <<<"${rapl_before:-0 0}" || true
+
+memory_line="$(memory_data)"
+memory_used=0
+memory_total=0
+memory_percent=0
+read -r memory_used memory_total memory_percent <<<"${memory_line:-0 0 0}" || true
+battery_line="$(battery_power)"
+read -r battery_power_uw battery_state battery_found <<<"$battery_line"
+
+processes="$(process_data)"
+gpu_processes="$(nvidia_gpu_processes)"
+gpu_data="$(amd_gpu_data)"
+nvidia_data="$(nvidia_gpu_data)"
+gpu_data="$(jq -c -n --argjson amd "$gpu_data" --argjson nvidia "$nvidia_data" '$amd + $nvidia')"
+
+sample_seconds=0.25
+sleep "$sample_seconds"
+
+cpu_after="$(cpu_stat)"
+cpu_idle_after=0
+cpu_total_after=0
+read -r cpu_idle_after cpu_total_after <<<"${cpu_after:-0 0}" || true
+rapl_after="$(rapl_total)"
+rapl_energy_after=0
+read -r rapl_energy_after _ <<<"${rapl_after:-0 0}" || true
+
+cpu_json=null
+if [[ "$cpu_idle_before" =~ ^[0-9]+$ ]] \
+  && [[ "$cpu_total_before" =~ ^[0-9]+$ ]] \
+  && [[ "$cpu_idle_after" =~ ^[0-9]+$ ]] \
+  && [[ "$cpu_total_after" =~ ^[0-9]+$ ]] \
+  && (( cpu_total_after > cpu_total_before )); then
+  cpu_json="$(awk -v idle_before="$cpu_idle_before" \
+    -v total_before="$cpu_total_before" \
+    -v idle_after="$cpu_idle_after" \
+    -v total_after="$cpu_total_after" \
+    'BEGIN { total = total_after - total_before; idle = idle_after - idle_before;
+      if (total > 0) printf "%.2f", (total - idle) / total * 100 }')"
+  [ -n "$cpu_json" ] || cpu_json=null
+fi
+
+memory_used_json=null
+memory_total_json=null
+memory_percent_json=null
+if [[ "$memory_used" =~ ^[0-9]+$ ]]; then
+  memory_used_json="$memory_used"
+fi
+if [[ "$memory_total" =~ ^[0-9]+$ ]]; then
+  memory_total_json="$memory_total"
+fi
+if [[ "$memory_percent" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+  memory_percent_json="$memory_percent"
+fi
+
+power_watts_json=null
+power_source="unavailable"
+power_label="Power draw unavailable"
+power_exact=false
+power_state="${battery_state:-unknown}"
+
+if [ "$battery_state" = "discharging" ] \
+  && [[ "$battery_power_uw" =~ ^[0-9]+$ ]] \
+  && (( battery_power_uw > 0 )); then
+  power_watts_json="$(awk -v microwatts="$battery_power_uw" 'BEGIN { printf "%.2f", microwatts / 1000000 }')"
+  power_source="battery"
+  power_label="Battery draw"
+  power_exact=true
+elif [[ "$rapl_energy_before" =~ ^[0-9]+$ ]] \
+  && [[ "$rapl_energy_after" =~ ^[0-9]+$ ]] \
+  && [[ "$rapl_count_before" =~ ^[0-9]+$ ]] \
+  && (( rapl_count_before > 0 )) \
+  && (( rapl_energy_after >= rapl_energy_before )); then
+  power_watts_json="$(awk -v before="$rapl_energy_before" \
+    -v after="$rapl_energy_after" \
+    -v seconds="$sample_seconds" \
+    'BEGIN { printf "%.2f", (after - before) / seconds / 1000000 }')"
+  power_source="rapl"
+  power_label="CPU package draw"
+fi
+if [ "$power_source" = "rapl" ] && [ "${battery_found:-0}" = "0" ]; then
+  power_state="ac"
+fi
+
+applications="$(jq -c -n \
+  --argjson processes "$processes" \
+  --argjson gpuProcesses "$gpu_processes" \
+  '
+    (($gpuProcesses | length) > 0) as $hasGpuProcesses
+    | ($processes
+      | map(. as $process | $process + {
+          gpuPercent: (if $hasGpuProcesses
+            then (($gpuProcesses | map(select(.pid == $process.pid))
+              | map(.gpuPercent) | add) // 0)
+            else null end)
+        })) as $raw
+    | ($raw
+      | group_by(.name)
+      | map({
+          name: .[0].name,
+          processCount: length,
+          cpuPercent: (map(.cpuPercent) | add // 0),
+          gpuPercent: (if $hasGpuProcesses then (map(.gpuPercent) | add // 0) else null end),
+          memoryPercent: (map(.memoryPercent) | add // 0),
+          memoryBytes: (map(.memoryBytes) | add // 0)
+        })
+      | map(. + {
+          energyScore: (.cpuPercent + (.gpuPercent // 0)),
+          hardwareScore: (.cpuPercent + (.gpuPercent // 0))
+        })) as $applications
+    | {
+        energy: ($applications | sort_by(.energyScore) | reverse | .[:5]),
+        memory: ($applications | sort_by(.memoryBytes) | reverse | .[:5]),
+        hardware: ($applications | sort_by(.hardwareScore) | reverse | .[:5])
+      }')"
+
+jq -n \
+  --arg generatedAt "$(date --iso-8601=seconds)" \
+  --argjson watts "$power_watts_json" \
+  --arg source "$power_source" \
+  --arg label "$power_label" \
+  --arg state "$power_state" \
+  --argjson exact "$power_exact" \
+  --argjson cpu "$cpu_json" \
+  --argjson memoryUsed "$memory_used_json" \
+  --argjson memoryTotal "$memory_total_json" \
+  --argjson memoryPercent "$memory_percent_json" \
+  --argjson gpus "$gpu_data" \
+  --argjson applications "$applications" \
+  '{version: 1, generatedAt: $generatedAt,
+    power: {watts: $watts, source: $source, label: $label,
+      state: $state, exact: $exact},
+    system: {cpuPercent: $cpu,
+      memory: {usedBytes: $memoryUsed, totalBytes: $memoryTotal,
+        usedPercent: $memoryPercent},
+      gpus: $gpus},
+    applications: $applications}'

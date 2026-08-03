@@ -31,6 +31,7 @@ targets are:
 - `display`: `status`, `refresh`, `applyProfile`, `saveProfile`,
   `deleteProfile`, `set`, `confirm`, and `rollback`.
 - `diagnostics`: `refresh` and `status`.
+- `resources`: `refresh` and `status`.
 - `profile`: `list`, `current`, `set`, and `togglePresentation`.
 
 Interactive display changes have a 20-second confirmation window. If they are

@@ -180,6 +180,7 @@ ShellRoot {
   }
 
   DiagnosticsService { id: diagnostics }
+  ResourceUsageService { id: resources }
 
   AdaptiveProfileService {
     id: adaptive
@@ -196,6 +197,7 @@ ShellRoot {
     core: core
     displays: displays
     diagnostics: diagnostics
+    resources: resources
     adaptive: adaptive
   }
 
@@ -212,7 +214,11 @@ ShellRoot {
     adaptive: adaptive
   }
   Notifications { shell: root; core: core }
-  DiagnosticsDrawer { shell: root; diagnostics: diagnostics }
+  DiagnosticsDrawer {
+    shell: root
+    diagnostics: diagnostics
+    resources: resources
+  }
   Launcher { shell: root }
   PowerMenu { shell: root }
   Osd { shell: root }

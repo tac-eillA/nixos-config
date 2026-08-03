@@ -18,6 +18,9 @@ let
       readonly property var settings: (${builtins.toJSON shellRuntimeSettings})
     }
   '';
+  nvidiaRuntimeInputs = lib.optional
+    (osConfig.scylla.desktop.video.gpu == "nvidia")
+    osConfig.boot.kernelPackages.nvidiaPackages.latest;
   themeTemplate = ./hyprland/theme.json.tpl;
   themeConfig = pkgs.writeText "scylla-matugen.toml" (
     builtins.replaceStrings
@@ -153,6 +156,16 @@ let
     ];
     text = builtins.readFile ./hyprland/scripts/scylla-displayctl;
   };
+  resourceUsageCollector = pkgs.writeShellApplication {
+    name = "scylla-resource-usage";
+    runtimeInputs = with pkgs; [
+      coreutils
+      gawk
+      jq
+      procps
+    ] ++ nvidiaRuntimeInputs;
+    text = builtins.readFile ./hyprland/scripts/scylla-resource-usage;
+  };
   diagnosticsCollector = pkgs.writeShellApplication {
     name = "scylla-diagnostics";
     runtimeInputs = with pkgs; [
@@ -208,6 +221,7 @@ in
     networkmanagerapplet
     pavucontrol
     quickshell
+    resourceUsageCollector
     diagnosticsCollector
     displayController
     themeSwitcher

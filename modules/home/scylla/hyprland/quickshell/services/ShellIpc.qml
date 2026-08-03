@@ -6,6 +6,7 @@ Scope {
   required property var core
   required property var displays
   required property var diagnostics
+  required property var resources
   required property var adaptive
 
   IpcHandler {
@@ -100,6 +101,18 @@ Scope {
     }
     function status(): string {
       return JSON.stringify(diagnostics.report);
+    }
+  }
+
+  IpcHandler {
+    target: "resources"
+
+    function refresh(): string {
+      resources.refresh();
+      return "ok";
+    }
+    function status(): string {
+      return JSON.stringify(resources.report);
     }
   }
 

@@ -5,12 +5,29 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import "../components/diagnostics"
 
 Variants {
   id: drawer
 
   required property var shell
   required property var diagnostics
+  required property var resources
+
+  property string activeTab: "diagnostics"
+  readonly property bool busy: diagnostics.busy || resources.busy
+  readonly property string activeError: activeTab === "resources"
+    ? resources.error : diagnostics.error
+
+  function selectTab(tab) {
+    activeTab = tab;
+    if (tab === "resources") resources.refresh();
+  }
+
+  function refreshActiveTab() {
+    if (activeTab === "resources") resources.refresh();
+    else diagnostics.refresh();
+  }
 
   model: Quickshell.screens
 
@@ -55,7 +72,7 @@ Variants {
             font.pixelSize: 16
           }
           Text {
-            text: drawer.diagnostics.busy ? "Refreshing…" : "󰑐"
+            text: drawer.busy ? "Refreshing…" : "󰑐"
             color: refreshMouse.containsMouse
               ? drawer.shell.accent : drawer.shell.muted
             MouseArea {
@@ -63,8 +80,8 @@ Variants {
               anchors.fill: parent
               anchors.margins: -7
               hoverEnabled: true
-              enabled: !drawer.diagnostics.busy
-              onClicked: drawer.diagnostics.refresh()
+              enabled: !drawer.busy
+              onClicked: drawer.refreshActiveTab()
             }
           }
           Text {
@@ -84,14 +101,52 @@ Variants {
 
         Text {
           Layout.fillWidth: true
-          visible: drawer.diagnostics.error.length > 0
-          text: drawer.diagnostics.error
+          visible: drawer.activeError.length > 0
+          text: drawer.activeError
           color: drawer.shell.urgent
           wrapMode: Text.Wrap
         }
 
+        Flow {
+          Layout.fillWidth: true
+          spacing: 5
+          Repeater {
+            model: [
+              { name: "diagnostics", label: "Diagnostics", icon: "󰒡" },
+              { name: "resources", label: "Resource usage", icon: "󰍛" }
+            ]
+            Rectangle {
+              required property var modelData
+              width: tabLabel.implicitWidth + 20
+              height: drawer.shell.touchLayout ? 38 : 30
+              radius: drawer.shell.cornerRadius - 3
+              color: drawer.activeTab === modelData.name
+                ? drawer.shell.selectedFill
+                : tabMouse.containsMouse ? drawer.shell.hoverFill
+                  : drawer.shell.normalFill
+              border.width: drawer.activeTab === modelData.name ? 1 : 0
+              border.color: drawer.shell.accent
+              Text {
+                id: tabLabel
+                anchors.centerIn: parent
+                text: modelData.icon + "  " + modelData.label
+                color: drawer.activeTab === modelData.name
+                  ? drawer.shell.accent : drawer.shell.foreground
+                font.pixelSize: 11
+              }
+              MouseArea {
+                id: tabMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                onClicked: drawer.selectTab(modelData.name)
+              }
+            }
+          }
+        }
+
         RowLayout {
           Layout.fillWidth: true
+          visible: drawer.activeTab === "diagnostics"
           spacing: 8
           Repeater {
             model: [
@@ -136,7 +191,8 @@ Variants {
         Flickable {
           id: scroller
           Layout.fillWidth: true
-          Layout.fillHeight: true
+          Layout.fillHeight: drawer.activeTab === "diagnostics"
+          visible: drawer.activeTab === "diagnostics"
           contentWidth: width
           contentHeight: content.implicitHeight
           boundsBehavior: Flickable.StopAtBounds
@@ -345,6 +401,29 @@ Variants {
                   }
                 }
               }
+            }
+          }
+        }
+
+        Flickable {
+          id: resourceScroller
+          Layout.fillWidth: true
+          Layout.fillHeight: drawer.activeTab === "resources"
+          visible: drawer.activeTab === "resources"
+          contentWidth: width
+          contentHeight: resourceContent.implicitHeight
+          boundsBehavior: Flickable.StopAtBounds
+          clip: true
+          ScrollBar.vertical: ScrollBar {}
+
+          ColumnLayout {
+            id: resourceContent
+            width: resourceScroller.width
+            spacing: 10
+
+            ResourceUsageSection {
+              shell: drawer.shell
+              resources: drawer.resources
             }
           }
         }
