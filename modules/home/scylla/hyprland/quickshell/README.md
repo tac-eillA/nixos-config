@@ -5,6 +5,10 @@ in `services/`, shared controls in `components/`, and major UI entry points in
 `surfaces/`. Feature code should depend on those service facades instead of QML
 IDs inside another surface.
 
+The Network quick-settings section uses NetworkManager. It controls Wi-Fi and
+Ethernet devices and shows NetworkManager VPN and WireGuard profiles. The shell
+does not create, edit, import, delete, or manage profile secrets.
+
 Home Manager replaces `RuntimeConfig.qml` with host-specific values from
 `scylla.desktop.shell`. The checked-in component is only a development fallback.
 
@@ -24,9 +28,9 @@ qs -c scylla ipc call profile set presentation
 qs -c scylla ipc call profile set auto
 ```
 
-The `shell` target retains the existing launcher, power, wallpaper,
-notification, audio, brightness, and media compatibility methods. Additional
-targets are:
+Vicinae is the only application launcher. `Super + Space` opens Vicinae.
+The `shell` target retains the power, wallpaper, notification, audio,
+brightness, and media compatibility methods. Additional targets are:
 
 - `display`: `status`, `refresh`, `applyProfile`, `saveProfile`,
   `deleteProfile`, `set`, `confirm`, and `rollback`.
@@ -81,6 +85,7 @@ select `auto` to resume context-based policy.
 
 ## Keybindings
 
+- `Super + Space`: Vicinae application launcher.
 - `Super + M`: native display controls.
 - `Super + Shift + M`: `wdisplays` fallback.
 - `Super + D`: diagnostics drawer.

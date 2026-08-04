@@ -189,7 +189,8 @@ Variants {
 
         StatusItem {
           shell: bar.shell
-          icon: bar.core.networkName === "offline" ? "󰤭" : ""
+          icon: bar.core.networkName === "offline" ? "󰤭"
+            : bar.core.networkTransport === "ethernet" ? "󰈀" : ""
           text: bar.core.networkName === "offline" ? "" : bar.core.networkName
           textColor: bar.core.networkName === "offline"
             ? bar.shell.muted : bar.shell.foreground

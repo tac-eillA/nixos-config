@@ -12,7 +12,7 @@ Variants {
   property int currentTab: 0
 
   property var shortcuts: [
-    ["Super + Space", "Open the app launcher"],
+    ["Super + Space", "Open Vicinae"],
     ["Super + Return", "Open Ghostty terminal"],
     ["Super + B", "Open Firefox"],
     ["Super + Shift + B", "Open Helium"],
@@ -245,7 +245,7 @@ Variants {
               spacing: 10
               Repeater {
                 model: [
-                  ["1", "Launch", "Press Super + Space and type an app or command. Use Super + Return when you want a terminal."],
+                  ["1", "Launch", "Press Super + Space to open Vicinae. Use Super + Return when you want a terminal."],
                   ["2", "Organize", "Windows tile automatically. Use workspaces 1–5 for separate activities, and Super + Shift + a number to send a window there."],
                   ["3", "Navigate", "Use Super + H/J/K/L to focus adjacent windows. A three-finger horizontal swipe changes workspaces on a touchpad."],
                   ["4", "Adjust", "The top bar controls Wi-Fi, Bluetooth, audio, power, notifications, wallpaper, and fingerprints. Right-click some status items for quick toggles."],

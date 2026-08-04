@@ -4,6 +4,7 @@
   imports = [
     ./git.nix
     ./ghostty.nix
+    ./hyfetch.nix
     ./neovim.nix
     ./appimages.nix
     ./tmux.nix

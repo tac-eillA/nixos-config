@@ -16,9 +16,11 @@ Scope {
 
   property alias notificationHistory: notificationHistory
   property alias wifiNetworks: wifiNetworks
+  property alias wiredDevices: wiredDevices
+  property alias vpnConnections: vpnConnections
   property alias idleInhibited: idleInhibitor.running
   property alias networkScanRunning: networkScan.running
-  property alias networkActionRunning: networkAction.running
+  readonly property bool networkActionRunning: networkAction.running || wifiAction.running
   property alias tailscaleActionRunning: tailscaleAction.running
   property alias powerProfileQueryRunning: powerProfileQuery.running
 
@@ -26,6 +28,8 @@ Scope {
   property bool notificationPopupVisible: false
   property string networkName: "offline"
   property string networkState: "disconnected"
+  property string networkTransport: "offline"
+  property string wifiNetworkName: "offline"
   property bool wifiEnabled: false
   property string tailscaleState: "Unknown"
   property string tailscaleHost: ""
@@ -84,6 +88,7 @@ Scope {
 
   function refreshNetwork() {
     if (!networkQuery.running) networkQuery.running = true;
+    if (!vpnQuery.running) vpnQuery.running = true;
   }
 
   function scanNetworks() {
@@ -93,14 +98,41 @@ Scope {
   function connectWifi(ssid, password) {
     const command = ["nmcli", "device", "wifi", "connect", ssid];
     if (password.length) command.push("password", password);
-    networkAction.actionLabel = ssid;
-    networkAction.command = command;
-    networkAction.running = true;
+    runNetworkAction(command, ssid, "wifi-connect");
   }
 
   function setWifiEnabled(enabled) {
+    if (networkActionRunning) return;
     wifiAction.command = ["nmcli", "radio", "wifi", enabled ? "on" : "off"];
     wifiAction.running = true;
+  }
+
+  function connectWired(interfaceName) {
+    runNetworkAction(["nmcli", "device", "connect", interfaceName],
+      interfaceName, "wired-connect");
+  }
+
+  function disconnectWired(interfaceName) {
+    runNetworkAction(["nmcli", "device", "disconnect", interfaceName],
+      interfaceName, "wired-disconnect");
+  }
+
+  function connectVpn(uuid, label) {
+    runNetworkAction(["nmcli", "connection", "up", "uuid", uuid],
+      label, "vpn-connect");
+  }
+
+  function disconnectVpn(uuid, label) {
+    runNetworkAction(["nmcli", "connection", "down", "uuid", uuid],
+      label, "vpn-disconnect");
+  }
+
+  function runNetworkAction(command, label, kind) {
+    if (networkActionRunning) return;
+    networkAction.actionLabel = label;
+    networkAction.actionKind = kind;
+    networkAction.command = command;
+    networkAction.running = true;
   }
 
   function refreshTailscale() {
@@ -197,6 +229,8 @@ Scope {
 
   ListModel { id: notificationHistory }
   ListModel { id: wifiNetworks }
+  ListModel { id: wiredDevices }
+  ListModel { id: vpnConnections }
 
   NotificationServer {
     bodySupported: true
@@ -265,12 +299,30 @@ Scope {
   Process {
     id: networkAction
     property string actionLabel: ""
+    property string actionKind: "wifi-connect"
     onExited: (exitCode, exitStatus) => {
-      services.osdRequested(exitCode === 0 ? "" : "󰤭",
-        exitCode === 0 ? "Connected to " + actionLabel
-          : "Could not connect to " + actionLabel, 0, false);
+      const successful = exitCode === 0;
+      const disconnecting = actionKind.endsWith("-disconnect");
+      const vpn = actionKind.startsWith("vpn-");
+      const wired = actionKind.startsWith("wired-");
+      const icon = vpn ? (successful ? "󰌆" : "󰌇")
+        : wired ? (successful ? "󰈀" : "󰈂")
+        : (successful ? "" : "󰤭");
+      let message;
+      if (actionKind === "wifi-connect")
+        message = successful ? "Connected to " + actionLabel
+          : "Could not connect to " + actionLabel;
+      else if (vpn)
+        message = successful
+          ? actionLabel + (disconnecting ? " disconnected" : " connected")
+          : "Could not " + (disconnecting ? "disconnect " : "connect ") + actionLabel;
+      else
+        message = successful
+          ? "Wired " + actionLabel + (disconnecting ? " disconnected" : " connected")
+          : "Could not " + (disconnecting ? "disconnect " : "connect ") + actionLabel;
+      services.osdRequested(icon, message, 0, false);
       services.refreshNetwork();
-      services.scanNetworks();
+      if (actionKind.startsWith("wifi-")) services.scanNetworks();
     }
   }
 
@@ -285,17 +337,84 @@ Scope {
   Process {
     id: networkQuery
     command: ["sh", "-lc",
-      "LC_ALL=C nmcli -t -f WIFI general; LC_ALL=C nmcli --escape yes -t -f TYPE,STATE,CONNECTION device status"]
+      "LC_ALL=C nmcli -t -f WIFI general; LC_ALL=C nmcli --escape yes -t -f TYPE,DEVICE,STATE,CONNECTION device status"]
     stdout: StdioCollector {
       onStreamFinished: {
-        const lines = text.trim().split("\n");
-        services.wifiEnabled = lines[0] === "enabled";
-        const wifi = lines.find(line => line.startsWith("wifi:connected:"));
-        const wired = lines.find(line => line.startsWith("ethernet:connected:"));
-        const active = wifi || wired;
+        const lines = text.trim().length ? text.trim().split("\n") : [];
+        let activeWifi = null;
+        let activeEthernet = null;
+        services.wifiEnabled = lines.length > 0 && lines[0] === "enabled";
+        services.wifiNetworkName = "offline";
+        services.wiredDevices.clear();
+
+        for (let i = 1; i < lines.length; ++i) {
+          const fields = services.splitNmcli(lines[i]);
+          if (fields.length < 4 || !fields[1] || fields[1] === "--") continue;
+          const type = fields[0];
+          const interfaceName = fields[1];
+          const state = fields[2] || "unknown";
+          const active = state.startsWith("connected");
+          const connectionName = fields[3] && fields[3] !== "--" ? fields[3] : "";
+          const device = { interfaceName, connectionName, state, active };
+
+          if (type === "ethernet") {
+            services.wiredDevices.append(device);
+            if (active && !activeEthernet) activeEthernet = device;
+          } else if (type === "wifi" && active && !activeWifi) {
+            activeWifi = device;
+            services.wifiNetworkName = connectionName || "offline";
+          }
+        }
+
+        const active = activeEthernet || activeWifi;
         services.networkName = active
-          ? active.split(":").slice(2).join(":").replace(/\\:/g, ":") : "offline";
+          ? (active.connectionName || active.interfaceName) : "offline";
+        services.networkTransport = active
+          ? (active === activeEthernet ? "ethernet" : "wifi") : "offline";
         services.networkState = active ? "connected" : "disconnected";
+      }
+    }
+  }
+
+  Process {
+    id: vpnQuery
+    command: ["sh", "-lc",
+      "LC_ALL=C nmcli --escape yes -t -f NAME,UUID,TYPE connection show; printf '%s\\n' '__SCYLLA_ACTIVE_PROFILES__'; LC_ALL=C nmcli --escape yes -t -f UUID connection show --active"]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const marker = "__SCYLLA_ACTIVE_PROFILES__";
+        const lines = text.split("\n");
+        const markerIndex = lines.indexOf(marker);
+        const profileLines = markerIndex >= 0 ? lines.slice(0, markerIndex) : lines;
+        const activeLines = markerIndex >= 0 ? lines.slice(markerIndex + 1) : [];
+        const activeUuids = {};
+        const profiles = [];
+
+        for (let i = 0; i < activeLines.length; ++i) {
+          const uuid = activeLines[i].trim();
+          if (uuid.length) activeUuids[uuid] = true;
+        }
+
+        for (let i = 0; i < profileLines.length; ++i) {
+          if (!profileLines[i].trim().length) continue;
+          const fields = services.splitNmcli(profileLines[i]);
+          if (fields.length < 3 || !fields[0] || !fields[1]) continue;
+          if (fields[2] !== "vpn" && fields[2] !== "wireguard") continue;
+          profiles.push({
+            name: fields[0],
+            uuid: fields[1],
+            type: fields[2] === "wireguard" ? "WireGuard" : "VPN",
+            active: activeUuids[fields[1]] === true
+          });
+        }
+
+        profiles.sort((a, b) => {
+          if (a.active !== b.active) return a.active ? -1 : 1;
+          return a.name.localeCompare(b.name);
+        });
+        vpnConnections.clear();
+        for (let i = 0; i < profiles.length; ++i)
+          vpnConnections.append(profiles[i]);
       }
     }
   }

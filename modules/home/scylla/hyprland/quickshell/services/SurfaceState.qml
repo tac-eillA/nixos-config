@@ -3,7 +3,6 @@ import QtQuick
 QtObject {
   id: state
 
-  property bool launcherVisible: false
   property bool powerVisible: false
   property bool wallpaperPickerVisible: false
   property bool calendarVisible: false
@@ -15,7 +14,6 @@ QtObject {
   property bool diagnosticsVisible: false
 
   readonly property var surfaceProperties: ({
-    launcher: "launcherVisible",
     power: "powerVisible",
     wallpaper: "wallpaperPickerVisible",
     calendar: "calendarVisible",

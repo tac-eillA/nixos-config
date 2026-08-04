@@ -11,6 +11,7 @@
 
     extraConfig = ''
       set -g renumber-windows on
+      set -g allow-passthrough on
       set -as terminal-overrides ",xterm-256color:RGB,tmux-256color:RGB"
 
       bind r source-file ~/.config/tmux/tmux.conf \; display-message "tmux config reloaded"

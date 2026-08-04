@@ -35,7 +35,6 @@ ShellRoot {
   property bool touchLayout: false
   property bool clockAlternate: false
 
-  property alias launcherVisible: surfaces.launcherVisible
   property alias powerVisible: surfaces.powerVisible
   property alias wallpaperPickerVisible: surfaces.wallpaperPickerVisible
   property alias calendarVisible: surfaces.calendarVisible
@@ -58,29 +57,6 @@ ShellRoot {
     + (Quickshell.env("XDG_STATE_HOME")
       || (Quickshell.env("HOME") + "/.local/state"))
     + "/scylla-theme/wallpaper"
-
-  property var paletteCommands: [
-    { name: "Lock session", icon: "", command: "loginctl lock-session", keywords: "secure screen" },
-    { name: "Suspend", icon: "󰤄", command: "systemctl suspend", keywords: "sleep" },
-    { name: "Log out", icon: "󰍃", command: "uwsm stop", keywords: "exit session" },
-    { name: "Reboot", icon: "󰜉", command: "systemctl reboot", keywords: "restart" },
-    { name: "Power off", icon: "", command: "systemctl poweroff", keywords: "shutdown" },
-    { name: "Display settings", icon: "󰍹", command: "qs -c scylla ipc call shell toggleQuickSettings display", keywords: "monitor screen" },
-    { name: "System diagnostics", icon: "󰒡", command: "qs -c scylla ipc call shell toggleDiagnostics", keywords: "services thermal generation reboot" }
-  ]
-
-  function run(command) {
-    Quickshell.execDetached(["sh", "-lc", command]);
-  }
-
-  function matchesPalette(label, keywords, query) {
-    const needle = query.trim().toLowerCase();
-    if (!needle.length) return true;
-    const haystack = (label + " " + (keywords || "")).toLowerCase();
-    if (haystack.includes(needle)) return true;
-    const acronym = label.split(/\s+/).map(word => word[0] || "").join("").toLowerCase();
-    return acronym.includes(needle);
-  }
 
   function closeSurfaces() {
     surfaces.closeAll();
@@ -143,7 +119,10 @@ ShellRoot {
 
   function prepareQuickSettings(section) {
     core.setBluetoothDiscovery(section === "bluetooth");
-    if (section === "network") core.scanNetworks();
+    if (section === "network") {
+      core.refreshNetwork();
+      core.scanNetworks();
+    }
     else if (section === "tailscale") core.refreshTailscale();
     else if (section === "battery") core.refreshPowerProfile();
     else if (section === "display") displays.refresh();
@@ -219,7 +198,6 @@ ShellRoot {
     diagnostics: diagnostics
     resources: resources
   }
-  Launcher { shell: root }
   PowerMenu { shell: root }
   Osd { shell: root }
   Wallpaper { shell: root }

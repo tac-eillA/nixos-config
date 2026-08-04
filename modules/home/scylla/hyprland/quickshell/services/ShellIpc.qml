@@ -12,7 +12,6 @@ Scope {
   IpcHandler {
     target: "shell"
 
-    function toggleLauncher(): void { shell.toggleSurface("launcher"); }
     function togglePower(): void { shell.toggleSurface("power"); }
     function toggleWallpaperPicker(): void { shell.toggleWallpaperPicker(); }
     function toggleNotifications(): void { shell.toggleSurface("notifications"); }
