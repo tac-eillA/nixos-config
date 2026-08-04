@@ -39,11 +39,11 @@ Variants {
 
         Repeater {
           model: [
-            { label: "Lock", icon: "", command: "loginctl lock-session" },
-            { label: "Suspend", icon: "󰤄", command: "systemctl suspend" },
-            { label: "Logout", icon: "󰍃", command: "uwsm stop" },
-            { label: "Reboot", icon: "󰜉", command: "systemctl reboot" },
-            { label: "Power off", icon: "", command: "systemctl poweroff" }
+            { label: "Lock", icon: "", command: ["loginctl", "lock-session"] },
+            { label: "Suspend", icon: "󰤄", command: ["systemctl", "suspend"] },
+            { label: "Logout", icon: "󰍃", command: ["uwsm", "stop"] },
+            { label: "Reboot", icon: "󰜉", command: ["systemctl", "reboot"] },
+            { label: "Power off", icon: "", command: ["systemctl", "poweroff"] }
           ]
 
           Rectangle {
@@ -78,7 +78,7 @@ Variants {
               id: powerMouse
               anchors.fill: parent
               hoverEnabled: true
-              onClicked: powerMenu.shell.run(modelData.command)
+              onClicked: Quickshell.execDetached(modelData.command)
             }
           }
         }

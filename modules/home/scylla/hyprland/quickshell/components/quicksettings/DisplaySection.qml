@@ -23,7 +23,7 @@ ColumnLayout {
       color: quick.shell.muted
     }
     Button { text: "Refresh"; enabled: !quick.displays.busy; onClicked: quick.displays.refresh() }
-    Button { text: "wdisplays"; onClicked: quick.shell.run("wdisplays") }
+    Button { text: "wdisplays"; onClicked: Quickshell.execDetached(["wdisplays"]) }
   }
   Text {
     Layout.fillWidth: true
