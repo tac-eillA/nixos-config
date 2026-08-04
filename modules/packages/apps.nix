@@ -17,7 +17,7 @@ let
     calibre
     mpv
     cider-2
-    hyfetch
+    fastfetch
     gparted
     ffmpeg
     libreoffice-fresh
