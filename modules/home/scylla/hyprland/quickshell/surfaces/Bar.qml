@@ -298,7 +298,7 @@ Variants {
         StatusItem {
           shell: bar.shell
           icon: bar.core.doNotDisturb ? "󰂛" : "󰂚"
-          text: bar.core.doNotDisturb ? "" : bar.core.notificationHistory.count
+          text: bar.core.doNotDisturb ? "" : bar.core.notificationCount
           textColor: bar.core.doNotDisturb ? bar.shell.muted : bar.shell.foreground
           onClicked: mouse => {
             if (mouse.button === Qt.RightButton)

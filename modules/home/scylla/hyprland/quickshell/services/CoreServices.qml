@@ -14,7 +14,6 @@ Scope {
 
   signal osdRequested(string icon, string label, int value, bool hasProgress)
 
-  property alias notificationHistory: notificationHistory
   property alias wifiNetworks: wifiNetworks
   property alias wiredDevices: wiredDevices
   property alias vpnConnections: vpnConnections
@@ -26,6 +25,7 @@ Scope {
 
   property bool doNotDisturb: false
   property bool notificationPopupVisible: false
+  property var notificationReceivedTimes: ({})
   property string networkName: "offline"
   property string networkState: "disconnected"
   property string networkTransport: "offline"
@@ -227,12 +227,60 @@ Scope {
     if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.enabled = enabled;
   }
 
-  ListModel { id: notificationHistory }
+  readonly property list<Notification> notificationHistory:
+    notificationServer.trackedNotifications.values.slice().reverse()
+  readonly property int notificationCount: notificationHistory.length
+
+  function notificationReceivedAt(id) {
+    return notificationReceivedTimes[id] || "";
+  }
+
+  function pruneNotificationReceivedTimes() {
+    const activeIds = {};
+    const tracked = notificationServer.trackedNotifications.values;
+    for (let i = 0; i < tracked.length; ++i)
+      activeIds[tracked[i].id] = true;
+
+    const times = {};
+    for (const id in notificationReceivedTimes) {
+      if (activeIds[id]) times[id] = notificationReceivedTimes[id];
+    }
+    notificationReceivedTimes = times;
+  }
+
+  function trimNotificationHistory() {
+    const tracked = notificationServer.trackedNotifications.values;
+    const excess = tracked.length - 50;
+    for (let i = 0; i < excess; ++i)
+      tracked[i].dismiss();
+    pruneNotificationReceivedTimes();
+  }
+
+  function dismissNotification(notification) {
+    if (!notification || !notification.tracked) return;
+    notification.dismiss();
+    pruneNotificationReceivedTimes();
+    if (notificationServer.trackedNotifications.values.length === 0) {
+      notificationPopupVisible = false;
+      notificationPopupTimer.stop();
+    }
+  }
+
+  function clearNotifications() {
+    const tracked = notificationServer.trackedNotifications.values.slice();
+    for (let i = 0; i < tracked.length; ++i)
+      tracked[i].dismiss();
+    notificationReceivedTimes = {};
+    notificationPopupVisible = false;
+    notificationPopupTimer.stop();
+  }
+
   ListModel { id: wifiNetworks }
   ListModel { id: wiredDevices }
   ListModel { id: vpnConnections }
 
   NotificationServer {
+    id: notificationServer
     bodySupported: true
     bodyMarkupSupported: false
     imageSupported: true
@@ -241,17 +289,24 @@ Scope {
     keepOnReload: true
     onNotification: notification => {
       notification.tracked = true;
-      notificationHistory.insert(0, {
-        appName: notification.appName || "",
-        summary: notification.summary || "",
-        body: notification.body || "",
-        receivedAt: Qt.formatDateTime(new Date(), "HH:mm")
-      });
-      if (notificationHistory.count > 50)
-        notificationHistory.remove(notificationHistory.count - 1);
+      const times = Object.assign({}, services.notificationReceivedTimes);
+      times[notification.id] = Qt.formatDateTime(new Date(), "HH:mm");
+      services.notificationReceivedTimes = times;
+      services.trimNotificationHistory();
       if (!services.doNotDisturb) {
         services.notificationPopupVisible = true;
         notificationPopupTimer.restart();
+      }
+    }
+  }
+
+  Connections {
+    target: notificationServer.trackedNotifications
+    function onObjectRemovedPost() {
+      services.pruneNotificationReceivedTimes();
+      if (notificationServer.trackedNotifications.values.length === 0) {
+        services.notificationPopupVisible = false;
+        notificationPopupTimer.stop();
       }
     }
   }
