@@ -58,6 +58,12 @@
     zed-editor-fhs
     claude-code
     python3
+    rustc
+    cargo
+    rustfmt
+    clippy
+    rust-analyzer
+    gcc
     detect-secrets
   ];
 

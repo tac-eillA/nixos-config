@@ -53,6 +53,32 @@
       local map = vim.keymap.set
       map("n", "<leader>w", "<cmd>write<cr>", { desc = "Save" })
       map("n", "<leader>q", "<cmd>nohlsearch<cr>", { desc = "Clear search" })
+
+      vim.lsp.config("rust_analyzer", {
+        cmd = { "rust-analyzer" },
+        filetypes = { "rust" },
+        root_markers = { "Cargo.toml", "rust-project.json", ".git" },
+        settings = {
+          ["rust-analyzer"] = {
+            check = {
+              command = "clippy",
+            },
+          },
+        },
+      })
+      vim.lsp.enable("rust_analyzer")
+
+      vim.api.nvim_create_autocmd("LspAttach", {
+        callback = function(args)
+          local client = vim.lsp.get_client_by_id(args.data.client_id)
+          if client and client.name == "rust_analyzer" then
+            map("n", "<leader>f", vim.lsp.buf.format, {
+              buffer = args.buf,
+              desc = "Format Rust buffer",
+            })
+          end
+        end,
+      })
     '';
   };
 }
