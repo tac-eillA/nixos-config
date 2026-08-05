@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./doom-emacs.nix
     ./git.nix
     ./ghostty.nix
     ./neovim.nix

@@ -1,6 +1,8 @@
 { pkgs, pkgsStable, ... }:
 
 let
+  codex = pkgs.callPackage ./codex.nix { };
+  opencode = pkgs.callPackage ./opencode.nix { };
   t3code = pkgs.callPackage ./t3code.nix { };
 
   # Packages use nixos-unstable unless explicitly moved to pkgsStable.
@@ -32,5 +34,5 @@ let
   ];
 in
 {
-  environment.systemPackages = unstablePackages ++ stablePackages ++ [ t3code ];
+  environment.systemPackages = unstablePackages ++ stablePackages ++ [ codex opencode t3code ];
 }

@@ -52,13 +52,10 @@
     mangohud
     steam-run
 
-    emacs
     jetbrains.rider
     jetbrains.clion
     jetbrains.rust-rover
     zed-editor-fhs
-    opencode
-    codex
     claude-code
     python3
     detect-secrets

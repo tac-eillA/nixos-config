@@ -57,6 +57,7 @@ fetch_release() {
 
 read_release() {
   local release_json="$1"
+  local tag_prefix="${2:-v}"
 
   if jq -e '.draft == true or .prerelease == true' \
     <<<"$release_json" >/dev/null; then
@@ -66,7 +67,7 @@ read_release() {
   release_tag="$(jq -er '.tag_name | select(type == "string" and length > 0)' \
     <<<"$release_json")" \
     || die "Release has no valid tag"
-  release_version="${release_tag#v}"
+  release_version="${release_tag#"$tag_prefix"}"
 
   [[ "$release_version" =~ $version_pattern ]] \
     || die "Release tag has an unsupported version: ${release_tag}"
@@ -76,6 +77,7 @@ read_asset() {
   local release_json="$1"
   local asset_pattern="$2"
   local asset_label="$3"
+  local require_version="${4:-true}"
   local asset_json
   local asset_name
 
@@ -87,10 +89,10 @@ read_asset() {
     ]
     | if length == 1 then .[0] else error("expected exactly one matching asset") end
   ' <<<"$release_json")" \
-    || die "Could not find exactly one ${asset_label} AppImage"
+    || die "Could not find exactly one ${asset_label} asset"
 
   asset_name="$(jq -er '.name' <<<"$asset_json")"
-  [[ "$asset_name" == *"${release_version}"* ]] \
+  [[ "$require_version" != true || "$asset_name" == *"${release_version}"* ]] \
     || die "${asset_label} asset does not match release ${release_tag}: ${asset_name}"
 
   asset_url="$(jq -er '.url' <<<"$asset_json")"
@@ -178,6 +180,28 @@ t3_url="$asset_url"
 download_and_hash "${tmp_dir}/t3code.AppImage"
 t3_hash="$asset_hash"
 
+codex_release_json="$(fetch_release 'openai/codex')" \
+  || die 'Failed to query the Codex release'
+read_release "$codex_release_json" 'rust-v'
+codex_tag="$release_tag"
+codex_version="$release_version"
+read_asset "$codex_release_json" \
+  '^codex-x86_64-unknown-linux-musl[.]tar[.]gz$' 'Codex x86_64' false
+codex_url="$asset_url"
+download_and_hash "${tmp_dir}/codex-x86_64-unknown-linux-musl.tar.gz"
+codex_hash="$asset_hash"
+
+opencode_release_json="$(fetch_release 'anomalyco/opencode')" \
+  || die 'Failed to query the OpenCode release'
+read_release "$opencode_release_json"
+opencode_tag="$release_tag"
+opencode_version="$release_version"
+read_asset "$opencode_release_json" \
+  '^opencode-linux-x64[.]tar[.]gz$' 'OpenCode x86_64' false
+opencode_url="$asset_url"
+download_and_hash "${tmp_dir}/opencode-linux-x64.tar.gz"
+opencode_hash="$asset_hash"
+
 helium_release_json="$(fetch_release 'imputnet/helium-linux')" \
   || die 'Failed to query the Helium release'
 read_release "$helium_release_json"
@@ -195,9 +219,15 @@ download_and_hash "${tmp_dir}/helium-arm64.AppImage"
 helium_aarch64_hash="$asset_hash"
 
 check_release_version 't3code' "$t3_version"
+check_release_version 'codex' "$codex_version"
+check_release_version 'opencode' "$opencode_version"
 check_release_version 'helium' "$helium_version"
 check_unchanged_release_asset 't3code' 'x86_64-linux' \
   "$t3_tag" "$t3_url" "$t3_hash"
+check_unchanged_release_asset 'codex' 'x86_64-linux' \
+  "$codex_tag" "$codex_url" "$codex_hash"
+check_unchanged_release_asset 'opencode' 'x86_64-linux' \
+  "$opencode_tag" "$opencode_url" "$opencode_hash"
 check_unchanged_release_asset 'helium' 'x86_64-linux' \
   "$helium_tag" "$helium_x86_64_url" "$helium_x86_64_hash"
 check_unchanged_release_asset 'helium' 'aarch64-linux' \
@@ -211,6 +241,14 @@ jq -S -n \
   --arg t3_tag "$t3_tag" \
   --arg t3_url "$t3_url" \
   --arg t3_hash "$t3_hash" \
+  --arg codex_version "$codex_version" \
+  --arg codex_tag "$codex_tag" \
+  --arg codex_url "$codex_url" \
+  --arg codex_hash "$codex_hash" \
+  --arg opencode_version "$opencode_version" \
+  --arg opencode_tag "$opencode_tag" \
+  --arg opencode_url "$opencode_url" \
+  --arg opencode_hash "$opencode_hash" \
   --arg helium_version "$helium_version" \
   --arg helium_tag "$helium_tag" \
   --arg helium_x86_64_url "$helium_x86_64_url" \
@@ -218,6 +256,16 @@ jq -S -n \
   --arg helium_aarch64_url "$helium_aarch64_url" \
   --arg helium_aarch64_hash "$helium_aarch64_hash" \
   '{
+    codex: {
+      sources: {
+        "x86_64-linux": {
+          hash: $codex_hash,
+          url: $codex_url
+        }
+      },
+      tag: $codex_tag,
+      version: $codex_version
+    },
     helium: {
       sources: {
         "aarch64-linux": {
@@ -231,6 +279,16 @@ jq -S -n \
       },
       tag: $helium_tag,
       version: $helium_version
+    },
+    opencode: {
+      sources: {
+        "x86_64-linux": {
+          hash: $opencode_hash,
+          url: $opencode_url
+        }
+      },
+      tag: $opencode_tag,
+      version: $opencode_version
     },
     t3code: {
       sources: {
@@ -247,10 +305,10 @@ jq -S -n \
 
 if cmp -s "$metadata_file" "$new_metadata_file"; then
   rm -f -- "$new_metadata_file"
-  printf 'T3 Code and Helium are already current.\n'
+  printf 'Codex, OpenCode, T3 Code, and Helium are already current.\n'
   exit 0
 fi
 
 mv -- "$new_metadata_file" "$metadata_file"
 printf 'Updated %s.\n' "$metadata_relative_path"
-printf 'Run the rebuild alias to activate the new AppImages.\n'
+printf 'Run the rebuild alias to activate the updated applications.\n'
