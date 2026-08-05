@@ -1,23 +1,5 @@
 {
   "nodes": {
-    "doom-emacs": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1785847327,
-        "narHash": "sha256-3cZHJAUo1LeWWQuMt12XQNpoJlS07/oBdMF+D0mebSI=",
-        "ref": "refs/heads/master",
-        "rev": "001a7ce6b8aaaf2b2b0403d2431a0bdb4d6de5b3",
-        "revCount": 21231,
-        "submodules": true,
-        "type": "git",
-        "url": "https://github.com/doomemacs/doomemacs"
-      },
-      "original": {
-        "submodules": true,
-        "type": "git",
-        "url": "https://github.com/doomemacs/doomemacs"
-      }
-    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -118,7 +100,6 @@
     },
     "root": {
       "inputs": {
-        "doom-emacs": "doom-emacs",
         "home-manager": "home-manager",
         "nix-flatpak": "nix-flatpak",
         "nix-stable": "nix-stable",

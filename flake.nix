@@ -10,10 +10,6 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    doom-emacs = {
-      url = "git+https://github.com/doomemacs/doomemacs?submodules=1";
-      flake = false;
-    };
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -165,10 +161,7 @@
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
               home-manager.backupFileExtension = "before-home-manager";
-              home-manager.extraSpecialArgs = {
-                inherit pkgsStable;
-                doomEmacs = inputs.doom-emacs;
-              };
+              home-manager.extraSpecialArgs = { inherit pkgsStable; };
             }
           ]
           ++ map (hardwareModule: hardwareModules.${hardwareModule}) (
