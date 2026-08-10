@@ -57,6 +57,8 @@
     jetbrains.rust-rover
     zed-editor-fhs
     claude-code
+    codex
+    opencode
     python3
     rustc
     cargo
