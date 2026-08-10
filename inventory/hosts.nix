@@ -76,9 +76,6 @@ in
     hardwareModules = [ "framework-amd-ai-300-series" ];
   };
 
-  pythia = mkWorkstation {
-    hardwareModules = [ "framework-amd-ai-300-series" ];
-  };
 
 
   authentik = mkServer "authentik" "authentik" {
@@ -116,7 +113,9 @@ in
     };
   };
 
-  pythia = placeholderHost;
+  pythia = mkWorkstation {
+    hardwareModules = [ "framework-amd-ai-300-series" ];
+  };
 
   vaultwarden = mkServer "vaultwarden" "vaultwarden" {
     roleSettings.vaultwarden = {
