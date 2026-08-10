@@ -12,3 +12,4 @@
 
   # The Framework 13 has an AMD Strix integrated GPU.
   scylla.desktop.video.gpu = "amd";
+}

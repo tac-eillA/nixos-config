@@ -1,14 +1,4 @@
 {
-  // "codex": {
-  //   "sources": {
-  //     "x86_64-linux": {
-  //       "hash": "sha256-Akbi53ODTgfw+1JJ7W660S5FkeYI+Me7l91qlpBUTDY=",
-  //       "url": "https://github.com/openai/codex/releases/download/rust-v0.147.0/codex-x86_64-unknown-linux-musl.tar.gz"
-  //     }
-  //   },
-  //   "tag": "rust-v0.147.0",
-  //   "version": "0.147.0"
-  // },
   "helium": {
     "sources": {
       "aarch64-linux": {
@@ -23,16 +13,6 @@
     "tag": "0.15.3.1",
     "version": "0.15.3.1"
   },
-  // "opencode": {
-  //   "sources": {
-  //     "x86_64-linux": {
-  //       "hash": "sha256-KG4HNV3wZzjBkFlVvhW3+8EKexLZMd6TlKb3WXJGdQs=",
-  //       "url": "https://github.com/anomalyco/opencode/releases/download/v1.18.16/opencode-linux-x64.tar.gz"
-  //     }
-  //   },
-  //   "tag": "v1.18.16",
-  //   "version": "1.18.16"
-  // },
   "t3code": {
     "sources": {
       "x86_64-linux": {
