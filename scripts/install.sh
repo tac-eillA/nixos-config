@@ -6,7 +6,6 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_dir="$(cd -- "${script_dir}/.." && pwd)"
 hosts_dir="${repo_dir}/hosts"
 template_dir="${repo_dir}/templates/host"
-inventory_file="${repo_dir}/inventory/hosts.nix"
 
 die() {
   printf 'Error: %s\n' "$*" >&2
@@ -40,6 +39,7 @@ case "${host_type,,}" in
 
     require_command nixos-generate-config
     require_command nano
+    require_command sed
     require_command sudo
 
     printf '\nWorkstation user defaults are kept in modules/profiles/workstation-user.nix.\n'
@@ -49,6 +49,7 @@ case "${host_type,,}" in
 
     mkdir -- "$destination"
     cp -- "${template_dir}/configuration.nix" "${destination}/configuration.nix"
+    sed -i "s/replace-me/${host}/" "${destination}/configuration.nix"
 
     printf '\nGenerating hardware configuration for %s...\n' "$host"
     if ! sudo nixos-generate-config --show-hardware-config \
@@ -61,16 +62,16 @@ case "${host_type,,}" in
     fi
 
     printf 'Created host configuration in %s\n' "$destination"
-    printf '\nAdd %s to inventory/hosts.nix and mark it deployable when ready.\n' "$host"
-    printf 'Nano will open the host inventory now.\n'
-    read -r -p 'Press Enter to open the host inventory. '
-    nano "$inventory_file"
+    printf '\nNano will open the host configuration now.\n'
+    printf 'Review the selected profile and add host-specific settings.\n'
+    read -r -p 'Press Enter to open the host configuration. '
+    nano "${destination}/configuration.nix"
     ;;
   2|other)
     read -r -p 'Enter the existing host configuration name: ' host
     valid_hostname "$host" \
       || die "Invalid host name: ${host}"
-    [[ "$host" != "default" ]] || die 'The default template is not deployable directly.'
+    [[ "$host" != "default" ]] || die 'The default template cannot be installed directly.'
     [[ -f "${hosts_dir}/${host}/configuration.nix" ]] \
       || die "No configuration found for host '${host}'."
 
@@ -103,11 +104,11 @@ if ! configured_hostname="$(
     "path:${repo_dir}#nixosConfigurations.${host}.config.networking.hostName" \
     2>/dev/null
 )"; then
-  die "Host '${host}' is not declared as deployable in inventory/hosts.nix."
+  die "Host '${host}' configuration does not evaluate."
 fi
 
 [[ "$configured_hostname" == "$host" ]] \
-  || die "Inventory output '${host}' evaluated with hostname '${configured_hostname}'."
+  || die "Host output '${host}' uses hostname '${configured_hostname}'."
 
 printf '\nBuilding the boot configuration for %s...\n' "$host"
 sudo nixos-rebuild boot \

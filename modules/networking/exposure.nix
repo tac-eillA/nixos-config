@@ -10,12 +10,7 @@ let
       options = {
         name = lib.mkOption {
           type = lib.types.nonEmptyStr;
-          description = "Stable inventory name for this exposure.";
-        };
-
-        address = lib.mkOption {
-          type = lib.types.nonEmptyStr;
-          description = "Address on which the corresponding service listens.";
+          description = "Unique name for this firewall exposure.";
         };
 
         port = lib.mkOption {
@@ -31,49 +26,12 @@ let
           description = "Transport protocols governed by this exposure.";
         };
 
-        classification = lib.mkOption {
-          type = lib.types.enum [
-            "lan-only"
-            "proxy-only"
-            "tailscale-only"
-            "public"
-          ];
-          description = "Reachability class assigned by inventory policy.";
-        };
-
         sources = firewallPolicy.sourcesOption;
-
-        consumedByProxy = lib.mkOption {
-          type = lib.types.bool;
-          description = "Whether the central proxy connects to this listener.";
-        };
       };
     }
   );
 
   names = map (exposure: exposure.name) cfg;
-  restrictedWithoutSources = map
-    (exposure: exposure.name)
-    (
-      lib.filter
-        (
-          exposure:
-          exposure.classification != "public"
-          && exposure.sources == [ ]
-        )
-        cfg
-    );
-  publicWithSources = map
-    (exposure: exposure.name)
-    (
-      lib.filter
-        (
-          exposure:
-          exposure.classification == "public"
-          && exposure.sources != [ ]
-        )
-        cfg
-    );
   emptyProtocolSets = map
     (exposure: exposure.name)
     (lib.filter (exposure: exposure.protocols == [ ]) cfg);
@@ -109,8 +67,8 @@ in
     type = lib.types.listOf exposureType;
     default = [ ];
     description = ''
-      Host firewall policy generated from service and administrative inventory.
-      Listener configuration remains owned by the service role.
+      Host firewall rules declared by the host configuration. An empty source
+      list opens the port publicly. Service roles own listener configuration.
     '';
   };
 
@@ -120,18 +78,6 @@ in
         {
           assertion = lib.length names == lib.length (lib.unique names);
           message = "Host exposure names must be unique.";
-        }
-        {
-          assertion = restrictedWithoutSources == [ ];
-          message =
-            "Restricted host exposures require trusted sources: "
-            + lib.concatStringsSep ", " restrictedWithoutSources;
-        }
-        {
-          assertion = publicWithSources == [ ];
-          message =
-            "Public host exposures cannot retain trusted sources: "
-            + lib.concatStringsSep ", " publicWithSources;
         }
         {
           assertion = emptyProtocolSets == [ ];
