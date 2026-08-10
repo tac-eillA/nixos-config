@@ -76,6 +76,11 @@ in
     hardwareModules = [ "framework-amd-ai-300-series" ];
   };
 
+  pythia = mkWorkstation {
+    hardwareModules = [ "framework-amd-ai-300-series" ];
+  };
+
+
   authentik = mkServer "authentik" "authentik" {
     roleSettings.authentik = {
       installAdminPackages = true;
