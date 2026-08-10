@@ -1,9 +1,13 @@
-{ ... }:
+{ inputs, ... }:
 
 {
   imports = [
     ./hardware-configuration.nix
+    inputs.nixos-hardware.nixosModules.framework-amd-ai-300-series
+    ../../modules/profiles/workstation.nix
   ];
+
+  networking.hostName = "athena";
 
   # Ryzen AI 300 firmware does not describe every device dependency needed
   # during a system-wide power transition. Serializing device suspend/resume

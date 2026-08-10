@@ -8,15 +8,15 @@
   A modular NixOS configuration for workstations and servers.
 </p>
 
-Scylla uses Nix flakes to define each host. The host inventory selects the
-system, profile, features, roles, address, and deployment state. Host files
-contain hardware settings and host-specific overrides. Shared modules are in
-`modules/`.
+Scylla uses Nix flakes to define each host. The flake discovers each
+`hosts/<name>/configuration.nix` file. Each host selects one profile and owns
+its name, address, roles, firewall rules, hardware, and overrides. Shared
+modules are in `modules/`.
 
 > [!IMPORTANT]
 > This repository contains personal host configurations and encrypted secrets.
 > Use the share-safe host template for a new system. The template does not
-> contain SOPS secrets and is not a deployable host.
+> contain SOPS secrets and is not a host output.
 
 ## Start here
 
@@ -27,14 +27,13 @@ contain hardware settings and host-specific overrides. Shared modules are in
 ## Features
 
 - NixOS configurations for workstations and servers.
-- Shared base, desktop, workstation, and server profiles.
-- Explicit feature and role selection from host inventory.
+- Manual host configuration in each host folder.
+- Workstation and server profiles with shared module imports.
 - Hyprland with a Quickshell desktop shell.
 - SOPS and Age secret management for configured hosts.
 - Service roles for Authentik, DNS, Forgejo, Headscale, Paperless-ngx,
   Proxy, and Vaultwarden.
-- Inventory validation for hosts, features, roles, addresses, networks,
-  listeners, exposure policies, and public domains.
+- Source-restricted firewall rules for server services and administration.
 
 ![Scylla desktop with a browser, terminal, media player, and audio controls](img/readme/fullscreen_browser_cider_terminal.png)
 
@@ -44,16 +43,13 @@ contain hardware settings and host-specific overrides. Shared modules are in
 
 | Path | Content |
 | --- | --- |
-| `flake.nix` | Flake inputs, validation, and NixOS outputs |
-| `inventory/hosts.nix` | Host metadata and role assignments |
-| `inventory/networks.nix` | Trusted LAN and Tailscale networks |
-| `inventory/services.nix` | Service listeners and exposure policy |
-| `hosts/` | Host configuration and hardware files |
+| `flake.nix` | Flake inputs and automatic host discovery |
+| `hosts/` | Manual host configuration and hardware files |
 | `templates/host/` | Share-safe host template |
 | `modules/core/` | Settings shared by every host |
-| `modules/profiles/` | Base, server, and workstation composition |
+| `modules/profiles/` | Server and workstation composition |
 | `modules/features/` | Desktop, development, gaming, and system features |
-| `modules/networking/` | Inventory-driven exposure and firewall policy |
+| `modules/networking/` | Source-restricted firewall policy |
 | `modules/home/scylla/` | Home Manager and desktop settings |
 | `modules/roles/` | Directory-based server workload roles |
 | `modules/secrets/` | SOPS declarations and Age settings |
@@ -61,7 +57,7 @@ contain hardware settings and host-specific overrides. Shared modules are in
 
 ## Common operations
 
-Check all deployable hosts without building them:
+Check every host without building it:
 
 ```console
 nix flake check --no-build --show-trace

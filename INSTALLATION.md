@@ -13,8 +13,8 @@ Before you start, confirm these requirements:
 - The repository is at `~/nixos-config`.
 - You have the required SOPS Age key for the selected host.
 
-The host template does not use SOPS secrets. Existing hosts can require the
-Age key at `/var/lib/sops-nix/age-key.txt`.
+The workstation profile uses encrypted GitHub settings. Server roles can also
+require the Age key at `/var/lib/sops-nix/age-key.txt`.
 
 ## Install a new host
 
@@ -40,14 +40,14 @@ Use this procedure after you install NixOS and clone the repository.
    name, full name, home directory, and Git identity. Save the file and exit
    Nano.
 
-6. When the installer opens `inventory/hosts.nix`, add the new host. Set its
-   architecture, profile, deployment state, features, and roles.
+6. When the installer opens the host configuration, check its profile. Add
+   host-specific settings before you continue.
 
 The installer performs these actions:
 
 1. Copies the host configuration template.
 2. Generates `hardware-configuration.nix`.
-3. Opens the host inventory.
+3. Opens the new host configuration.
 4. Checks that the flake exposes the requested host.
 5. Installs the bootloader.
 6. Builds the configuration for the next boot.
@@ -58,8 +58,8 @@ The installer does not reboot the system. Reboot after a successful build:
 sudo reboot
 ```
 
-Commit the new `hosts/<host-name>/` directory and its inventory entry if you
-want to keep the host in the repository.
+Commit the new `hosts/<host-name>/` directory to keep the host in the
+repository.
 
 ## Install an existing host
 
@@ -90,16 +90,22 @@ Use this procedure if you do not want to use the installer.
    cp templates/host/configuration.nix hosts/<host-name>/configuration.nix
    ```
 
-2. Keep the host configuration focused on the hardware file and exceptional
-   overrides:
+2. Import the hardware file and one profile. Set the host name:
 
    ```nix
    { ... }:
 
    {
-     imports = [ ./hardware-configuration.nix ];
+     imports = [
+       ./hardware-configuration.nix
+       ../../modules/profiles/workstation.nix
+     ];
+
+     networking.hostName = "<host-name>";
    }
    ```
+
+   Import `server.nix` instead for a server.
 
 3. Generate the hardware file:
 
@@ -108,8 +114,8 @@ Use this procedure if you do not want to use the installer.
      > hosts/<host-name>/hardware-configuration.nix
    ```
 
-4. Add the host to `inventory/hosts.nix`. The flake rejects a host directory
-   that is absent from the inventory.
+4. Add host-specific settings to `configuration.nix`. The flake discovers the
+   host configuration automatically.
 
 ## Rebuild a host
 

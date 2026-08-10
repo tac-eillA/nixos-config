@@ -1,8 +1,11 @@
 { ... }:
 
 {
-  imports = [ ./hardware-configuration.nix ];
+  imports = [
+    ./hardware-configuration.nix
+    ../../modules/profiles/workstation.nix
+  ];
 
-  # Add the new host to inventory/hosts.nix to select its profile, features,
-  # roles, architecture, address, and deployability.
+  # Use server.nix for a server.
+  networking.hostName = "replace-me";
 }

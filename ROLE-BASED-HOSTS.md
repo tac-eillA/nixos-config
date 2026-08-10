@@ -1,132 +1,128 @@
 # Role-based hosts
 
-Scylla builds each host from inventory data. A host entry selects a profile,
-features, roles, address, and deployment state. A role enables one workload.
-Keep each host file limited to hardware imports and exceptional settings.
+Each host directory contains its complete host configuration. The flake finds
+every `hosts/<name>/configuration.nix` file automatically.
 
-## Add a host to inventory
+## Select a profile
 
-Use a workstation or server constructor in `inventory/hosts.nix`:
-
-```nix
-athena = mkWorkstation {
-  hardwareModules = [ "framework-amd-ai-300-series" ];
-};
-
-forgejo = mkServer "forgejo" "forgejo" {
-  roleSettings.forgejo = {
-    installAdminPackages = true;
-  };
-};
-```
-
-Use `placeholderHost` for a host that is visible in inventory but is not ready
-for deployment. Set `deployable = false` until the host has valid hardware and
-configuration. The flake rejects a deployable host with template disk labels.
-
-## Select features
-
-Each feature name imports one module. A server normally uses these features:
+Import one shared profile in each host configuration:
 
 ```nix
-features = [
-  "development-minimal"
-  "tailscale"
-];
+{ ... }:
+
+{
+  imports = [
+    ./hardware-configuration.nix
+    ../../modules/profiles/workstation.nix
+  ];
+
+  networking.hostName = "athena";
+}
 ```
 
-A workstation can add desktop, audio, firmware, AppImage, printing, gaming,
-Distrobox, development, GitHub secrets, and Tailscale features. Add only the
-features that the workstation requires.
-`tailscale-operator` requires `tailscale` and `desktop`. Select only one of
-`development-minimal` and `development-full`.
+Use `workstation.nix` for desktop systems. It imports the desktop, development,
+gaming, printing, firmware, Home Manager, Flatpak, and secret modules.
 
-The server profile does not include firmware updates. Add `firmware` to a
-server only if its hardware needs `fwupd`.
+Use `server.nix` for servers. It imports the core, administration, Tailscale,
+firewall, SOPS, and workload role modules.
 
 ## Configure the primary user
 
-Set the primary user in `modules/profiles/workstation-user.nix`:
+Set workstation user defaults in `modules/profiles/workstation-user.nix`:
 
 ```nix
 scylla.user = {
   name = "user-name";
   fullName = "User Name";
-  homeDirectory = null; # null uses /home/<user-name>
+  homeDirectory = null;
   git.name = "Git Author";
   git.email = "user@example.com";
 };
 ```
 
-The workstation profile imports this module. The `scylla.user` account is the
-primary Home Manager account. Add other system accounts in a host-specific
-module with `users.users.<name>`.
+A null home directory uses `/home/<user-name>`. Add other accounts in the
+applicable host configuration.
+
+## Configure a server
+
+Set the host name and address in the server configuration:
+
+```nix
+networking.hostName = "forgejo";
+systemd.network.networks."10-uplink".address = [ "10.254.1.213/24" ];
+```
+
+The server profile enables systemd-networkd, DHCP, OpenSSH, QEMU guest support,
+and Tailscale. Host files can also add a static address.
 
 ## Enable a workload role
 
-Role modules are imported centrally and disabled by default. Enable a role in a
-host entry. Keep role settings specific to that workload:
+The server profile imports every role module. All roles are disabled by
+default. Enable and configure one role in the applicable host file:
 
 ```nix
-roles = [ "forgejo" ];
-roleSettings.forgejo = {
+scylla.roles.forgejo = {
+  enable = true;
+  domain = "git.example.com";
+  listenAddress = "10.0.0.13";
+  port = 3000;
   oidcDiscoveryUrl =
     "https://auth.example.com/application/o/forgejo/.well-known/openid-configuration";
-  installAdminPackages = false;
 };
 ```
 
-Disabled roles create no service users, listeners, global packages, or SOPS
-declarations. A role does not open firewall ports. Service inventory controls
-listener addresses, ports, and domains. Exposure policy controls the allowed
-sources.
+Role settings control the workload listener. They do not open firewall ports.
+
+## Declare firewall access
+
+Declare each allowed listener in the same host file:
+
+```nix
+scylla.network.exposures = [
+  {
+    name = "forgejo";
+    port = 3000;
+    protocols = [ "tcp" ];
+    sources = [ "10.0.0.15/32" ];
+  }
+];
+```
+
+Each source can be an address or a network. An empty source list opens the port
+publicly. Each host must use unique exposure names.
+
+The server profile declares LAN and Tailscale access to OpenSSH. DNS hosts
+declare TCP and UDP port 53 access for the LAN.
 
 ## Publish a service
 
-Declare service listeners and publication policy in `inventory/services.nix`:
+Add each public route to the proxy host configuration:
 
 ```nix
-forgejo = mkProxyService {
-  host = "forgejo";
-  domain = "git.example.com";
-  port = 3000;
+scylla.roles.proxy.ingress = {
+  "git.example.com" = "http://10.0.0.13:3000";
 };
 ```
 
-`mkProxyService` creates a TCP listener for HTTP traffic with proxy-only
-exposure and a Cloudflare publication. Use `mkDnsService "dns1"` for a DNS
-listener. A DNS listener uses TCP and UDP port 53.
+The destination host must allow the proxy address through its firewall. Keep
+the role listener, firewall exposure, and proxy route consistent.
 
-The listener domain belongs to the workload. If a service has a Cloudflare
-publication, its publication domain must match the listener domain. Do not add
-an `ingress` map to the proxy host.
+## Add a host
 
-Declare trusted LAN and Tailscale ranges once in `inventory/networks.nix`.
-Use LAN-only policy for raw DNS. Use proxy-only policy for DNS dashboards and
-application backends. A proxy-only service must trust the deployable proxy
-host. Use public exposure only for a listener that has no trusted-source
-restriction.
+Create `hosts/<name>/configuration.nix` and its hardware file. Import one
+profile and set `networking.hostName`. The flake creates the host output from
+the directory name.
 
-The validator rejects missing or non-deployable hosts, disabled roles,
-unsupported protocols, and invalid listener sockets. It also rejects
-undeclared networks or hosts, policy mismatches, duplicate domains, manual
-listener settings, and invalid Cloudflare destinations.
-
-## Administrative SSH
-
-Deployable servers declare SSH exposure in their host inventory. TCP port 22 is
-restricted to the declared LAN and Tailscale networks. The proxy has no
-inbound application exposure. The proxy keeps only the administrative SSH
-rules.
+Replace all template disk labels before you install the host. The flake does
+not track a separate deployment state.
 
 ## Secrets
 
-Role modules use `sops-nix`, the Age key at the following path, and role-specific
-ownership and restart settings:
+Role modules use `sops-nix` and this Age key:
 
 ```text
 /var/lib/sops-nix/age-key.txt
 ```
 
-Do not commit an unencrypted secret or an Age private key. The host template
-does not declare a SOPS secret.
+Do not commit an unencrypted secret or an Age private key. The workstation
+profile also uses this key for the GitHub CLI configuration.
