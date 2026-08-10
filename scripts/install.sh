@@ -73,6 +73,21 @@ case "${host_type,,}" in
     [[ "$host" != "default" ]] || die 'The default template is not deployable directly.'
     [[ -f "${hosts_dir}/${host}/configuration.nix" ]] \
       || die "No configuration found for host '${host}'."
+
+    hardware_file="${hosts_dir}/${host}/hardware-configuration.nix"
+    if [[ -f "$hardware_file" ]] && grep -q 'replace-me-root' "$hardware_file"; then
+      require_command nixos-generate-config
+      require_command sudo
+
+      printf '\nGenerating hardware configuration for %s...\n' "$host"
+      generated_hardware="${hardware_file}.new"
+      if sudo nixos-generate-config --show-hardware-config > "$generated_hardware"; then
+        mv -- "$generated_hardware" "$hardware_file"
+      else
+        rm -f -- "$generated_hardware"
+        die "Hardware configuration generation failed."
+      fi
+    fi
     ;;
   *)
     die "Choose Default (1) or Other (2)."

@@ -64,7 +64,7 @@ want to keep the host in the repository.
 ## Install an existing host
 
 Use this procedure only if the repository contains the correct host
-configuration and hardware file.
+configuration. The installer replaces template hardware data on the target.
 
 1. Open the repository and run the installer:
 
