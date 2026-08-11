@@ -59,6 +59,7 @@ in
       origin_web_ui_allowed = "wan";
       capture = "wlr";
       encoder = "vaapi";
+      key_rightalt_to_key_win = "enabled";
     };
     applications.apps = [
       {
