@@ -1,6 +1,11 @@
 { lib, osConfig, pkgs, ... }:
 
 {
+  programs.gh = {
+    enable = true;
+    settings.git_protocol = "https";
+  };
+
   programs.git = {
     enable = true;
     package = pkgs.gitFull;
