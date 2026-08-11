@@ -8,6 +8,7 @@ keys:
   - &host_athena age16qq7puuphyk0dzdw7w0yas7se8yv7l35m06yg2gwfwzsr96a3elq5xcu6y
   - &host_artemis age15h3t2n4v7gw47kmurl36mku2eluvua9tpemew76dgx5jj485l3csgrjld2
   - &host_demeter age1tup7frxvvt79mufcec3j97ky5s6eed02xk9re6hkkjzlytuh34fq7rpqjv
+  - &host_pythia age1ke28ty7073weu9wl2mwr4mkwkwmjswarcgu06zs7aygkgh9pa4tsd3resu
 
 creation_rules:
   - path_regex: secrets/authentik\.yaml$
@@ -52,3 +53,4 @@ creation_rules:
           - *host_athena
           - *host_artemis
           - *host_demeter
+          - *host_pythia
