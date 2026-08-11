@@ -56,5 +56,11 @@ symlinkJoin {
   postBuild = ''
     wrapProgram "$out/bin/t3code" \
       --add-flags "--password-store=gnome-libsecret"
+
+    # The AppImage bundles the current headless CLI inside its ASAR. Run that
+    # entry point with Electron's Node mode instead of starting the GUI.
+    makeWrapper "$out/bin/.t3code-wrapped" "$out/bin/t3" \
+      --set ELECTRON_RUN_AS_NODE 1 \
+      --add-flags "${contents}/resources/app.asar/apps/server/dist/bin.mjs"
   '';
 }

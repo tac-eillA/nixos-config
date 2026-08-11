@@ -7,7 +7,7 @@ let
   # Use the same pinned AppImage package as the desktop application. The
   # nixpkgs CLI package can lag behind the upstream AppImage release.
   t3Package = pkgs.callPackage ../packages/t3code.nix { };
-  t3Executable = lib.getExe t3Package;
+  t3Executable = lib.getExe' t3Package "t3";
   t3Cli = pkgs.writeShellScriptBin "t3" ''
     exec ${t3Executable} "$@"
   '';
@@ -27,6 +27,15 @@ let
     ${pkgs.coreutils}/bin/sleep 2
     exec ${lib.getExe pkgs.hyprlock} --grace 0 --immediate-render
   '';
+  ensureHeadlessOutput = pkgs.writeShellApplication {
+    name = "ensure-headless-output";
+    runtimeInputs = [ pkgs.hyprland pkgs.jq ];
+    text = ''
+      if ! hyprctl monitors all -j | jq -e 'any(.[]; .name == "HEADLESS-0")' >/dev/null; then
+        hyprctl output create headless HEADLESS-0
+      fi
+    '';
+  };
 in
 {
   services.displayManager.autoLogin = {
@@ -153,6 +162,20 @@ in
         on-timeout = "loginctl lock-session";
       }
     ];
+
+    systemd.user.services.headless-output = {
+      Unit = {
+        Description = "Create the Hyprland virtual display";
+        After = [ "graphical-session.target" ];
+        PartOf = [ "graphical-session.target" ];
+      };
+      Service = {
+        Type = "oneshot";
+        ExecStart = lib.getExe ensureHeadlessOutput;
+        RemainAfterExit = true;
+      };
+      Install.WantedBy = [ "graphical-session.target" ];
+    };
 
     systemd.user.services.remote-session-lock = {
       Unit = {
