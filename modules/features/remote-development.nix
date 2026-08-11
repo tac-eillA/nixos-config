@@ -4,7 +4,10 @@ let
   userName = config.scylla.user.name;
   homeDirectory = config.users.users.${userName}.home;
   tailscaleInterface = config.services.tailscale.interfaceName;
-  t3Executable = lib.getExe' pkgs.t3code "t3";
+  # Use the same pinned AppImage package as the desktop application. The
+  # nixpkgs CLI package can lag behind the upstream AppImage release.
+  t3Package = pkgs.callPackage ../packages/t3code.nix { };
+  t3Executable = lib.getExe t3Package;
   t3Cli = pkgs.writeShellScriptBin "t3" ''
     exec ${t3Executable} "$@"
   '';
@@ -59,6 +62,14 @@ in
   };
 
   services.tailscale.openFirewall = true;
+
+  # NixOS orders tailscaled after NetworkManager-wait-online, but After= does
+  # not pull that unit into the transaction. Explicitly require an online
+  # network so tailscaled sees the LAN DNS server before configuring MagicDNS.
+  systemd.services.tailscaled = {
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+  };
 
   users.users.${userName}.extraGroups = [ "uinput" ];
 
