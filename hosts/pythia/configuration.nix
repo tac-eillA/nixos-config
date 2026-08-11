@@ -3,17 +3,22 @@
 {
   imports = [
     ./hardware-configuration.nix
-    inputs.nixos-hardware.nixosModules.framework-amd-ai-300-series
+    inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
+    inputs.nixos-hardware.nixosModules.common-gpu-amd
+    inputs.nixos-hardware.nixosModules.common-pc-ssd
     ../../modules/profiles/workstation.nix
+    ../../modules/features/lm-studio.nix
+    ../../modules/features/remote-development.nix
   ];
 
   networking.hostName = "pythia";
 
-  # Ryzen AI 300 firmware does not describe every device dependency needed
-  # during a system-wide power transition. Serializing device suspend/resume
-  # avoids intermittent input/USB/GPU resume hangs on this platform.
-  boot.kernelParams = [ "pm_async=off" ];
+  hardware.enableRedistributableFirmware = true;
 
-  # The Framework 13 has an AMD Strix integrated GPU.
+  # This limit gives the 128 GB model 100 GB of shared GPU memory.
+  boot.extraModprobeConfig = ''
+    options ttm pages_limit=26214400
+  '';
+
   scylla.desktop.video.gpu = "amd";
 }
