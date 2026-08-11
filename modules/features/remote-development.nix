@@ -12,11 +12,10 @@ let
     name = "t3code-server";
     runtimeInputs = [ config.services.tailscale.package ];
     text = ''
-      tailnet_address="$(tailscale ip -4)"
-      if [ -z "$tailnet_address" ]; then
-        echo "Tailscale has no IPv4 address." >&2
-        exit 1
-      fi
+      until tailnet_address="$(tailscale ip -4 2>/dev/null)" && [ -n "$tailnet_address" ]; do
+        echo "Waiting for a Tailscale IPv4 address..." >&2
+        ${pkgs.coreutils}/bin/sleep 1
+      done
 
       exec ${t3Executable} serve --host "$tailnet_address" --port 3773
     '';
