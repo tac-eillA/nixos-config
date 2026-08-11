@@ -2,6 +2,7 @@
 
 let
   t3code = pkgs.callPackage ./t3code.nix { };
+  t3codeNightly = pkgs.callPackage ./t3code.nix { nightly = true; };
 
   # Packages use nixos-unstable unless explicitly moved to pkgsStable.
   unstablePackages = with pkgs; [
@@ -32,5 +33,8 @@ let
   ];
 in
 {
-  environment.systemPackages = unstablePackages ++ stablePackages ++ [ t3code ];
+  environment.systemPackages = unstablePackages ++ stablePackages ++ [
+    t3code
+    t3codeNightly
+  ];
 }

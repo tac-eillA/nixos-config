@@ -22,5 +22,15 @@
     },
     "tag": "v0.0.33",
     "version": "0.0.33"
+  },
+  "t3code-nightly": {
+    "sources": {
+      "x86_64-linux": {
+        "hash": "sha256-cFkEh/FWa0PwkVwPC84U6StPiAEkACfvK2Nve5YeBmE=",
+        "url": "https://github.com/pingdotgg/t3code/releases/download/v0.0.34-nightly.20260811.1071/T3-Code-0.0.34-nightly.20260811.1071-x86_64.AppImage"
+      }
+    },
+    "tag": "v0.0.34-nightly.20260811.1071",
+    "version": "0.0.34-nightly.20260811.1071"
   }
 }
