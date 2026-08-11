@@ -20,7 +20,10 @@ let
         ${pkgs.coreutils}/bin/sleep 1
       done
 
-      exec ${t3Executable} serve --host "$tailnet_address" --port 3773
+      exec ${t3Executable} serve \
+        --host 127.0.0.1 \
+        --port 3774 \
+        --tailscale-serve
     '';
   };
   lockRemoteSession = pkgs.writeShellScript "lock-remote-session" ''
