@@ -52,9 +52,6 @@
     mangohud
     steam-run
 
-    jetbrains.rider
-    jetbrains.clion
-    jetbrains.rust-rover
     zed-editor-fhs
     claude-code
     codex
@@ -66,6 +63,7 @@
     clippy
     rust-analyzer
     gcc
+    clang-tools
     detect-secrets
   ];
 
