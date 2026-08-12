@@ -7,6 +7,10 @@ in
 {
   imports = [ ./runtime-age.nix ];
 
+  # Keep the OAuth token in this SOPS-encrypted hosts.yml payload. Headless
+  # workstation services can start before an autologin session has supplied a
+  # password to GNOME Keyring, but gh's Git credential helper must still remain
+  # non-interactive after a reboot.
   sops.secrets."gh/hosts-yml" = {
     sopsFile = ../../secrets/github.yaml;
     path = "${homeDirectory}/.config/gh/hosts.yml";
