@@ -16,7 +16,7 @@ let
   }) release.sources;
 
   src = sources.${stdenv.hostPlatform.system};
-  contents = appimageTools.extractType2 {
+  contents = appimageTools.extract {
     inherit pname version src;
   };
 in

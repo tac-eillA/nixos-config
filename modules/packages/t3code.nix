@@ -22,7 +22,7 @@ let
     inherit (source) hash url;
   };
 
-  contents = appimageTools.extractType2 {
+  contents = appimageTools.extract {
     inherit pname version src;
   };
 
