@@ -2,7 +2,6 @@ keys:
   - &allison_admin age13cl4dacu3vdw9cttjdys0qrq52q5apz8q9zaa5ax90aruvpqyadqfnphsy
   - &host_authentik age1ghsdwq7j4yfmculja75enwdx93slr2pq8zc9t70fs2vuqa7a432qc68sxc
   - &host_forgejo age1pqvf65525hydme443g5tf4c9ass04pajp6ryjj3xpdal0dsqlepqy4rh95
-  - &host_headscale age17j775elsx750jyexmsh76zthg42s5nqyrhnhkqdnhzzjqy89sqxs9u368p
   - &host_proxy age1usrgz3uuu6mqh3kfzc59g0su6xn4r49s0hptu8nknxegp0j8h46shjkzl7
   - &host_vaultwarden age1vuyq6gcj7j3uzngad4qhghvv7u3ex5gfwvzxplm25ce28gkvjeuqm5p7eh
   - &host_athena age16qq7puuphyk0dzdw7w0yas7se8yv7l35m06yg2gwfwzsr96a3elq5xcu6y
@@ -23,12 +22,6 @@ creation_rules:
           - *allison_admin
           - *host_forgejo
 
-  - path_regex: secrets/headscale\.yaml$
-    key_groups:
-      - age:
-          - *allison_admin
-          - *host_headscale
-
   - path_regex: secrets/vaultwarden\.yaml$
     key_groups:
       - age:
@@ -40,11 +33,6 @@ creation_rules:
       - age:
           - *allison_admin
           - *host_proxy
-
-  - path_regex: secrets/paperless\.yaml$
-    key_groups:
-      - age:
-          - *allison_admin
 
   - path_regex: secrets/github\.yaml$
     key_groups:
