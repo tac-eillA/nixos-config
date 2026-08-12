@@ -184,7 +184,13 @@ in
     systemd.user.services.remote-session-lock = {
       Unit = {
         Description = "Lock the automatic remote desktop session";
-        After = [ "sunshine.service" ];
+        # The graphical-session target also starts Sunshine. Order this service
+        # after the target explicitly so systemd does not infer the reverse
+        # target ordering and create graphical -> lock -> Sunshine -> graphical.
+        After = [
+          "graphical-session.target"
+          "sunshine.service"
+        ];
         Wants = [ "sunshine.service" ];
         PartOf = [ "graphical-session.target" ];
       };
