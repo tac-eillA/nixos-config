@@ -2,16 +2,16 @@
   "helium": {
     "sources": {
       "aarch64-linux": {
-        "hash": "sha256-3Ut6Mr5Spj9mPUuXgtRf2WVqlMzkOAWEyZXdXQiwb4k=",
-        "url": "https://github.com/imputnet/helium-linux/releases/download/0.15.3.1/helium-0.15.3.1-arm64.AppImage"
+        "hash": "sha256-VNVETBXVO1skExhK3maw7N/HuFufeHRky/z1CRwjqkw=",
+        "url": "https://github.com/imputnet/helium-linux/releases/download/0.15.4.1/helium-0.15.4.1-arm64.AppImage"
       },
       "x86_64-linux": {
-        "hash": "sha256-ZCCm/prkgYgbDHW6OBPWvoIE77g7IYQpYdqc/PnIrSU=",
-        "url": "https://github.com/imputnet/helium-linux/releases/download/0.15.3.1/helium-0.15.3.1-x86_64.AppImage"
+        "hash": "sha256-h3yxZnMb/EHvPJALQlJgHUVYUNsfuv0pnewgf6K6sx8=",
+        "url": "https://github.com/imputnet/helium-linux/releases/download/0.15.4.1/helium-0.15.4.1-x86_64.AppImage"
       }
     },
-    "tag": "0.15.3.1",
-    "version": "0.15.3.1"
+    "tag": "0.15.4.1",
+    "version": "0.15.4.1"
   },
   "lmstudio": {
     "sources": {
@@ -36,11 +36,11 @@
   "t3code-nightly": {
     "sources": {
       "x86_64-linux": {
-        "hash": "sha256-cFkEh/FWa0PwkVwPC84U6StPiAEkACfvK2Nve5YeBmE=",
-        "url": "https://github.com/pingdotgg/t3code/releases/download/v0.0.34-nightly.20260811.1071/T3-Code-0.0.34-nightly.20260811.1071-x86_64.AppImage"
+        "hash": "sha256-TBL3tBxcqjbIq9mqV1Svl1Mm2n0RFyPRMIbkAJdnJss=",
+        "url": "https://github.com/pingdotgg/t3code/releases/download/v0.0.34-nightly.20260813.1082/T3-Code-0.0.34-nightly.20260813.1082-x86_64.AppImage"
       }
     },
-    "tag": "v0.0.34-nightly.20260811.1071",
-    "version": "0.0.34-nightly.20260811.1071"
+    "tag": "v0.0.34-nightly.20260813.1082",
+    "version": "0.0.34-nightly.20260813.1082"
   }
 }
