@@ -13,6 +13,16 @@
     "tag": "0.15.3.1",
     "version": "0.15.3.1"
   },
+  "lmstudio": {
+    "sources": {
+      "x86_64-linux": {
+        "hash": "sha256-EBQ3bYnWaMOBTNIOKxRqB2FGdg3tHvB7lo+2HFje01U=",
+        "url": "https://installers.lmstudio.ai/linux/x64/0.4.21-2/LM-Studio-0.4.21-2-x64.AppImage"
+      }
+    },
+    "tag": "0.4.21-2",
+    "version": "0.4.21-2"
+  },
   "t3code": {
     "sources": {
       "x86_64-linux": {

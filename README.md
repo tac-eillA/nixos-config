@@ -31,8 +31,7 @@ modules are in `modules/`.
 - Workstation and server profiles with shared module imports.
 - Hyprland with a Quickshell desktop shell.
 - SOPS and Age secret management for configured hosts.
-- Service roles for Authentik, DNS, Forgejo, Headscale, Paperless-ngx,
-  Proxy, and Vaultwarden.
+- Service roles for Authentik, DNS, Forgejo, Caddy proxying, and Vaultwarden.
 - Source-restricted firewall rules for server services and administration.
 
 ![Scylla desktop with a browser, terminal, media player, and audio controls](img/readme/fullscreen_browser_cider_terminal.png)

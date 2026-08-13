@@ -11,7 +11,7 @@
   environment.systemPackages = with pkgs; [
     clinfo
     libva-utils
-    lmstudio
+    (callPackage ../packages/lmstudio.nix { })
     rocmPackages.amdsmi
     rocmPackages.rocminfo
   ];

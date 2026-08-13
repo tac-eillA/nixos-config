@@ -2,87 +2,61 @@
 
 let
   cfg = config.scylla.roles.proxy;
-  credentialsFile = config.sops.secrets."cloudflare/tunnel-credentials".path;
 in
 {
   options.scylla.roles.proxy = {
-    enable = lib.mkEnableOption "the Cloudflare tunnel proxy workload";
-
-    tunnelId = lib.mkOption {
-      type = lib.types.nonEmptyStr;
-      default = "8eaa3da2-b2ae-4cbf-86f0-73bda6de85bd";
-      description = "Cloudflare tunnel identifier.";
-    };
+    enable = lib.mkEnableOption "the Caddy reverse proxy workload";
 
     ingress = lib.mkOption {
       type = lib.types.attrsOf lib.types.nonEmptyStr;
       default = { };
       example = {
-        "git.example.com" = "http://10.0.0.10:3000";
+        "git.example.com" = "http://forgejo:3000";
       };
-      description = "Map of public domains to Cloudflare tunnel service URLs.";
+      description = "Map of public domains to upstream URLs reachable over Tailscale.";
     };
 
-    defaultService = lib.mkOption {
-      type = lib.types.nonEmptyStr;
-      default = "http_status:404";
-      description = "Cloudflare tunnel fallback service.";
-    };
-
-    warpRouting = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Whether to enable Cloudflare WARP routing.";
+    acmeEmail = lib.mkOption {
+      type = lib.types.nullOr lib.types.nonEmptyStr;
+      default = null;
+      example = "admin@example.com";
+      description = "Optional email address for Caddy's ACME account.";
     };
 
     installAdminPackages = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Whether to install cloudflared globally.";
-    };
-
-    secretFile = lib.mkOption {
-      type = lib.types.path;
-      default = ../../../secrets/proxy.yaml;
-      description = "SOPS file containing the Cloudflare tunnel credentials.";
+      description = "Whether to install the Caddy CLI globally.";
     };
   };
 
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = builtins.pathExists cfg.secretFile;
-        message = "The proxy role secret file does not exist.";
-      }
-      {
         assertion = cfg.ingress != { };
         message = "The proxy role requires at least one ingress route.";
       }
     ];
 
-    sops.age = {
-      keyFile = "/var/lib/sops-nix/age-key.txt";
-      generateKey = false;
-    };
-
-    sops.secrets."cloudflare/tunnel-credentials" = {
-      sopsFile = cfg.secretFile;
-      owner = "cloudflared";
-      group = "cloudflared";
-      mode = "0400";
-      restartUnits = [ "cloudflared-tunnel-${cfg.tunnelId}.service" ];
-    };
-
-    services.cloudflared = {
+    services.caddy = {
       enable = true;
-      tunnels.${cfg.tunnelId} = {
-        inherit credentialsFile;
-        warp-routing.enabled = cfg.warpRouting;
-        ingress = lib.mapAttrs (_: service: { inherit service; }) cfg.ingress;
-        default = cfg.defaultService;
-      };
+      email = cfg.acmeEmail;
+      openFirewall = false;
+      virtualHosts = lib.mapAttrs
+        (_: upstream: {
+          extraConfig = ''
+            encode zstd gzip
+            reverse_proxy ${upstream}
+          '';
+        })
+        cfg.ingress;
     };
 
-    environment.systemPackages = lib.optionals cfg.installAdminPackages [ pkgs.cloudflared ];
+    systemd.services.caddy = {
+      wants = [ "tailscaled.service" ];
+      after = [ "tailscaled.service" ];
+    };
+
+    environment.systemPackages = lib.optionals cfg.installAdminPackages [ pkgs.caddy ];
   };
 }

@@ -12,7 +12,7 @@
   scylla.roles.authentik = {
     enable = true;
     domain = "auth.allie.sh";
-    listenAddress = "10.254.1.210";
+    listenAddress = "0.0.0.0";
     port = 9000;
     installAdminPackages = true;
   };
@@ -22,7 +22,7 @@
       name = "authentik";
       port = 9000;
       protocols = [ "tcp" ];
-      sources = [ "10.254.1.215/32" ];
+      sources = [ "100.64.0.0/10" ];
     }
   ];
 }

@@ -203,6 +203,28 @@ check_unchanged_release_asset() {
     || die "Release asset changed under immutable tag ${candidate_tag}: ${application} ${platform}"
 }
 
+lmstudio_url="$(curl \
+  --fail \
+  --location \
+  --max-redirs 5 \
+  --output /dev/null \
+  --silent \
+  --show-error \
+  --write-out '%{url_effective}' \
+  'https://lmstudio.ai/download/latest/linux/x64?format=AppImage')" \
+  || die 'Failed to resolve the latest LM Studio Linux AppImage'
+
+lmstudio_filename="${lmstudio_url##*/}"
+if [[ "$lmstudio_filename" =~ ^LM-Studio-([0-9]+([.][0-9]+)*-[0-9]+)-x64[.]AppImage$ ]]; then
+  lmstudio_version="${BASH_REMATCH[1]}"
+else
+  die "Latest LM Studio URL has an unsupported filename: ${lmstudio_filename}"
+fi
+lmstudio_tag="$lmstudio_version"
+asset_url="$lmstudio_url"
+download_and_hash "${tmp_dir}/lmstudio.AppImage"
+lmstudio_hash="$asset_hash"
+
 t3_release_json="$(fetch_release 'pingdotgg/t3code')" \
   || die 'Failed to query the T3 Code release'
 read_release "$t3_release_json"
@@ -243,6 +265,7 @@ helium_aarch64_hash="$asset_hash"
 check_release_version 't3code' "$t3_version"
 check_release_version 't3code-nightly' "$t3_nightly_version"
 check_release_version 'helium' "$helium_version"
+check_release_version 'lmstudio' "$lmstudio_version"
 check_unchanged_release_asset 't3code' 'x86_64-linux' \
   "$t3_tag" "$t3_url" "$t3_hash"
 check_unchanged_release_asset 't3code-nightly' 'x86_64-linux' \
@@ -251,6 +274,8 @@ check_unchanged_release_asset 'helium' 'x86_64-linux' \
   "$helium_tag" "$helium_x86_64_url" "$helium_x86_64_hash"
 check_unchanged_release_asset 'helium' 'aarch64-linux' \
   "$helium_tag" "$helium_aarch64_url" "$helium_aarch64_hash"
+check_unchanged_release_asset 'lmstudio' 'x86_64-linux' \
+  "$lmstudio_tag" "$lmstudio_url" "$lmstudio_hash"
 
 new_metadata_file="$(mktemp "${metadata_file}.tmp.XXXXXX")"
 trap 'rm -f -- "$new_metadata_file"; rm -rf -- "$tmp_dir"' EXIT
@@ -270,6 +295,10 @@ jq -S -n \
   --arg helium_x86_64_hash "$helium_x86_64_hash" \
   --arg helium_aarch64_url "$helium_aarch64_url" \
   --arg helium_aarch64_hash "$helium_aarch64_hash" \
+  --arg lmstudio_version "$lmstudio_version" \
+  --arg lmstudio_tag "$lmstudio_tag" \
+  --arg lmstudio_url "$lmstudio_url" \
+  --arg lmstudio_hash "$lmstudio_hash" \
   '{
     helium: {
       sources: {
@@ -304,13 +333,23 @@ jq -S -n \
       },
       tag: $t3_nightly_tag,
       version: $t3_nightly_version
+    },
+    lmstudio: {
+      sources: {
+        "x86_64-linux": {
+          hash: $lmstudio_hash,
+          url: $lmstudio_url
+        }
+      },
+      tag: $lmstudio_tag,
+      version: $lmstudio_version
     }
   }' >"$new_metadata_file" \
   || die 'Failed to generate AppImage metadata'
 
 if cmp -s "$metadata_file" "$new_metadata_file"; then
   rm -f -- "$new_metadata_file"
-  printf 'T3 Code stable/nightly and Helium are already current.\n'
+  printf 'LM Studio, T3 Code stable/nightly, and Helium are already current.\n'
   exit 0
 fi
 

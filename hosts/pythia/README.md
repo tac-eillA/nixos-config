@@ -22,15 +22,15 @@ Enable automatic startup after a power failure.
 
 ## First connection
 
-Join the private Headscale network:
+Join the Tailscale network:
 
 ```console
-sudo tailscale up --login-server=https://headscale.allie.sh
+sudo tailscale up
 ```
 
-Open `https://pythia.tailnet.allie.sh:47990` from the tailnet.
+Open `https://pythia:47990` from the tailnet.
 Create the first Sunshine account.
-Add `pythia.tailnet.allie.sh` to Moonlight and complete pairing.
+Add `pythia` to Moonlight and complete pairing.
 
 Create a T3 Code pairing link:
 
@@ -39,7 +39,7 @@ t3 pair
 ```
 
 Enter the link in the T3 Code desktop client.
-The direct endpoint uses `http://pythia.tailnet.allie.sh:3773`.
+The direct endpoint uses `http://pythia:3773`.
 
 ## GPU checks
 

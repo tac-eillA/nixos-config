@@ -12,7 +12,7 @@
   scylla.roles.forgejo = {
     enable = true;
     domain = "git.allie.sh";
-    listenAddress = "10.254.1.213";
+    listenAddress = "0.0.0.0";
     port = 3000;
     oidcDiscoveryUrl =
       "https://auth.allie.sh/application/o/forgejo/.well-known/openid-configuration";
@@ -24,7 +24,7 @@
       name = "forgejo";
       port = 3000;
       protocols = [ "tcp" ];
-      sources = [ "10.254.1.215/32" ];
+      sources = [ "100.64.0.0/10" ];
     }
   ];
 }

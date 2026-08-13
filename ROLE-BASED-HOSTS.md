@@ -96,16 +96,54 @@ declare TCP and UDP port 53 access for the LAN.
 
 ## Publish a service
 
-Add each public route to the proxy host configuration:
+The proxy host is intended to run on a public VPS. Caddy terminates HTTPS there
+and reaches each standalone service host through Tailscale MagicDNS:
 
 ```nix
-scylla.roles.proxy.ingress = {
-  "git.example.com" = "http://10.0.0.13:3000";
+scylla.roles.proxy = {
+  enable = true;
+  ingress = {
+    "git.example.com" = "http://forgejo:3000";
+  };
 };
 ```
 
-The destination host must allow the proxy address through its firewall. Keep
-the role listener, firewall exposure, and proxy route consistent.
+Point the public DNS record at the VPS and allow TCP port 80 plus TCP and UDP
+port 443 through both the host and provider firewalls. The VPS and backend must
+be members of the same tailnet, with MagicDNS enabled.
+
+Every ingress entry is publicly reachable through Caddy. Tailscale protects the
+VPS-to-backend hop; it does not authenticate internet clients at the Caddy
+frontend. Remove administrative routes or add an authentication layer if they
+must remain private.
+
+Backend listeners must accept traffic on their Tailscale address. The current
+host examples listen on all addresses and admit `100.64.0.0/10` at the NixOS
+firewall. Narrow that source to the proxy's stable Tailscale `/32` when it is
+known, and use Tailscale grants as the primary authorization boundary. A tagged
+policy can grant the proxy only the required service ports:
+
+```json
+{
+  "tagOwners": {
+    "tag:public-proxy": ["autogroup:admin"],
+    "tag:authentik": ["autogroup:admin"],
+    "tag:dns-dashboard": ["autogroup:admin"],
+    "tag:forgejo": ["autogroup:admin"],
+    "tag:vaultwarden": ["autogroup:admin"]
+  },
+  "grants": [
+    { "src": ["tag:public-proxy"], "dst": ["tag:authentik"], "ip": ["tcp:9000"] },
+    { "src": ["tag:public-proxy"], "dst": ["tag:dns-dashboard"], "ip": ["tcp:5380"] },
+    { "src": ["tag:public-proxy"], "dst": ["tag:forgejo"], "ip": ["tcp:3000"] },
+    { "src": ["tag:public-proxy"], "dst": ["tag:vaultwarden"], "ip": ["tcp:8222"] }
+  ]
+}
+```
+
+Keep each role listener, firewall exposure, Caddy route, and tailnet grant in
+sync. Caddy handles HTTP and HTTPS; Forgejo SSH remains a direct LAN or
+Tailscale connection unless a separate TCP forwarding design is added.
 
 ## Add a host
 

@@ -10,8 +10,6 @@
     ../networking/exposure.nix
     ../roles/authentik
     ../roles/forgejo
-    ../roles/headscale
-    ../roles/paperless-ngx
     ../roles/proxy
     ../roles/technitium-dns
     ../roles/vaultwarden

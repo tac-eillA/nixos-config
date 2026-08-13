@@ -25,7 +25,7 @@
       name = "dns1-dashboard";
       port = 5380;
       protocols = [ "tcp" ];
-      sources = [ "10.254.1.215/32" ];
+      sources = [ "100.64.0.0/10" ];
     }
   ];
 }
