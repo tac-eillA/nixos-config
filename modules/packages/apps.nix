@@ -7,6 +7,7 @@ let
   # Packages use nixos-unstable unless explicitly moved to pkgsStable.
   unstablePackages = with pkgs; [
     blender
+    godot
     kicad
     krita
     obs-studio
