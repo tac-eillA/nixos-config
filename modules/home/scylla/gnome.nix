@@ -85,6 +85,7 @@ in
       enabled-extensions = [
         "appindicatorsupport@rgcjonas.gmail.com"
         "clipboard-indicator@tudmotu.com"
+        "extension-list@tu.berry"
         "tiling-assistant@leleat-on-github"
       ];
     };
@@ -107,6 +108,8 @@ in
     "org/gnome/desktop/wm/keybindings" = {
       close = [ "<Super>q" ];
       toggle-fullscreen = [ "<Super>f" ];
+      switch-input-source = [ ];
+      switch-input-source-backward = [ ];
       focus-left = [ "<Super>h" ];
       focus-down = [ "<Super>j" ];
       focus-up = [ "<Super>k" ];

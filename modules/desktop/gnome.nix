@@ -26,6 +26,7 @@
       gnome-screenshot
       gnomeExtensions.appindicator
       gnomeExtensions.clipboard-indicator
+      gnomeExtensions.extension-list
       gnomeExtensions.tiling-assistant
       imv
       xarchiver
