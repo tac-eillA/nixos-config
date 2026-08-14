@@ -26,17 +26,12 @@ let
         --tailscale-serve
     '';
   };
-  lockRemoteSession = pkgs.writeShellScript "lock-remote-session" ''
-    ${pkgs.coreutils}/bin/sleep 2
-    exec ${lib.getExe pkgs.hyprlock} --grace 0 --immediate-render
-  '';
-  ensureHeadlessOutput = pkgs.writeShellApplication {
-    name = "ensure-headless-output";
-    runtimeInputs = [ pkgs.hyprland pkgs.jq ];
+  lockRemoteSession = pkgs.writeShellApplication {
+    name = "lock-remote-session";
+    runtimeInputs = [ pkgs.coreutils pkgs.systemd ];
     text = ''
-      if ! hyprctl monitors all -j | jq -e 'any(.[]; .name == "HEADLESS-0")' >/dev/null; then
-        hyprctl output create headless HEADLESS-0
-      fi
+      sleep 2
+      loginctl lock-session
     '';
   };
 in
@@ -45,8 +40,6 @@ in
     enable = true;
     user = userName;
   };
-  services.displayManager.sddm.autoLogin.relogin = true;
-
   services.sunshine = {
     enable = true;
     autoStart = true;
@@ -143,44 +136,9 @@ in
     AllowSuspendThenHibernate = false;
   };
 
-  security.pam.services.hyprlock = {
-    enableGnomeKeyring = true;
-    fprintAuth = lib.mkForce false;
-  };
-
   services.fprintd.enable = lib.mkForce false;
 
   home-manager.users.${userName} = {
-    wayland.windowManager.hyprland.extraConfig = lib.mkAfter ''
-      hl.monitor({
-        output = "HEADLESS-0",
-        mode = "2560x1440@60",
-        position = "0x0",
-        scale = 1,
-      })
-    '';
-
-    services.hypridle.settings.listener = lib.mkForce [
-      {
-        timeout = 300;
-        on-timeout = "loginctl lock-session";
-      }
-    ];
-
-    systemd.user.services.headless-output = {
-      Unit = {
-        Description = "Create the Hyprland virtual display";
-        After = [ "graphical-session.target" ];
-        PartOf = [ "graphical-session.target" ];
-      };
-      Service = {
-        Type = "oneshot";
-        ExecStart = lib.getExe ensureHeadlessOutput;
-        RemainAfterExit = true;
-      };
-      Install.WantedBy = [ "graphical-session.target" ];
-    };
-
     systemd.user.services.remote-session-lock = {
       Unit = {
         Description = "Lock the automatic remote desktop session";

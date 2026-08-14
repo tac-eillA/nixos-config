@@ -2,7 +2,7 @@
 
 {
   # Let the primary desktop user control Tailscale without sudo. This is used
-  # by the Quickshell top-bar applet.
+  # by the desktop status applet.
   services.tailscale.extraSetFlags = [
     "--operator=${config.scylla.user.name}"
   ];

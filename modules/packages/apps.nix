@@ -6,26 +6,14 @@ let
 
   # Packages use nixos-unstable unless explicitly moved to pkgsStable.
   unstablePackages = with pkgs; [
-    blender
-    godot
-    kicad
-    krita
-    obs-studio
     vial
-    qbittorrent
-    foliate
-    easyeffects
     opentabletdriver
-    calibre
-    mpv
     cider-2
     fastfetch
     gparted
     ffmpeg
-    libreoffice-fresh
     streamrip
     kontainer
-    moonlight-qt
   ];
 
   stablePackages = with pkgsStable; [

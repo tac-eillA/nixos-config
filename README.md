@@ -22,14 +22,14 @@ modules are in `modules/`.
 
 - [Install a new or existing host](INSTALLATION.md).
 - [Configure role-based hosts and services](ROLE-BASED-HOSTS.md).
-- [Configure the Quickshell desktop](modules/home/scylla/hyprland/quickshell/README.md).
+- [Configure the GNOME desktop](modules/home/scylla/gnome.nix).
 
 ## Features
 
 - NixOS configurations for workstations and servers.
 - Manual host configuration in each host folder.
 - Workstation and server profiles with shared module imports.
-- Hyprland with a Quickshell desktop shell.
+- GNOME with declarative desktop settings and keybindings.
 - SOPS and Age secret management for configured hosts.
 - Service roles for Authentik, DNS, Forgejo, Caddy proxying, and Vaultwarden.
 - Source-restricted firewall rules for server services and administration.
@@ -91,6 +91,5 @@ their SOPS files and restart targets.
 
 ## Desktop documentation
 
-The [Quickshell README](modules/home/scylla/hyprland/quickshell/README.md)
-describes the shell composition, IPC targets, display profiles, adaptive
-profiles, and keybindings.
+The GNOME Home Manager module contains the desktop settings, wallpaper
+handling, and keybindings.
