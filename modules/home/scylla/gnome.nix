@@ -60,6 +60,11 @@ in
     };
   };
 
+  programs.vicinae = {
+    enable = true;
+    systemd.enable = true;
+  };
+
   dconf.settings = {
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
