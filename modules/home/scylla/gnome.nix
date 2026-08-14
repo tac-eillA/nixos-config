@@ -76,6 +76,14 @@ in
       dynamic-workspaces = false;
     };
 
+    "org/gnome/shell" = {
+      enabled-extensions = [
+        "appindicatorsupport@rgcjonas.gmail.com"
+        "clipboard-indicator@tudmotu.com"
+        "tiling-assistant@leleat-on-github"
+      ];
+    };
+
     "org/gnome/desktop/wm/preferences" = {
       num-workspaces = 5;
       focus-mode = "sloppy";

@@ -24,6 +24,9 @@
 
     environment.systemPackages = with pkgs; [
       gnome-screenshot
+      gnomeExtensions.appindicator
+      gnomeExtensions.clipboard-indicator
+      gnomeExtensions.tiling-assistant
       imv
       xarchiver
     ];

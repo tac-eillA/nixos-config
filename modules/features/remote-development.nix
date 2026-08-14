@@ -43,14 +43,16 @@ in
   services.sunshine = {
     enable = true;
     autoStart = true;
-    capSysAdmin = false;
+    # GNOME runs on Wayland. Sunshine uses DRM/KMS capture instead of the
+    # wlroots-only capture path used by Hyprland.
+    capSysAdmin = true;
     openFirewall = false;
     settings = {
       sunshine_name = config.networking.hostName;
       upnp = "disabled";
       address_family = "both";
       origin_web_ui_allowed = "wan";
-      capture = "wlr";
+      capture = "kms";
       encoder = "vaapi";
       key_rightalt_to_key_win = "enabled";
     };
