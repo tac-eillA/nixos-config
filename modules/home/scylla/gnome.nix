@@ -65,6 +65,23 @@ in
     systemd.enable = true;
   };
 
+  systemd.user.services.tailscale-systray = {
+    Unit = {
+      Description = "Tailscale system tray";
+      After = [ "graphical-session.target" ];
+      PartOf = [ "graphical-session.target" ];
+    };
+
+    Service = {
+      ExecStart = "${pkgs.tailscale}/bin/tailscale systray";
+      Restart = "on-failure";
+    };
+
+    Install = {
+      WantedBy = [ "graphical-session.target" ];
+    };
+  };
+
   dconf.settings = {
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
