@@ -89,6 +89,16 @@ in
       ];
     };
 
+    # GNOME normally uses Super+1 through Super+9 to launch favorite apps.
+    # Release Super+1 through Super+5 for workspace navigation.
+    "org/gnome/shell/keybindings" = {
+      switch-to-application-1 = [ ];
+      switch-to-application-2 = [ ];
+      switch-to-application-3 = [ ];
+      switch-to-application-4 = [ ];
+      switch-to-application-5 = [ ];
+    };
+
     "org/gnome/desktop/wm/preferences" = {
       num-workspaces = 5;
       focus-mode = "sloppy";
