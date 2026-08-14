@@ -65,7 +65,7 @@ symlinkJoin {
   paths = [ appimage ];
   nativeBuildInputs = [ makeWrapper ];
 
-  # Hyprland is not one of Electron's auto-detected Linux keyring desktops.
+  # GNOME Keyring is the desktop keyring used by this workstation.
   # Select the GNOME Keyring backend explicitly so Clerk tokens use the
   # workstation's existing Secret Service rather than plaintext storage.
   # Releases are pinned by update-appimages because the Nix store is immutable.

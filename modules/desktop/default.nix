@@ -3,10 +3,9 @@
 {
   imports = [
     ./fonts.nix
-    ./hyprland.nix
+    ./gnome.nix
     ./login.nix
     ./peripherals.nix
-    ./shell.nix
     ./video.nix
   ];
 }

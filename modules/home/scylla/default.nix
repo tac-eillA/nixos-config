@@ -3,6 +3,7 @@
 {
   imports = [
     ./git.nix
+    ./gnome.nix
     ./ghostty.nix
     ./neovim.nix
     ./appimages.nix

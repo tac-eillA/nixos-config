@@ -2,7 +2,7 @@
 
 Pythia is a remote workstation for the GMKtec EVO-X2.
 
-The host starts Hyprland automatically. It locks the session after startup.
+The host starts GNOME automatically. It locks the session after startup.
 Sunshine streams that session through Moonlight.
 T3 Code listens only on the Tailscale address.
 

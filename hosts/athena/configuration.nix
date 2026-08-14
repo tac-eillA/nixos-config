@@ -17,11 +17,6 @@
   # The Framework 13 has an AMD Strix integrated GPU.
   scylla.desktop.video.gpu = "amd";
 
-  # Keep the pre-login UI on the laptop panel. Hyprland applies the user's
-  # complete docked layout after SDDM launches the UWSM-managed session.
-  scylla.desktop.login.internalDisplayOnly = true;
-  scylla.desktop.shell.internalDisplay = "eDP-1";
-
   home-manager.users.${config.scylla.user.name} = { lib, ... }: {
       # Moonlight defaults system-key capture to off, which leaves Super/Alt
       # shortcuts with Athena's compositor instead of forwarding them to Pythia.
