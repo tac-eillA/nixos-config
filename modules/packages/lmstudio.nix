@@ -21,6 +21,36 @@ in
 appimageTools.wrapType2 {
   inherit pname version src;
 
+  # LM Studio downloads the ROCm BLAS libraries separately from the engine
+  # extension.  The engine is launched as a child process, so expose that
+  # per-user vendor directory inside the FHS environment.  Its bundled
+  # libraries also depend on libelf and zstd, which are not part of the
+  # default AppImage environment.
+  extraPkgs = pkgs: with pkgs; [
+    elfutils
+    zstd
+  ];
+
+  profile = ''
+    export LD_LIBRARY_PATH="''${HOME}/.lmstudio/extensions/backends/vendor/linux-llama-rocm-vendor-v4:/run/opengl-driver/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+  '';
+
+  # The runtime hardware survey launches a helper with a sanitized
+  # environment on some LM Studio versions.  Make the downloaded ROCm
+  # libraries visible through the normal FHS linker path as well.
+  extraPreBwrapCmds = ''
+    lmstudio_rocm_vendor="''${HOME}/.lmstudio/extensions/backends/vendor/linux-llama-rocm-vendor-v4"
+    lmstudio_rocm_mounts=()
+    for library in "$lmstudio_rocm_vendor"/lib*.so*; do
+      [ -e "$library" ] || continue
+      lmstudio_rocm_mounts+=(--ro-bind-try "$library" "/usr/lib/''${library##*/}")
+    done
+  '';
+
+  extraBwrapArgs = [
+    "\${lmstudio_rocm_mounts[@]}"
+  ];
+
   extraInstallCommands = ''
     mkdir -p "$out/share/applications"
 
