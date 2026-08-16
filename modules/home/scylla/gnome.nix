@@ -105,6 +105,15 @@ in
         "extension-list@tu.berry"
         "tiling-assistant@leleat-on-github"
       ];
+      favorite-apps = [
+        "firefox.desktop"
+        "helium.desktop"
+        "t3code.desktop"
+        "com.mitchellh.ghostty.desktop"
+        "dev.zed.Zed.desktop"
+        "cider-2.desktop"
+        "thunar.desktop"
+      ];
     };
 
     # GNOME normally uses Super+1 through Super+9 to launch favorite apps.
