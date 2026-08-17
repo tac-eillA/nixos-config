@@ -14,6 +14,7 @@ let
     ffmpeg
     streamrip
     kontainer
+    nordvpn
   ];
 
   stablePackages = with pkgsStable; [

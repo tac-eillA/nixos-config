@@ -28,6 +28,8 @@
       gnomeExtensions.clipboard-indicator
       gnomeExtensions.extension-list
       gnomeExtensions.tiling-assistant
+      gnomeExtensions.nordvpn-quick-toggle
+      gnomeExtensions.paperwm
       imv
       xarchiver
     ];

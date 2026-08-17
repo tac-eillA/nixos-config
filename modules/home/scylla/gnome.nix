@@ -103,6 +103,7 @@ in
         "appindicatorsupport@rgcjonas.gmail.com"
         "clipboard-indicator@tudmotu.com"
         "extension-list@tu.berry"
+        "nordvpnquicktoggle@wedaxi.com"
         "tiling-assistant@leleat-on-github"
       ];
       favorite-apps = [
