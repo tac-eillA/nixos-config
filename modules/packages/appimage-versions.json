@@ -2,45 +2,45 @@
   "helium": {
     "sources": {
       "aarch64-linux": {
-        "hash": "sha256-CRVOuJhFIWZosPP+WkfCp/WbhjeWzKOA1hr9nVVmIqs=",
-        "url": "https://github.com/imputnet/helium-linux/releases/download/0.16.6.1/helium-0.16.6.1-arm64.AppImage"
+        "hash": "sha256-35KVUqsbpEhqAns2b+PtmzqQKRwiJ3ebRAQUdu7eytc=",
+        "url": "https://github.com/imputnet/helium-linux/releases/download/0.18.1.1/helium-0.18.1.1-arm64.AppImage"
       },
       "x86_64-linux": {
-        "hash": "sha256-T29e5QpXsFYADvSsNcti2LXqLaCUjB5mLYEnHtpxO/Q=",
-        "url": "https://github.com/imputnet/helium-linux/releases/download/0.16.6.1/helium-0.16.6.1-x86_64.AppImage"
+        "hash": "sha256-0eG5k9+/7gbp+Q6KKc1Y6HpHUZewT8BIdQYifDOFacs=",
+        "url": "https://github.com/imputnet/helium-linux/releases/download/0.18.1.1/helium-0.18.1.1-x86_64.AppImage"
       }
     },
-    "tag": "0.16.6.1",
-    "version": "0.16.6.1"
+    "tag": "0.18.1.1",
+    "version": "0.18.1.1"
   },
   "lmstudio": {
     "sources": {
       "x86_64-linux": {
-        "hash": "sha256-F8uKxjdPkYL8En764gaAJl48TBfZbq3xR+tf5hEak1M=",
-        "url": "https://installers.lmstudio.ai/linux/x64/0.4.24-1/LM-Studio-0.4.24-1-x64.AppImage"
+        "hash": "sha256-7KRnRGyDOCRpfovvqzAP5Saf35hOPuQ4X8uthQLwfFM=",
+        "url": "https://installers.lmstudio.ai/linux/x64/0.4.25-1/LM-Studio-0.4.25-1-x64.AppImage"
       }
     },
-    "tag": "0.4.24-1",
-    "version": "0.4.24-1"
+    "tag": "0.4.25-1",
+    "version": "0.4.25-1"
   },
   "t3code": {
     "sources": {
       "x86_64-linux": {
-        "hash": "sha256-i/X9RMt/rQxDGR1U/v35dKgifVBQXsuKvPdjJiCfJko=",
-        "url": "https://github.com/pingdotgg/t3code/releases/download/v0.0.40/T3-Code-0.0.40-x86_64.AppImage"
+        "hash": "sha256-urbPKfEwFa9+lm6VPo7Vqa17bmPLhkz0Hj4IFeqFchk=",
+        "url": "https://github.com/pingdotgg/t3code/releases/download/v0.0.44/T3-Code-0.0.44-x86_64.AppImage"
       }
     },
-    "tag": "v0.0.40",
-    "version": "0.0.40"
+    "tag": "v0.0.44",
+    "version": "0.0.44"
   },
   "t3code-nightly": {
     "sources": {
       "x86_64-linux": {
-        "hash": "sha256-F+elwLVEmxnv1nvD+C91f0wUGabVhkKmpBvCIZ02Sq0=",
-        "url": "https://github.com/pingdotgg/t3code/releases/download/v0.0.41-nightly.20260909.1461/T3-Code-0.0.41-nightly.20260909.1461-x86_64.AppImage"
+        "hash": "sha256-hfbi8B/9vHzPIB+JZf7dttjMSCdHBuD8dkR9qKIVYMw=",
+        "url": "https://github.com/pingdotgg/t3code/releases/download/v0.0.44-nightly.20260929.2456/T3-Code-0.0.44-nightly.20260929.2456-x86_64.AppImage"
       }
     },
-    "tag": "v0.0.41-nightly.20260909.1461",
-    "version": "0.0.41-nightly.20260909.1461"
+    "tag": "v0.0.44-nightly.20260929.2456",
+    "version": "0.0.44-nightly.20260929.2456"
   }
 }

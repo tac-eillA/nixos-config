@@ -11,7 +11,7 @@
   hardware.i2c.enable = true;
 
   hardware.logitech.wireless.enable = false;
-  hardware.logitech.wireless.enableGraphical = false;
+  programs.solaar.enable = false;
   hardware.keyboard.qmk.enable = true;
 
   hardware.bluetooth = {
