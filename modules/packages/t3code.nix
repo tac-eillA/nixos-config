@@ -45,7 +45,7 @@ let
       cp -r ${contents}/usr/share/* "$out/share/"
       install -m 444 ${contents}/t3code.desktop "$out/share/applications/${desktopEntryName}"
       substituteInPlace "$out/share/applications/${desktopEntryName}" \
-        --replace-fail "Exec=AppRun --no-sandbox %U" "Exec=${pname} --no-sandbox %U"
+        --replace-fail "Exec=AppRun %U" "Exec=${pname} --no-sandbox %U"
 
       ${lib.optionalString nightly ''
         chmod -R u+w "$out/share/icons"
